@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'export',
-    distDir: 'dist'
+    // Konfigurasi untuk development
+    // Tidak ada opsi khusus yang diperlukan
 };
 
 export default nextConfig;
