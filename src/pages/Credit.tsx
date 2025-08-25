@@ -1,25 +1,14 @@
-import { useRouter } from "next/router";
-import MenuBackgroundWrapper from "../components/MenuBackgroundWrapper";
-import GameButton from "../components/GameButton";
+import PageWrapper from "../components/PageWrapper";
 
 const CreditPage = () => {
-  const router = useRouter();
-
   return (
-    <MenuBackgroundWrapper>
-      <div className="absolute top-4 left-4">
-        <GameButton
-          normal="/assets/ui/buttons/home/home_normal.png"
-          hover="/assets/ui/buttons/home/home_hover.png"
-          active="/assets/ui/buttons/home/home_active.png"
-          alt="Home Button"
-          onClick={() => router.push("/menu")}
-          width={120}
-          height={120}
-        />
+    <PageWrapper>
+      <div className="text-white text-center">
+        <h1 className="text-4xl font-bold">Kredit</h1>
+        <p className="mt-4">Game ini dibuat oleh:</p>
+        <p className="mt-2">Nama Pengembang</p>
       </div>
-      {/* Konten lain bisa ditambahkan di sini dan akan terpusat */}
-    </MenuBackgroundWrapper>
+    </PageWrapper>
   );
 };
 
