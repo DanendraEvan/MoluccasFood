@@ -39,7 +39,7 @@ const MenuPage: React.FC = () => {
             normal="/assets/ui/buttons/play/play_normal.png"
             hover="/assets/ui/buttons/play/play_hover.png"
             active="/assets/ui/buttons/play/play_active.png"
-            onClick={() => router.push("/game")}
+            onClick={() => router.push("/Game")}
             alt="Play Button"
             width={200}
             height={200}
