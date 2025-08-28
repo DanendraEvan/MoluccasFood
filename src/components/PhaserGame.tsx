@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { createGame } from '../game/GameEngine';
 import type { Game } from 'phaser';
 
-const PhaserGame = ({ food }: { food: 'papeda' | 'kohukohu' }) => {
+const PhaserGame = ({ food }: { food: 'papeda' | 'kohukohu' | 'nasi_lapola' | 'colo_colo' | 'ikan_kuahkuning' }) => {
   const gameRef = useRef<Game | null>(null);
 
   useEffect(() => {

@@ -2,10 +2,16 @@
 import Phaser from 'phaser';
 import PapedaScene from './scenes/PapedaScene';
 import KohuKohuScene from './scenes/KohuKohuScene';
+import NasiLapolaScene from './scenes/NasiLapolaScene';
+import ColoColoScene from './scenes/ColoColoScene';
+import IkanKuahKuningScene from './scenes/IkanKuahKuningScene';
 
 const सीन्स = {
   papeda: PapedaScene,
   kohukohu: KohuKohuScene,
+  nasi_lapola: NasiLapolaScene,
+  colo_colo: ColoColoScene,
+  ikan_kuahkuning: IkanKuahKuningScene,
 };
 
 export const createGame = (food: keyof typeof सीन्स) => {

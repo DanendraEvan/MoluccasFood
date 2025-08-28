@@ -10,7 +10,7 @@ const GamePage = () => {
   const router = useRouter();
   const { food } = router.query;
 
-  if (!food || (food !== 'papeda' && food !== 'kohukohu')) {
+  if (!food || (food !== 'papeda' && food !== 'kohukohu' && food !== 'nasi_lapola' && food !== 'colo_colo' && food !== 'ikan_kuahkuning')) {
     return <div>Invalid food selection</div>;
   }
 

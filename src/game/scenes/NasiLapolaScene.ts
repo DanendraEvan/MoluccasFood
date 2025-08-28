@@ -1,265 +1,295 @@
-// src/game/scenes/KohuKohuScene.ts
+
+// src/game/scenes/NasiLapolaScene.ts
 import Phaser from "phaser";
 
-type BowlState =
+// State untuk panci-panci individual
+type PotState =
   | "empty"
-  | "teflonKelapa"
-  | "sangrai"
-  | "tambahanSepatula"
-  | "aduk"
-  | "piringKelapa"
-  | "finished";
+  | "air"
+  | "kacang_mentah"
+  | "kacang_matang"
+  | "kelapa_mentah"
+  | "kelapa_matang"
+  | "beras_mentah"
+  | "beras_diaduk"
+  | "beras_matang"
+  | "beras_kelapa"
+  | "beras_kelapa_garam"
+  | "kelapa_garam"
+  | "final"
+  | "kukus"
+  | "plated";
 
-type WajanState =
-  | "empty"
-  | "kemangi"
-  | "kol"
-  | "bawangPutih"
-  | "cabeBawangMerah"
-  | "daging"
-  | "minyak"
-  | "sepatulaDanSayur"
-  | "kohukohu";
+export default class NasiLapolaScene extends Phaser.Scene {
+  // Definisikan semua objek game
+  private panciKiri: Phaser.GameObjects.Image;
+  private panciKanan: Phaser.GameObjects.Image;
+  private panciMasak: Phaser.GameObjects.Image | null = null;
 
-export default class KohuKohuScene extends Phaser.Scene {
-  private Teflon: Phaser.GameObjects.Image;
-  private Wajan: Phaser.GameObjects.Image;
-  private Sepatula: Phaser.GameObjects.Image;
-  private Piring: Phaser.GameObjects.Image;
+  private komporKiriZone: Phaser.GameObjects.Zone;
+  private komporKananZone: Phaser.GameObjects.Zone;
+  private stagingZone: Phaser.GameObjects.Zone;
 
-  private Kelapa: Phaser.GameObjects.Image;
-  private Kemangi: Phaser.GameObjects.Image;
-  private Kol: Phaser.GameObjects.Image;
-  private BawangPutih: Phaser.GameObjects.Image;
-  private Cabe: Phaser.GameObjects.Image;
-  private BawangMerah: Phaser.GameObjects.Image;
-  private Daging: Phaser.GameObjects.Image;
-  private MinyakIkan: Phaser.GameObjects.Image;
+  // State untuk setiap panci
+  private statePanciKiri: PotState = "air";
+  private statePanciKanan: PotState = "air";
+  private statePanciMasak: PotState = "empty";
+  private statePanciKukus: PotState = "empty";
 
-  private dropZone: Phaser.GameObjects.Zone;
-  private wajanZone: Phaser.GameObjects.Zone;
-  private teflonZone: Phaser.GameObjects.Zone;
-  private bowlState: BowlState;
-  private wajanState: WajanState;
-  private stirringTimer: Phaser.Time.TimerEvent | null = null;
-
-  private KomporWajan: Phaser.GameObjects.Image;
-  private KomporTeflon: Phaser.GameObjects.Image;
-
-  private hasCabe = false;
-  private hasBawangMerah = false;
+  // Status penempatan panci
+  private isPanciKiriStaged = false;
+  private isPanciKananStaged = false;
 
   constructor() {
-    super("KohuKohuScene");
-    this.bowlState = "empty";
-    this.wajanState = "empty";
+    super("NasiLapolaScene");
   }
 
   preload() {
     this.load.image("background", "/assets/backgrounds/kitchen.png");
-
-    // Tools
-    this.load.image("Teflon", "/assets/foods/kohu_kohu/Teflon.png");
-    this.load.image("Wajan", "/assets/foods/kohu_kohu/wajan.png");
-    this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.png");
-    this.load.image("Piring", "/assets/foods/kohu_kohu/Piring Kohu.png");
     this.load.image("Kompor", "/assets/foods/kohu_kohu/Kompor.png");
 
-    // Ingredients
+    // Alat & Bahan
+    this.load.image("PanciAir", "/assets/foods/nasi_lapola/PanciAir.png");
+    this.load.image("PanciAir2", "/assets/foods/nasi_lapola/PanciAir2.png");
+    this.load.image("Kacang", "/assets/foods/nasi_lapola/Kacang.png");
     this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
-    this.load.image("Kol", "/assets/foods/kohu_kohu/kol.png");
-    this.load.image("Kemangi", "/assets/foods/kohu_kohu/Kemangi.png");
-    this.load.image("BawangPutih", "/assets/foods/kohu_kohu/bawangPutih.png");
-    this.load.image("Cabe", "/assets/foods/kohu_kohu/Cabe.png");
-    this.load.image("BawangMerah", "/assets/foods/kohu_kohu/Bawang Merah.png");
-    this.load.image("Daging", "/assets/foods/kohu_kohu/Daging.png");
-    this.load.image("MinyakIkan", "/assets/foods/kohu_kohu/MinyakIkan.png");
+    this.load.image("Beras", "/assets/foods/nasi_lapola/Beras.png");
+    this.load.image("Garam", "/assets/foods/nasi_lapola/Garam.png");
+    this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.png");
 
-    // Steps / hasil
-    this.load.image("TeflonKelapa", "/assets/foods/kohu_kohu/TeflonKelapa.png");
-    this.load.image("Sangrai", "/assets/foods/kohu_kohu/sangrai.png");
-    this.load.image("TambahanSepatula", "/assets/foods/kohu_kohu/TambahanSepatula.png");
-    this.load.image("AdukKohu1", "/assets/foods/kohu_kohu/adukKohu1.png");
-    this.load.image("AdukKohu2", "/assets/foods/kohu_kohu/AdukKohu2.png");
-    this.load.image("PiringKelapa", "/assets/foods/kohu_kohu/piringKelapa.png");
-    this.load.image("SepatuladanSayur", "/assets/foods/kohu_kohu/SepatuladanSayur.png");
-    this.load.image("KohuKohu", "/assets/foods/kohu_kohu/kohukohu.png");
+    // Variasi Panci
+    this.load.image("PanciKacang", "/assets/foods/nasi_lapola/PanciKacang.png");
+    this.load.image("PanciSaring", "/assets/foods/nasi_lapola/PanciSaring.png");
+    this.load.image("PanciKelapa", "/assets/foods/nasi_lapola/PanciKelapa.png");
+    this.load.image("PanciBeras", "/assets/foods/nasi_lapola/PanciBeras.png");
+    this.load.image("PanciKelapaGaram", "/assets/foods/nasi_lapola/PanciKelapaGaram.png");
+    this.load.image("PanciKacang2", "/assets/foods/nasi_lapola/PanciKacang2.png"); // Hasil akhir
+    this.load.image("PanciBerasKelapa", "/assets/foods/nasi_lapola/PanciBerasKelapa.png");
+    this.load.image("PanciNasiLapola", "/assets/foods/nasi_lapola/PanciNasiLapola.png");
 
-    this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.png");
-    this.load.image("tambahanKol", "/assets/foods/kohu_kohu/tambahanKol.png");
-    this.load.image("tambahanBawangPutih", "/assets/foods/kohu_kohu/tambahanBawangPutih.png");
-    this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.png");
-    this.load.image("tambahanDaging", "/assets/foods/kohu_kohu/TambahanDaging.png");
-    this.load.image("tambahanMinyak", "/assets/foods/kohu_kohu/tambahanMinyak.png");
+    // Animasi Aduk
+    this.load.image("PanciAirSepatula", "/assets/foods/nasi_lapola/PanciAirSepatula.png");
+    this.load.image("PanciAirSepatula2", "/assets/foods/nasi_lapola/PanciAirSepatula2.png");
+    this.load.image("PanciAirSepatula3", "/assets/foods/nasi_lapola/PanciAirSepatula3.png");
+    this.load.image("AdukKacang", "/assets/foods/nasi_lapola/AdukKacang.png");
+    this.load.image("AdukKacang2", "/assets/foods/nasi_lapola/AdukKacang2.png");
+    this.load.image("Piring", "/assets/foods/nasi_lapola/Piring.png");
+    this.load.image("KukusNasi", "/assets/foods/nasi_lapola/KukusNasi.png");
+    this.load.image("NasiLapola", "/assets/foods/nasi_lapola/NasiLapola.png");
   }
 
   create() {
     const bg = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, "background");
-    const scaleX = this.cameras.main.width / bg.width;
-    const scaleY = this.cameras.main.height / bg.height;
-    const scale = Math.max(scaleX, scaleY);
-    bg.setScale(scale).setScrollFactor(0);
+    bg.setScale(Math.max(this.cameras.main.width / bg.width, this.cameras.main.height / bg.height));
 
-    // --- Kompor kiri untuk WAJAN ---
-    this.KomporWajan = this.add.image(this.cameras.main.width / 3, this.cameras.main.height - 150, "Kompor").setScale(0.4);
-    this.wajanZone = this.add.zone(this.KomporWajan.x, this.KomporWajan.y - 100, 200, 200).setRectangleDropZone(200, 200).setName("wajanZone");
-    this.Wajan = this.add.image(this.wajanZone.x, this.wajanZone.y, "Wajan").setScale(0.3);
+    // 1. ZONA & KOMPOR
+    // Zona kompor kiri
+    const komporKiri = this.add.image(this.cameras.main.width / 4, this.cameras.main.height - 150, "Kompor").setScale(0.4);
+    this.komporKiriZone = this.add.zone(komporKiri.x, komporKiri.y - 100, 200, 200).setRectangleDropZone(200, 200);
+    this.komporKiriZone.name = "komporKiri";
 
-    // --- Kompor kanan untuk TEFLON ---
-    this.KomporTeflon = this.add.image(this.cameras.main.width * 2/3, this.cameras.main.height - 150, "Kompor").setScale(0.4);
-    this.teflonZone = this.add.zone(this.KomporTeflon.x, this.KomporTeflon.y - 100, 200, 200).setRectangleDropZone(200, 200).setName("teflonZone");
-    this.Teflon = this.add.image(this.teflonZone.x, this.teflonZone.y, "Teflon").setScale(0.3);
+    // Zona kompor kanan
+    const komporKanan = this.add.image(this.cameras.main.width / 2, this.cameras.main.height - 150, "Kompor").setScale(0.4);
+    this.komporKananZone = this.add.zone(komporKanan.x, komporKanan.y - 100, 200, 200).setRectangleDropZone(200, 200);
+    this.komporKananZone.name = "komporKanan";
+    
+    // Zona samping kanan untuk menaruh panci
+    this.stagingZone = this.add.zone(this.cameras.main.width - 200, this.cameras.main.height / 2, 300, 400).setRectangleDropZone(300, 400);
+    this.stagingZone.name = "staging";
+    // Debug staging zone
+    // const graphics = this.add.graphics();
+    // graphics.lineStyle(2, 0xffff00);
+    // graphics.strokeRect(this.stagingZone.x - this.stagingZone.input.hitArea.width / 2, this.stagingZone.y - this.stagingZone.input.hitArea.height / 2, this.stagingZone.input.hitArea.width, this.stagingZone.input.hitArea.height);
 
-    this.createIngredients();
-    this.initDragAndDrop();
-  }
 
-  private createIngredients() {
-    const ingredientX = this.cameras.main.width - 100;
-    const verticalSpacing = 60;
-    const initialY = 100;
-
-    const ingredients = [
-      "Kelapa",
-      "Kemangi",
-      "Kol",
-      "BawangPutih",
-      "Cabe",
-      "BawangMerah",
-      "Daging",
-      "MinyakIkan",
-      "Sepatula",
-      "Piring"
-    ];
-
+    // 2. PANCI AWAL
+    this.panciKiri = this.add.image(this.komporKiriZone.x, this.komporKiriZone.y, "PanciAir").setScale(0.4).setInteractive();
+    this.panciKanan = this.add.image(this.komporKananZone.x, this.komporKananZone.y, "PanciSaring").setScale(0.4).setInteractive();
+    
+    // 3. BAHAN-BAHAN (di sisi kanan)
+    const ingredientX = this.cameras.main.width - 150;
+    const initialY = 150;
+    const verticalSpacing = 80;
+    const ingredients = ["Kacang", "Kelapa", "Beras", "Garam", "Sepatula", "PanciAir2", "PanciSaring", "Piring"];
     ingredients.forEach((key, i) => {
-      this[key] = this.add.image(ingredientX, initialY + i * verticalSpacing, key).setInteractive().setScale(0.2);
-      this.input.setDraggable(this[key]);
+      const ingredient = this.add.image(ingredientX, initialY + i * verticalSpacing, key)
+        .setInteractive()
+        .setScale(0.3);
+      ingredient.name = key;
+      this.input.setDraggable(ingredient);
     });
+
+    this.initDragAndDrop();
   }
 
   private initDragAndDrop() {
     this.input.on("drag", (pointer, gameObject, dragX, dragY) => {
       gameObject.x = dragX;
       gameObject.y = dragY;
-      if (gameObject.texture.key === "Sepatula" && this.wajanState === "minyak") {
-        const spatulaBounds = gameObject.getBounds();
-        const wajanBounds = this.Wajan.getBounds();
-    
-        // Kalau spatula menyentuh wajan sedikit saja
-        if (Phaser.Geom.Intersects.RectangleToRectangle(spatulaBounds, wajanBounds)) {
-          this.Wajan.setTexture("SepatuladanSayur");
-          this.wajanState = "sepatulaDanSayur";
-    
-          // Spatula juga langsung berubah
-          gameObject.setTexture("SepatuladanSayur");
-          gameObject.Interactive(); // biar nggak bisa ditarik lagi
-        }
+    });
+
+    this.input.on("dragend", (pointer, gameObject, dropped) => {
+      if (!dropped) {
+        gameObject.x = gameObject.input.dragStartX;
+        gameObject.y = gameObject.input.dragStartY;
       }
     });
 
-    this.input.on("drop", (pointer, gameObject: Phaser.GameObjects.Image, dropZone) => {
-      const droppedKey = gameObject.texture.key;
-      if (droppedKey === "Piring") {
-        this.Piring.x = this.KomporTeflon.x;
-        this.Piring.y = this.KomporTeflon.y - 180; // agak lebih tinggi
+    this.input.on("drop", (pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
+      const droppedKey = gameObject.name;
+
+      // --- LOGIKA UNTUK PANCI KIRI ---
+      if (dropZone === this.komporKiriZone && this.statePanciKiri === "air" && droppedKey === "Kacang") {
+        this.panciKiri.setTexture("PanciKacang");
+        this.statePanciKiri = "kacang_matang";
+        this.input.setDraggable(this.panciKiri); // Sekarang panci bisa di-drag
+        gameObject.destroy();
       }
-      // --- TEFLON logic (kanan) ---
-      if (dropZone === this.teflonZone) {
-        if (this.bowlState === "empty" && droppedKey === "Kelapa") {
-          this.Teflon.setTexture("TeflonKelapa");
-          this.bowlState = "teflonKelapa";
+      // --- LOGIKA UNTUK PANCI KANAN ---
+      else if (dropZone === this.komporKananZone && this.statePanciKanan === "air" && droppedKey === "Kelapa") {
+        this.panciKanan.setTexture("PanciKelapa");
+        this.statePanciKanan = "kelapa_matang";
+        this.input.setDraggable(this.panciKanan); // Sekarang panci bisa di-drag
+        gameObject.destroy();
+      }
+      // --- LOGIKA MENARUH PANCI KE STAGING AREA ---
+      else if (dropZone === this.stagingZone) {
+        if (gameObject === this.panciKiri && this.statePanciKiri === "kacang_matang") {
+            this.isPanciKiriStaged = true;
+            // Biarkan panci dapat di-drag lagi
+        }
+        if (gameObject === this.panciKanan && this.statePanciKanan === "kelapa_matang") {
+            this.isPanciKananStaged = true;
+            // Biarkan panci dapat di-drag lagi
+        }
+      }
+      // --- LOGIKA MEMASAK BERAS (DENGAN PANCI AIR 2) ---
+      // 1. Taruh PanciAir2 ke kompor
+      else if ((dropZone === this.komporKiriZone || dropZone === this.komporKananZone) && this.statePanciMasak === "empty" && droppedKey === "PanciAir2") {
+          this.panciMasak = this.add.image(dropZone.x, dropZone.y, "PanciAir2").setScale(0.4).setInteractive();
+          this.input.setDraggable(this.panciMasak);
+          this.statePanciMasak = "air";
           gameObject.destroy();
-          this.time.delayedCall(1000, () => {
-            // Cek lagi buat jaga-jaga kalau state sudah berubah
-            if (this.bowlState === "teflonKelapa") {
-              this.Teflon.setTexture("Sangrai");
-              this.bowlState = "sangrai";
-              this.Teflon.setInteractive();
-    this.input.setDraggable(this.Teflon);
-            }
+      }
+      // 2. Taruh Beras ke PanciAir2 (tidak ada perubahan visual)
+      else if (this.panciMasak && this.panciMasak.texture.key === "PanciAir2" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && this.statePanciMasak === "air" && droppedKey === "Beras") {
+          this.statePanciMasak = "beras_mentah";
+          gameObject.destroy();
+      }
+      // 3. Aduk dengan Sepatula, animasi, lalu jadi PanciBeras
+      else if (this.panciMasak && this.panciMasak.texture.key === "PanciAir2" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && this.statePanciMasak === "beras_mentah" && droppedKey === "Sepatula") {
+          this.statePanciMasak = "beras_diaduk";
+          // Kembalikan sepatula ke posisi semula agar bisa dipakai lagi
+          gameObject.x = gameObject.input.dragStartX;
+          gameObject.y = gameObject.input.dragStartY;
+          
+          // Simpan tekstur awal untuk animasi
+          const initialTexture = this.panciMasak.texture.key;
+
+          const animTimer = this.time.addEvent({
+              delay: 300,
+              repeat: 2, // Akan berjalan 3 kali (0, 1, 2)
+              callback: () => {
+                  const currentTexture = this.panciMasak.texture.key;
+                  if (currentTexture === initialTexture) {
+                      this.panciMasak.setTexture("PanciAirSepatula");
+                  } else if (currentTexture === "PanciAirSepatula") {
+                      this.panciMasak.setTexture("PanciAirSepatula2");
+                  } else {
+                      this.panciMasak.setTexture("PanciAirSepatula3");
+                  }
+              }
           });
-        } else if (this.bowlState === "teflonKelapa" && droppedKey === "Kelapa") {
-          this.Teflon.setTexture("Sangrai");
-          this.bowlState = "sangrai";
-          gameObject.destroy();
-        } else if (this.bowlState === "sangrai" && droppedKey === "Sepatula") {
-          this.Teflon.setTexture("TambahanSepatula");
-          this.startStirring();
-          gameObject.destroy();
-        }  // ✅ Sangrai ke Piring
-        else if (this.bowlState === "sangrai" && droppedKey === "Piring") {
-          this.Teflon.setTexture("PiringKelapa");
-          this.bowlState = "piringKelapa";
-      
-          this.Teflon.x = this.Piring.x;
-          this.Teflon.y = this.Piring.y - 30;
-      
-          gameObject.destroy();
-        } else if (this.bowlState === "piringKelapa" && droppedKey === "SepatuladanSayur") {
-          this.Teflon.setTexture("KohuKohu");
-          this.bowlState = "finished";
-        }
-      }
 
-      // --- WAJAN logic (kiri) ---
-      if (dropZone === this.wajanZone) {
-        if (this.wajanState === "empty" && droppedKey === "Kemangi") {
-          this.Wajan.setTexture("Tambahankemangi");
-          this.wajanState = "kemangi";
+          this.time.delayedCall(1200, () => {
+              animTimer.destroy();
+              this.panciMasak.setTexture("PanciBeras"); // Hasil akhir
+              this.statePanciMasak = "beras_matang";
+          });
+      }
+      // --- LOGIKA PENGGABUNGAN SETELAH NASI MASAK ---
+      // 4. Gabungkan PanciKelapa ke PanciBeras
+      else if (this.panciMasak && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && this.statePanciMasak === "beras_matang" && gameObject === this.panciKanan && this.statePanciKanan === "kelapa_matang") {
+          this.panciMasak.setTexture("PanciBerasKelapa");
+          this.statePanciMasak = "beras_kelapa";
+          this.panciKanan.destroy();
+          this.isPanciKananStaged = false; // Reset flag
+      }
+      // 5. Tambahkan Garam ke PanciBerasKelapa (tidak ada perubahan visual)
+      else if (this.panciMasak && this.panciMasak.texture.key === "PanciBerasKelapa" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && this.statePanciMasak === "beras_kelapa" && droppedKey === "Garam") {
+          this.statePanciMasak = "beras_kelapa_garam";
           gameObject.destroy();
-        } else if (this.wajanState === "kemangi" && droppedKey === "Kol") {
-          this.Wajan.setTexture("tambahanKol");
-          this.wajanState = "kol";
+      }
+      // 6. (FINAL) Gabungkan PanciKacang untuk menjadi Nasi Lapola
+      else if (this.panciMasak && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && this.statePanciMasak === "beras_kelapa_garam" && gameObject === this.panciKiri && this.statePanciKiri === "kacang_matang") {
+          this.panciMasak.setTexture("PanciNasiLapola");
+          this.statePanciMasak = "final";
+          this.panciKiri.destroy();
+          this.isPanciKiriStaged = false; // Reset flag
+
+          // TODO: Pindah ke scene Result
+          this.time.delayedCall(1000, () => {
+            // this.scene.start('ResultScene', { score: 100 });
+          });
+      }
+      // 7. Aduk Nasi Lapola yang sudah jadi
+      else if (this.panciMasak && this.panciMasak.texture.key === "PanciNasiLapola" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && this.statePanciMasak === "final" && droppedKey === "Sepatula") {
+          // Kembalikan sepatula ke posisi semula
+          gameObject.x = gameObject.input.dragStartX;
+          gameObject.y = gameObject.input.dragStartY;
+
+          // Animasi mengaduk
+          const initialTexture = this.panciMasak.texture.key; // PanciNasiLapola
+          this.panciMasak.setTexture("AdukKacang");
+
+          const animTimer = this.time.addEvent({
+              delay: 300,
+              repeat: 3, // Loop 4 times total
+              callback: () => {
+                  if (this.panciMasak.texture.key === "AdukKacang") {
+                      this.panciMasak.setTexture("AdukKacang2");
+                  } else {
+                      this.panciMasak.setTexture("AdukKacang");
+                  }
+              }
+          });
+
+          this.time.delayedCall(1200, () => { // 300ms * 4
+              animTimer.destroy();
+              this.panciMasak.setTexture(initialTexture); // Kembali ke PanciNasiLapola
+          });
+      }
+      // --- LOGIKA MENGUKUS DAN MENYAJIKAN ---
+      // 8. Taruh PanciSaring (baru) ke kompor untuk mengukus
+      else if ((dropZone === this.komporKiriZone || dropZone === this.komporKananZone) && !this.panciKukus && droppedKey === "PanciSaring") {
+          this.panciKukus = this.add.image(dropZone.x, dropZone.y, "PanciSaring").setScale(0.4).setInteractive();
+          this.statePanciKukus = "air"; // State awal untuk panci kukus
           gameObject.destroy();
-        } else if (this.wajanState === "kol" && droppedKey === "BawangPutih") {
-          this.Wajan.setTexture("tambahanBawangPutih");
-          this.wajanState = "bawangPutih";
-          gameObject.destroy();
-        } else if (this.wajanState === "bawangPutih") {
-          if (droppedKey === "Cabe") {
-            this.hasCabe = true;
-            gameObject.destroy();
-          } else if (droppedKey === "BawangMerah") {
-            this.hasBawangMerah = true;
-            gameObject.destroy();
-          }
-          if (this.hasCabe && this.hasBawangMerah) {
-            this.Wajan.setTexture("tambahanCabeBawangMerah");
-            this.wajanState = "cabeBawangMerah";
-          }
-        } else if (this.wajanState === "cabeBawangMerah" && droppedKey === "Daging") {
-          this.Wajan.setTexture("tambahanDaging");
-          this.wajanState = "daging";
-          gameObject.destroy();
-        } else if (this.wajanState === "daging" && droppedKey === "MinyakIkan") {
-          this.Wajan.setTexture("tambahanMinyak");
-          this.wajanState = "minyak";
-          gameObject.destroy();
-        } else if (this.wajanState === "minyak" && droppedKey === "Sepatula") {
-          this.Wajan.setTexture("SepatuladanSayur");
-          this.wajanState = "sepatulaDanSayur";
-          gameObject.destroy();
-        } else if (this.wajanState === "sepatulaDanSayur" && droppedKey === "PiringKelapa") {
-          this.Wajan.setTexture("KohuKohu");
-          this.wajanState = "kohukohu";
-        }
+      }
+      // 9. Drag PanciNasiLapola ke PanciSaring untuk dikukus
+      else if (this.panciKukus && this.statePanciKukus === "air" && gameObject === this.panciMasak && this.statePanciMasak === "final" && Phaser.Geom.Rectangle.Contains(this.panciKukus.getBounds(), pointer.x, pointer.y)) {
+          this.panciKukus.setTexture("KukusNasi");
+          this.statePanciKukus = "kukus";
+          this.panciMasak.destroy();
+          this.panciMasak = null;
+      }
+      // 10. Sajikan dengan Piring
+      else if (this.panciKukus && this.statePanciKukus === "kukus" && droppedKey === "Piring" && Phaser.Geom.Rectangle.Contains(this.panciKukus.getBounds(), pointer.x, pointer.y)) {
+          this.panciKukus.setTexture("NasiLapola"); // Ini adalah gambar final di atas piring
+          this.statePanciKukus = "plated";
+          this.panciKukus.disableInteractive();
+          gameObject.destroy(); // Hancurkan piring
+
+          // Selesai!
+          this.time.delayedCall(2000, () => {
+            // this.scene.start('ResultScene', { score: 100 });
+          });
+      }
+      // Jika salah langkah, kembalikan objek ke posisi awal
+      else {
+        gameObject.x = gameObject.input.dragStartX;
+        gameObject.y = gameObject.input.dragStartY;
       }
     });
   }
-
-  private startStirring() {
-    this.bowlState = "aduk";
-    let isAduk1 = true;
-    this.stirringTimer = this.time.addEvent({
-      delay: 300,
-      loop: true,
-      callback: () => {
-        this.Teflon.setTexture(isAduk1 ? "AdukKohu1" : "AdukKohu2");
-        isAduk1 = !isAduk1;
-      }
-    });
-  }
-
-  update() {}
 }
