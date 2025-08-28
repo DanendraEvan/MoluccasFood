@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import GameButton from "../components/GameButton";
 import MenuBackgroundWrapper from "../components/MenuBackgroundWrapper";
 
-const MenuPage: React.FC = () => {
+const SelectFoodPage: React.FC = () => {
   const router = useRouter();
 
   return (
@@ -14,24 +14,18 @@ const MenuPage: React.FC = () => {
             className="text-[4.25rem] font-chewy font-bold drop-shadow-lg leading-tight mb-2"
             style={{ color: 'black' }}
           >
-            TFM
+            Pilih Makanan
           </h1>
-          <h2
-            className="text-[2.5rem] font-chewy font-bold drop-shadow-lg leading-tight"
-            style={{ color: 'black' }}
-          >
-            TRADISIONAL FOOD OF MOLLUCAS
-          </h2>
         </div>
 
         {/* Tombol Menu - diatur horizontal */}
         <div className="flex items-center gap-2">
           <GameButton
-            normal="/assets/ui/buttons/credit/credit_normal.png"
-            hover="/assets/ui/buttons/credit/credit_hover.png"
-            active="/assets/ui/buttons/credit/credit_active.png"
-            onClick={() => router.push("/Credit")}
-            alt="Credit Button"
+            normal="/assets/ui/buttons/play/play_normal.png"
+            hover="/assets/ui/buttons/play/play_hover.png"
+            active="/assets/ui/buttons/play/play_active.png"
+            onClick={() => router.push("/Game?food=papeda")}
+            alt="Papeda Button"
             width={200}
             height={200}
           />
@@ -39,17 +33,8 @@ const MenuPage: React.FC = () => {
             normal="/assets/ui/buttons/play/play_normal.png"
             hover="/assets/ui/buttons/play/play_hover.png"
             active="/assets/ui/buttons/play/play_active.png"
-            onClick={() => router.push("/SelectFood")}
-            alt="Play Button"
-            width={200}
-            height={200}
-          />
-          <GameButton
-            normal="/assets/ui/buttons/info/info_normal.png"
-            hover="/assets/ui/buttons/info/info_hover.png"
-            active="/assets/ui/buttons/info/info_active.png"
-            onClick={() => router.push("/info/1")}
-            alt="Info Button"
+            onClick={() => router.push("/Game?food=kohukohu")}
+            alt="Kohu Kohu Button"
             width={200}
             height={200}
           />
@@ -59,4 +44,4 @@ const MenuPage: React.FC = () => {
   );
 };
 
-export default MenuPage;
+export default SelectFoodPage;

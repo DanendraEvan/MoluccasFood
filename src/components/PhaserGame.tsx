@@ -3,12 +3,12 @@ import { useEffect, useRef } from 'react';
 import { createGame } from '../game/GameEngine';
 import type { Game } from 'phaser';
 
-const PhaserGame = () => {
+const PhaserGame = ({ food }: { food: 'papeda' | 'kohukohu' }) => {
   const gameRef = useRef<Game | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !gameRef.current) {
-      gameRef.current = createGame();
+      gameRef.current = createGame(food);
     }
 
     return () => {
@@ -17,7 +17,7 @@ const PhaserGame = () => {
         gameRef.current = null;
       }
     };
-  }, []);
+  }, [food]);
 
   return <div id="game-container" style={{ width: '100vw', height: '100vh' }} />;
 };

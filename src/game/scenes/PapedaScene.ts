@@ -1,9 +1,9 @@
-// src/game/scenes/CookingScene.ts
+// src/game/scenes/PapedaScene.ts
 import Phaser from "phaser";
 
 type BowlState = 'empty' | 'flour' | 'flour_water' | 'finished' | 'keras_with_water' | 'finished_second_stir' | 'keras_with_nipis' | 'keras_with_nipis_and_hot_water' | 'final_stir' | 'ready_to_serve' | 'served'; // Added new states
 
-export default class CookingScene extends Phaser.Scene {
+export default class PapedaScene extends Phaser.Scene {
   private mangkuk: Phaser.GameObjects.Image;
   private tepung: Phaser.GameObjects.Image;
   private water: Phaser.GameObjects.Image;
@@ -17,7 +17,7 @@ export default class CookingScene extends Phaser.Scene {
   private stirringTimer: Phaser.Time.TimerEvent | null = null; // To hold the repeating timer
 
   constructor() {
-    super("CookingScene");
+    super("PapedaScene");
     this.bowlState = 'empty';
   }
 
