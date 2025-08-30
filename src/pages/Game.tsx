@@ -1,20 +1,56 @@
 // src/pages/Game.tsx
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import PhaserGame from '../components/PhaserGame';
 
-const PhaserGame = dynamic(() => import('../components/PhaserGame'), {
-  ssr: false,
-});
-
-const GamePage = () => {
+const Game = () => {
   const router = useRouter();
-  const { food } = router.query;
+  const [food, setFood] = useState<'papeda' | 'kohukohu' | 'nasi_lapola' | 'colo_colo' | 'ikan_kuahkuning' | null>(null);
 
-  if (!food || (food !== 'papeda' && food !== 'kohukohu' && food !== 'nasi_lapola' && food !== 'colo_colo' && food !== 'ikan_kuahkuning')) {
-    return <div>Invalid food selection</div>;
+  useEffect(() => {
+    if (router.isReady) {
+      const { food: foodParam } = router.query;
+      
+      if (foodParam && typeof foodParam === 'string') {
+        // Validate that the food parameter is one of the allowed values
+        const validFoods: ('papeda' | 'kohukohu' | 'nasi_lapola' | 'colo_colo' | 'ikan_kuahkuning')[] = [
+          'papeda',
+          'kohukohu', 
+          'nasi_lapola',
+          'colo_colo',
+          'ikan_kuahkuning'
+        ];
+        
+        if (validFoods.includes(foodParam as any)) {
+          setFood(foodParam as any);
+        } else {
+          // Invalid food parameter, redirect to SelectFood
+          router.push('/SelectFood');
+        }
+      } else {
+        // No food parameter, redirect to SelectFood
+        router.push('/SelectFood');
+      }
+    }
+  }, [router.isReady, router.query]);
+
+  // Show loading while router is not ready or food is not set
+  if (!router.isReady || !food) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '24px',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        Loading...
+      </div>
+    );
   }
 
   return <PhaserGame food={food} />;
 };
 
-export default GamePage;
+export default Game;
