@@ -104,17 +104,13 @@ export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
 
     try {
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Load timeout')), 8000);
-
         const onCanPlay = () => {
-          clearTimeout(timeout);
           audio.removeEventListener('canplaythrough', onCanPlay);
           audio.removeEventListener('error', onError);
           resolve();
         };
 
         const onError = (e: Event) => {
-          clearTimeout(timeout);
           audio.removeEventListener('canplaythrough', onCanPlay);
           audio.removeEventListener('error', onError);
           reject(e);

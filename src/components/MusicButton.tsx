@@ -78,12 +78,7 @@ const MusicButton: React.FC<MusicButtonProps> = ({
             console.log(`❌ Error loading music button image: ${getButtonImage()}`);
           }}
         />
-        {/* User interaction indicator */}
-        {!hasUserInteracted && (
-          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
-            !
-          </div>
-        )}
+        
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-full">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

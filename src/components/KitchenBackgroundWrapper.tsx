@@ -1,6 +1,7 @@
 // src/components/KitchenBackgroundWrapper.tsx - Simplified with Fixed Imports
 import React, { ReactNode, useRef } from 'react';
 import { useRouter } from 'next/router';
+import MusicButton from './MusicButton';
 
 interface KitchenBackgroundWrapperProps {
   children: ReactNode;
@@ -64,59 +65,12 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
         <img
           src={getImageSrc()}
           alt="Home Button"
+          style={{ width: '108px', height: '108px' }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
             const parent = target.parentElement!;
             parent.innerHTML = '🏠';
-            parent.style.color = '#FFD700';
-            parent.style.fontSize = '24px';
-          }}
-        />
-      </button>
-    );
-  };
-
-  // Simple Music Button Component (fallback without context)
-  const SimpleMusicButton: React.FC = () => {
-    const [isPlaying, setIsPlaying] = React.useState(false);
-    const [isHovered, setIsHovered] = React.useState(false);
-    const [isActive, setIsActive] = React.useState(false);
-
-    const handleClick = () => {
-      setIsActive(true);
-      setIsPlaying(!isPlaying);
-      setTimeout(() => setIsActive(false), 150);
-    };
-
-    const getImageSrc = () => {
-      const prefix = isPlaying ? 'music' : 'nomusic';
-      if (isActive) return `/assets/ui/buttons/music/${prefix}_active.png`;
-      if (isHovered) return `/assets/ui/buttons/music/${prefix}_hover.png`;
-      return `/assets/ui/buttons/music/${prefix}_normal.png`;
-    };
-
-    return (
-      <button
-        className="music-button"
-        onClick={handleClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          setIsActive(false);
-        }}
-        onMouseDown={() => setIsActive(true)}
-        onMouseUp={() => setIsActive(false)}
-        title={isPlaying ? "Matikan Musik" : "Nyalakan Musik"}
-      >
-        <img
-          src={getImageSrc()}
-          alt={isPlaying ? "Music On" : "Music Off"}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const parent = target.parentElement!;
-            parent.innerHTML = isPlaying ? '🔊' : '🔇';
             parent.style.color = '#FFD700';
             parent.style.fontSize = '24px';
           }}
@@ -189,7 +143,7 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
       }}
     >
       {/* Top Header Bar - Always visible */}
-      <div className="game-header-bar">
+      <div className="game-header-bar" style={{ paddingTop: '35px', paddingBottom: '35px' }}>
         {/* Left side - Home button */}
         <div className="game-header-left">
           <HomeButton />
@@ -202,7 +156,7 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
 
         {/* Right side - Music Button */}
         <div className="game-header-right">
-          <SimpleMusicButton />
+          <MusicButton />
         </div>
       </div>
 
