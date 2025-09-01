@@ -1,6 +1,8 @@
+// src/components/PageWrapper.tsx - Updated dengan musik
 import { useRouter } from "next/router";
 import GameButton from "./GameButton";
 import MenuBackgroundWrapper from "./MenuBackgroundWrapper";
+import MusicButton from "./MusicButton";
 
 interface PageWrapperProps {
   children: React.ReactNode;
@@ -23,6 +25,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ children }) => {
             height={120}
           />
         </div>
+        {/* Music button akan otomatis muncul dari MenuBackgroundWrapper */}
         <div className="flex flex-col items-center justify-center h-full text-white">
           {children}
         </div>

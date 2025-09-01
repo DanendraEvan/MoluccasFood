@@ -1,3 +1,4 @@
+// src/pages/index.tsx (LandingPage) - Updated dengan sistem musik baru
 import { useRouter } from "next/router";
 import MenuBackgroundWrapper from "../components/MenuBackgroundWrapper";
 import GameButton from "../components/GameButton";
@@ -7,6 +8,7 @@ const LandingPage = () => {
 
   return (
     <MenuBackgroundWrapper>
+      {/* MenuBackgroundWrapper sudah include MusicButton otomatis */}
       <div className="flex flex-col items-center justify-center h-full gap-40">
         {/* Judul */}
         <div className="text-center">
