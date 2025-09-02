@@ -68,6 +68,14 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
   private campuranBumbuHalus: Phaser.GameObjects.Image | null = null;
+  private ingredientsContentContainer!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
+  private scrollableArea!: Phaser.GameObjects.Zone;
+  private scrollContentHeight: number = 0;
+  private draggedItemOriginalParent: Phaser.GameObjects.Container | null = null;
+  private draggedItemOriginalX: number = 0;
+  private draggedItemOriginalY: number = 0;
+  private ingredientsContentMask: Phaser.Display.Masks.GeometryMask | null = null;
 
   // Layout configuration
   private layoutConfig = {
@@ -75,10 +83,10 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     headerHeight: 60,
     
     // Ingredients panel
-    ingredientsPanelWidth: 350,
+    ingredientsPanelWidth: 400,
     ingredientsPanelX: 0, // Will be calculated
     ingredientsPanelY: 155,
-    ingredientsPanelHeight: 450,
+    ingredientsPanelHeight: 550,
     
     // Cooking area
     cookingAreaLeft: 20,
@@ -300,7 +308,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
   private createCookingArea() {
     // Kompor
-    this.kompor = this.add.image(650, 600, "Kompor").setScale(this.layoutConfig.equipmentScale);
+    this.kompor = this.add.image(700, 700, "Kompor").setScale(this.layoutConfig.equipmentScale);
     
     // Wajan
     this.wajan = this.add.image(650, 540, "wajan")
@@ -309,7 +317,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.input.setDraggable(this.wajan);
 
     // Ulekan
-    this.ulekan = this.add.image(350, 500, "ulekan")
+    this.ulekan = this.add.image(1200, 600, "ulekan")
       .setScale(this.layoutConfig.equipmentScale)
       .setInteractive();
     this.input.setDraggable(this.ulekan);
@@ -364,7 +372,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private createIngredientsPanel() {
-    // Create ingredients panel container
+    // Create ingredients panel container (main container for the whole panel)
     this.ingredientsPanel = this.add.container(
       this.layoutConfig.ingredientsPanelX,
       this.layoutConfig.ingredientsPanelY
@@ -382,13 +390,61 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.menuToggleButton = this.add.image(0, 0, "menu_normal");
     this.ingredientsPanel.add(this.menuToggleButton);
 
+    // Create a scrollable area (zone) for ingredients
+    const scrollableAreaX = 15; // Relative to ingredientsPanel
+    const scrollableAreaY = 100; // Relative to ingredientsPanel, below title
+    const scrollableAreaWidth = this.layoutConfig.ingredientsPanelWidth - 70; // Panel width minus padding
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - scrollableAreaY - 5; // Remaining height
+
+    this.scrollableArea = this.add.zone(
+      scrollableAreaX + scrollableAreaWidth / 2,
+      scrollableAreaY + scrollableAreaHeight / 2,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    ).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(this.scrollableArea);
+
+    // Create a container for the actual ingredient items
+    this.ingredientsContentContainer = this.add.container(scrollableAreaX, scrollableAreaY);
+    this.ingredientsPanel.add(this.ingredientsContentContainer);
+
+    // Set up a clipping mask for the ingredients content
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillRect(0, 0, scrollableAreaWidth, scrollableAreaHeight); // Define mask in local coordinates
+    this.ingredientsContentMask = maskGraphics.createGeometryMask(); // Store the mask object
+    this.ingredientsContentContainer.setMask(this.ingredientsContentMask); // Apply the stored mask
+
+    // Position the maskGraphics to align with the scrollable area in world coordinates
+    maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+    maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+
+    // Create scrollbar
+    this.scrollbar = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbar);
+
     this.createIngredients();
+
+    // Enable mouse wheel scrolling
+    this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
+      // Check if the mouse pointer is within the ingredients panel's scrollable area
+      const panelBounds = new Phaser.Geom.Rectangle(
+        this.ingredientsPanel.x + scrollableAreaX,
+        this.ingredientsPanel.y + scrollableAreaY,
+        scrollableAreaWidth,
+        scrollableAreaHeight
+      );
+
+      if (Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        this.handleScroll(deltaY);
+      }
+    });
   }
 
   private createIngredients() {
     // Destroy existing ingredient items to prevent duplicates
     this.ingredientItems.forEach(item => item.destroy());
     this.ingredientItems = [];
+    this.ingredientsContentContainer.removeAll(true); // Clear previous items from the container
 
     const ingredients = [
       { key: "bawang_putih", name: "Bawang Putih", scale: 0.15 },
@@ -412,11 +468,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Manual grid layout
     const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 4;
-    const startY = 100;
+    const startX = panelWidth / 6;
+    const startY = 100; // Adjusted startY for content container
     const spacingX = panelWidth / 2;
     const spacingY = 90;
     const itemsPerRow = 2;
+
+    let maxContentY = 0;
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
@@ -430,7 +488,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
       itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-      this.ingredientsPanel.add(itemBg);
+      this.ingredientsContentContainer.add(itemBg); // Add to content container
 
       // Item image
       const item = this.add.image(x, y, ingredient.key)
@@ -440,7 +498,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
       this.ingredientItems.push(item);
       this.input.setDraggable(item);
-      this.ingredientsPanel.add(item);
+      this.ingredientsContentContainer.add(item); // Add to content container
 
       // Item label
       const label = this.add.text(x, y + 40, ingredient.name, {
@@ -450,7 +508,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
-      this.ingredientsPanel.add(label);
+      this.ingredientsContentContainer.add(label); // Add to content container
 
       // Hover effects
       item.on('pointerover', () => {
@@ -472,7 +530,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         itemBg.lineStyle(1, 0x8B4513, 0.4);
         itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
       });
+      maxContentY = Math.max(maxContentY, y + 40); // Track the lowest point of content
     });
+
+    this.scrollContentHeight = maxContentY + startY; // Calculate total content height
+    this.updateScrollbar(); // Initial update of scrollbar
   }
 
   private createDialogPanel() {
@@ -482,7 +544,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       this.layoutConfig.dialogPanelY
     );
 
-    const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
+    // const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
+    const dialogWidth = this.layoutConfig.cookingAreaRight - 200;
 
     // Panel background
     const dialogBg = this.add.graphics();
@@ -574,6 +637,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.menuToggleButton.on('pointerup', () => {
       this.menuToggleButton.setTexture("menu_hover");
     });
+
+    this.updateScrollbar(); // Call updateScrollbar here
   }
 
   private toggleIngredientsPanel() {
@@ -639,6 +704,21 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private initDragAndDrop() {
+    this.input.on("dragstart", (pointer: any, gameObject: Phaser.GameObjects.Image) => {
+      // Simpan parent dan posisi asli
+      this.draggedItemOriginalParent = gameObject.parentContainer;
+      this.draggedItemOriginalX = gameObject.x;
+      this.draggedItemOriginalY = gameObject.y;
+
+      // Disable the mask on the container by setting it to null
+      if (this.ingredientsContentContainer) { // Check if container exists
+        this.ingredientsContentContainer.mask = null;
+      }
+
+      // Pindahkan gameObject ke scene utama agar tidak terpengaruh mask
+      this.children.bringToTop(gameObject); // Pastikan item berada di atas semua objek lain
+    });
+
     this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
       gameObject.x = dragX;
       gameObject.y = dragY;
@@ -647,7 +727,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       gameObject.setTint(0xFFFFAA);
     });
 
-    this.input.on("dragend", (pointer: any, gameObject: any, dropped: any) => {
+    this.input.on("dragend", (pointer: any, gameObject: Phaser.GameObjects.Image, dropped: any) => {
       // Reset visual feedback
       gameObject.clearTint();
       
@@ -655,15 +735,35 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         const originalScale = this.getOriginalScale(gameObject.name);
         gameObject.setScale(originalScale);
         
-        // Smooth return with bounce effect
-        this.tweens.add({
-          targets: gameObject,
-          x: gameObject.input.dragStartX,
-          y: gameObject.input.dragStartY,
-          duration: 400,
-          ease: 'Back.easeOut'
-        });
+        // Kembalikan item ke parent aslinya (ingredientsContentContainer)
+        if (this.draggedItemOriginalParent) {
+          this.draggedItemOriginalParent.add(gameObject);
+          gameObject.x = this.draggedItemOriginalX;
+          gameObject.y = this.draggedItemOriginalY;
+          
+          // Re-enable interactivity explicitly
+          gameObject.setInteractive(); 
+        } else {
+          // Fallback jika parent asli tidak ditemukan (seharusnya tidak terjadi)
+          this.tweens.add({
+            targets: gameObject,
+            x: gameObject.input.dragStartX,
+            y: gameObject.input.dragStartY,
+            duration: 400,
+            ease: 'Back.easeOut'
+          });
+        }
       }
+
+      // Re-enable the mask on the container if it was disabled
+      if (this.ingredientsContentContainer && this.ingredientsContentMask) {
+        this.ingredientsContentContainer.mask = this.ingredientsContentMask;
+      }
+
+      // Reset properti yang disimpan
+      this.draggedItemOriginalParent = null;
+      this.draggedItemOriginalX = 0;
+      this.draggedItemOriginalY = 0;
     });
 
     // Enhanced drop handling
@@ -1037,6 +1137,65 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       ease: 'Power2',
       delay: this.tweens.stagger(100)
     });
+  }
+
+  private handleScroll(deltaY: number) {
+    const scrollSpeed = 10; // Adjust as needed
+    let newY = this.ingredientsContentContainer.y - deltaY * scrollSpeed;
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 15; // Same as in createIngredientsPanel
+    const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+    // Clamp the newY value to prevent scrolling beyond content boundaries
+    newY = Math.max(-maxScroll, newY);
+    newY = Math.min(0, newY); // Cannot scroll above the top
+
+    this.ingredientsContentContainer.y = newY;
+    this.updateScrollbar();
+  }
+
+  private updateScrollbar() {
+    this.scrollbar.clear();
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 15; // Same as in createIngredientsPanel
+    const scrollbarWidth = 10;
+    const scrollbarX = this.layoutConfig.ingredientsPanelWidth - scrollbarWidth - 5; // Position to the right of the panel
+    const scrollbarYOffset = 60; // Start below the title
+
+    if (this.scrollContentHeight > scrollableAreaHeight) {
+      // Calculate scrollbar height based on content and visible area
+      const scrollbarHeight = (scrollableAreaHeight / this.scrollContentHeight) * scrollableAreaHeight;
+
+      // Calculate scrollbar position based on content container's scroll
+      const scrollPercentage = -this.ingredientsContentContainer.y / (this.scrollContentHeight - scrollableAreaHeight);
+      const scrollbarY = scrollbarYOffset + (scrollableAreaHeight - scrollbarHeight) * scrollPercentage;
+
+      this.scrollbar.fillStyle(0x8B4513, 0.8); // Scrollbar color
+      this.scrollbar.fillRoundedRect(scrollbarX, scrollbarY, scrollbarWidth, scrollbarHeight, 5);
+
+      // Make scrollbar interactive for dragging
+      this.scrollbar.setInteractive(new Phaser.Geom.Rectangle(scrollbarX, scrollbarY, scrollbarWidth, scrollbarHeight), Phaser.Geom.Rectangle.Contains);
+      this.input.setDraggable(this.scrollbar);
+
+      this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+        const halfWidth = gameObject.displayWidth / 2;
+        const halfHeight = gameObject.displayHeight / 2;
+      
+        // Clamp supaya tidak keluar dari kamera
+        const minX = halfWidth;
+        const maxX = this.cameras.main.width - halfWidth;
+        const minY = halfHeight;
+        const maxY = this.cameras.main.height - halfHeight;
+      
+        gameObject.x = Phaser.Math.Clamp(dragX, minX, maxX);
+        gameObject.y = Phaser.Math.Clamp(dragY, minY, maxY);
+      });
+      
+    } else {
+      // If content is not scrollable, hide scrollbar
+      this.scrollbar.setVisible(false);
+      this.scrollbar.disableInteractive();
+    }
   }
 
   private getOriginalScale(itemName: string): number {
