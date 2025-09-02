@@ -16,6 +16,7 @@ export default class PapedaScene extends Phaser.Scene {
   private dropZone: Phaser.GameObjects.Zone;
   private bowlState: BowlState;
   private stirringTimer: Phaser.Time.TimerEvent | null = null;
+  private finalPlate: Phaser.GameObjects.Image | null = null;
 
   // UI Components (from NasiLapola)
   private ingredientsPanel!: Phaser.GameObjects.Container;
@@ -36,10 +37,10 @@ export default class PapedaScene extends Phaser.Scene {
     headerHeight: 60,
     
     // Ingredients panel
-    ingredientsPanelWidth: 350,
+    ingredientsPanelWidth: 375,
     ingredientsPanelX: 0, // Will be calculated
     ingredientsPanelY: 155,
-    ingredientsPanelHeight: 450,
+    ingredientsPanelHeight: 600,
     
     // Cooking area
     cookingAreaLeft: 20,
@@ -49,13 +50,13 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Dialog panel
     dialogPanelHeight: 120,
-    dialogPanelY: 0, // Will be calculated
-    dialogPanelLeft: 15,
+    dialogPanelY: 1000, // Will be calculated
+    dialogPanelLeft: 120,
     dialogPanelRight: 290,
 
     // Character
-    characterX: 1010,
-    characterY: 500,
+    characterX: 400,
+    characterY: 1000,
 
     // Bowl settings
     bowlScale: 0.3,
@@ -202,15 +203,15 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private createCookingArea() {
-    // Calculate cooking area center
-    const cookingCenterX = (this.layoutConfig.cookingAreaLeft + this.layoutConfig.cookingAreaRight) / 2;
-    const cookingCenterY = (this.layoutConfig.cookingAreaTop + this.layoutConfig.cookingAreaBottom) / 2;
-    
-    // Create drop zone for the bowl
-    this.dropZone = this.add.zone(cookingCenterX, cookingCenterY, 200, 200).setRectangleDropZone(200, 200);
+    // Atur posisi mangkuk untuk mengolah papeda secara manual di sini
+    const mangkukX = 800; // Ganti nilai ini untuk posisi horizontal (sumbu X)
+    const mangkukY = 550; // Ganti nilai ini untuk posisi vertikal (sumbu Y)
+
+    // Create drop zone for the bowl, matching the bowl's new position
+    this.dropZone = this.add.zone(mangkukX, mangkukY, 200, 200).setRectangleDropZone(200, 200);
     
     // Create the main bowl
-    this.mangkuk = this.add.image(cookingCenterX, cookingCenterY, "Mangkuk").setScale(this.layoutConfig.bowlScale);
+    this.mangkuk = this.add.image(mangkukX, mangkukY, "Mangkuk").setScale(this.layoutConfig.bowlScale);
   }
 
   private createStagingArea() {
@@ -241,7 +242,7 @@ export default class PapedaScene extends Phaser.Scene {
     this.stagingArea.add(stagingGraphics);
     
     const stagingLabel = this.add.text(0, 0, "Area Persiapan", {
-      fontSize: '14px',
+      fontSize: '24px',
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -278,22 +279,35 @@ export default class PapedaScene extends Phaser.Scene {
     this.ingredientItems = [];
 
     const ingredients = [
-      { key: "Tepung", name: "Tepung Sagu", scale: 0.2 },
+      { key: "Tepung", name: "Tepung Sagu", scale: 0.12 },
       { key: "Water", name: "Air 200ml", scale: 0.2 },
       { key: "Spoon", name: "Sendok", scale: 0.15 },
-      { key: "Air100ml", name: "Air 100ml", scale: 0.2 },
+      { key: "Air100ml", name: "Air 100ml", scale: 0.12 },
       { key: "Nipis", name: "Jeruk Nipis", scale: 0.2 },
       { key: "AirPanas", name: "Air Panas", scale: 0.2 },
       { key: "Piring", name: "Piring", scale: 0.15 }
     ];
 
-    // Manual grid layout
-    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 4;
-    const startY = 100;
-    const spacingX = panelWidth / 2;
-    const spacingY = 90;
+    // --- PENGATURAN LAYOUT GRID ---
     const itemsPerRow = 2;
+    const horizontalPadding = 40; // Jarak total dari tepi kiri & kanan panel
+    const verticalPadding = 20;   // Jarak total dari tepi atas & bawah (di bawah judul)
+
+    // --- Perhitungan Otomatis ---
+    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
+    const panelHeight = this.layoutConfig.ingredientsPanelHeight;
+    const titleAreaHeight = 80; // Area untuk judul "ALAT DAN BAHAN"
+
+    // Perhitungan Horizontal
+    const availableWidth = panelWidth - horizontalPadding;
+    const spacingX = availableWidth / itemsPerRow;
+    const startX = (horizontalPadding / 2) + (spacingX / 2);
+
+    // Perhitungan Vertikal
+    const numRows = Math.ceil(ingredients.length / itemsPerRow);
+    const availableHeight = panelHeight - titleAreaHeight - verticalPadding;
+    const spacingY = availableHeight / numRows;
+    const startY = titleAreaHeight + (verticalPadding / 2) + (spacingY / 2);
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
@@ -321,9 +335,9 @@ export default class PapedaScene extends Phaser.Scene {
 
       // Item label
       const label = this.add.text(x, y + 40, ingredient.name, {
-        fontSize: '14px',
+        fontSize: '18px',
         fontFamily: 'Chewy, cursive',
-        color: '#FFE4B5',
+        color: '#FFFFFF',
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
@@ -385,9 +399,9 @@ export default class PapedaScene extends Phaser.Scene {
 
     // Step text
     this.stepText = this.add.text(110, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '15px',
+      fontSize: '25px',
       fontFamily: 'Chewy, cursive',
-      color: '#2C1810',
+      color: '#000000',
       wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
       align: 'left',
       lineSpacing: 4
@@ -421,7 +435,7 @@ export default class PapedaScene extends Phaser.Scene {
     // Update panel title
     this.panelTitle.setText("BAHAN & ALAT");
     this.panelTitle.setStyle({
-      fontSize: '14px',
+      fontSize: '24px',
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -569,6 +583,9 @@ export default class PapedaScene extends Phaser.Scene {
     this.input.on('dragstart', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
       gameObject.setTint(0x00ff00);
       this.children.bringToTop(gameObject);
+      // Store original position
+      gameObject.setData('dragStartX', gameObject.x);
+      gameObject.setData('dragStartY', gameObject.y);
     });
 
     this.input.on('dragenter', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
@@ -633,6 +650,14 @@ export default class PapedaScene extends Phaser.Scene {
         this.executeSuccessfulDrop(gameObject, () => {
           this.mangkuk.setTexture('Tambahan-Air-Panas');
           this.bowlState = 'keras_with_nipis_and_hot_water';
+
+          // Geser mangkuk ke atas
+          this.tweens.add({
+            targets: this.mangkuk,
+            y: this.mangkuk.y - 50, // Geser 50 piksel ke atas
+            duration: 500,
+            ease: 'Power2'
+          });
           
           this.executeStirringAnimation(null, 'Aduk6', 'Aduk8', 'Hasil-Jadi', () => {
             this.bowlState = 'ready_to_serve';
@@ -643,7 +668,23 @@ export default class PapedaScene extends Phaser.Scene {
       // Step 6: Serve on plate
       else if (this.bowlState === 'ready_to_serve' && droppedItemKey === 'Piring' && this.currentStep === 5) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.mangkuk.setTexture('Papeda');
+          this.mangkuk.setVisible(false);
+          if (this.dropZone) {
+            this.dropZone.destroy(); // Hapus drop zone agar tidak mengganggu
+          }
+
+          // Atur posisi piring saji (final) secara manual di sini.
+          const plateX = this.cameras.main.centerX; // Ganti nilai untuk posisi horizontal
+          const plateY = this.cameras.main.centerY; // Ganti nilai untuk posisi vertikal
+
+          if (this.finalPlate) {
+            this.finalPlate.destroy();
+          }
+
+          this.finalPlate = this.add.image(plateX, plateY, 'Papeda');
+          this.finalPlate.setScale(0.4); 
+          this.finalPlate.setDepth(100); 
+
           this.bowlState = 'served';
           this.nextStep();
           this.showCompletionCelebration();
@@ -659,9 +700,12 @@ export default class PapedaScene extends Phaser.Scene {
 
     this.input.on('dragend', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
       if (!dropped) {
-        if (gameObject.input) {
-          gameObject.x = gameObject.input.dragStartX;
-          gameObject.y = gameObject.input.dragStartY;
+        // Return to original position if not dropped on a valid zone
+        const startX = gameObject.getData('dragStartX');
+        const startY = gameObject.getData('dragStartY');
+        if (startX !== undefined && startY !== undefined) {
+          gameObject.x = startX;
+          gameObject.y = startY;
         }
       }
       gameObject.clearTint();
@@ -689,8 +733,8 @@ export default class PapedaScene extends Phaser.Scene {
       // Return spatula to original position
       this.tweens.add({
         targets: spatula,
-        x: spatula.input.dragStartX,
-        y: spatula.input.dragStartY,
+        x: spatula.getData('dragStartX'),
+        y: spatula.getData('dragStartY'),
         duration: 300,
         ease: 'Back.easeOut'
       });
@@ -736,8 +780,8 @@ export default class PapedaScene extends Phaser.Scene {
   private executeInvalidDrop(gameObject: Phaser.GameObjects.Image) {
     this.tweens.add({
       targets: gameObject,
-      x: gameObject.input.dragStartX,
-      y: gameObject.input.dragStartY,
+      x: gameObject.getData('dragStartX'),
+      y: gameObject.getData('dragStartY'),
       duration: 400,
       ease: 'Back.easeOut'
     });
@@ -834,6 +878,18 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private showCompletionDialog() {
+    // Geser piring papeda agar tidak tertumpuk popup
+    if (this.finalPlate) {
+      this.tweens.add({
+        targets: this.finalPlate,
+        y: this.cameras.main.height - 150, // Bergerak ke area bawah
+        x: 250,                            // Bergerak ke area kiri
+        scale: 0.3,                        // Sedikit diperkecil
+        duration: 600,
+        ease: 'Power2'
+      });
+    }
+
     const dialogWidth = 500;
     const dialogHeight = 200;
     const centerX = this.cameras.main.width / 2;
@@ -883,7 +939,7 @@ export default class PapedaScene extends Phaser.Scene {
       alpha: 1,
       duration: 500,
       ease: 'Power2',
-      delay: this.tweens.stagger(100)
+      stagger: 100
     });
   }
 
