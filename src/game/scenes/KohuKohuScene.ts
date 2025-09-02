@@ -9,6 +9,8 @@ type BowlState =
   | "tambahanSepatula"
   | "aduk"
   | "piringKelapa"
+  | "piring_on_staging"
+  | "piring_with_kelapa"
   | "finished";
 
 type WajanState =
@@ -20,6 +22,7 @@ type WajanState =
   | "daging"
   | "minyak"
   | "sepatulaDanSayur"
+  | "ready_to_plate"
   | "kohukohu";
 
 interface GameStep {
@@ -639,6 +642,12 @@ export default class KohuKohuScene extends Phaser.Scene {
   }
 
   private initDragAndDrop() {
+    this.input.on("dragstart", (pointer: any, gameObject: Phaser.GameObjects.Image) => {
+      // Store original position
+      gameObject.setData('dragStartX', gameObject.x);
+      gameObject.setData('dragStartY', gameObject.y);
+    });
+
     this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
       gameObject.x = dragX;
       gameObject.y = dragY;
@@ -654,8 +663,8 @@ export default class KohuKohuScene extends Phaser.Scene {
         
         this.tweens.add({
           targets: gameObject,
-          x: gameObject.input.dragStartX,
-          y: gameObject.input.dragStartY,
+          x: gameObject.getData('dragStartX'),
+          y: gameObject.getData('dragStartY'),
           duration: 400,
           ease: 'Back.easeOut'
         });
@@ -752,7 +761,7 @@ export default class KohuKohuScene extends Phaser.Scene {
         });
       }
       // Step 7: Teflon to Plate
-      else if (dropZone === this.plateZone && this.bowlState === "piring_on_staging" && gameObject === this.Teflon && this.currentStep === 6) {
+      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_on_staging" && gameObject === this.Teflon && this.currentStep === 6) {
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.finalPlate!, 'PiringKelapa');
           this.Teflon.destroy();
@@ -766,7 +775,7 @@ export default class KohuKohuScene extends Phaser.Scene {
       else if (dropZone === this.wajanZone && this.wajanState === "minyak" && droppedKey === "Sepatula" && this.currentStep === 7) {
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, 'SepatuladanSayur');
-          this.wajanState = 'ready_to_plate';
+          this.wajanState = "ready_to_plate";
           this.Wajan.setInteractive();
           this.input.setDraggable(this.Wajan, true);
           this.Wajan.name = "WajanWithFood"; // Identify the wajan as ready to be moved
@@ -774,13 +783,13 @@ export default class KohuKohuScene extends Phaser.Scene {
         });
       }
       // Step 8, Part 2: Drop the Wajan onto the plate
-      else if (dropZone === this.plateZone && this.bowlState === "piring_with_kelapa" && gameObject.name === "WajanWithFood" && this.currentStep === 7) {
+      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_with_kelapa" && gameObject.name === "WajanWithFood" && this.currentStep === 7) {
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.finalPlate!, 'KohuKohu');
           // The gameObject is the Wajan itself, so it's destroyed here
           this.wajanZone.destroy();
           this.KomporWajan.destroy();
-          this.bowlState = 'finished';
+          this.bowlState = "finished";
           this.nextStep(); // Advance to final step
           this.showCompletionCelebration();
         });
@@ -827,8 +836,8 @@ export default class KohuKohuScene extends Phaser.Scene {
     // Return spatula with smooth animation
     this.tweens.add({
       targets: spatula,
-      x: spatula.input.dragStartX,
-      y: spatula.input.dragStartY,
+      x: spatula.getData('dragStartX'),
+      y: spatula.getData('dragStartY'),
       duration: 300,
       ease: 'Back.easeOut'
     });
@@ -874,8 +883,8 @@ export default class KohuKohuScene extends Phaser.Scene {
   private executeInvalidDrop(gameObject: Phaser.GameObjects.Image) {
     this.tweens.add({
       targets: gameObject,
-      x: gameObject.input.dragStartX,
-      y: gameObject.input.dragStartY,
+      x: gameObject.getData('dragStartX'),
+      y: gameObject.getData('dragStartY'),
       duration: 400,
       ease: 'Back.easeOut'
     });
@@ -1027,12 +1036,16 @@ export default class KohuKohuScene extends Phaser.Scene {
       }
     });
 
-    this.tweens.add({
-      targets: dialogElements,
-      alpha: 1,
-      duration: 500,
-      ease: 'Power2',
-      delay: this.tweens.stagger(100)
+    dialogElements.forEach((element, index) => {
+      if (element) {
+        this.tweens.add({
+          targets: element,
+          alpha: 1,
+          duration: 500,
+          ease: 'Power2',
+          delay: index * 100
+        });
+      }
     });
   }
 
