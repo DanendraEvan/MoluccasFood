@@ -30,6 +30,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
   // Definisikan semua objek game
   private panciKiri!: Phaser.GameObjects.Image;
   private panciKanan!: Phaser.GameObjects.Image;
+  private komporKiri!: Phaser.GameObjects.Image;
+  private komporKanan!: Phaser.GameObjects.Image;
   private panciMasak: Phaser.GameObjects.Image | null = null;
   private panciKukus: Phaser.GameObjects.Image | null = null;
 
@@ -93,8 +95,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
     potScale: 0.45,
     
     // Staging area
-    stagingAreaX: 150,
-    stagingAreaY: 200,
+    stagingAreaX: 200,
+    stagingAreaY: 300,
     stagingAreaWidth: 300,
     stagingAreaHeight: 225
   }
@@ -217,6 +219,10 @@ export default class NasiLapolaScene extends Phaser.Scene {
     // Initial update of panel visuals
     this.updateIngredientsPanelVisuals();
 
+    // Setup ingredient panel layout
+    // Example: Set ingredient panel position using x and y coordinates
+    this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
+
     // Initialize drag and drop
     this.initDragAndDrop();
 
@@ -240,6 +246,100 @@ export default class NasiLapolaScene extends Phaser.Scene {
     this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
   }
 
+  private setupStoveLayout(hAlign: string, vAlign: string, spacing: number, padding: number) {
+    const { cookingAreaLeft, cookingAreaRight, cookingAreaTop, cookingAreaBottom } = this.layoutConfig;
+
+    // Determine Y position based on vertical alignment
+    let yPosition;
+    switch (vAlign) {
+      case 'top':
+        yPosition = cookingAreaTop + padding;
+        break;
+      case 'middle':
+        yPosition = (cookingAreaTop + cookingAreaBottom) / 2;
+        break;
+      default: // bottom
+        yPosition = cookingAreaBottom - padding;
+        break;
+    }
+
+    // Determine X positions based on horizontal alignment
+    let leftX, rightX;
+    switch (hAlign) {
+      case 'left':
+        leftX = cookingAreaLeft + padding;
+        rightX = leftX + spacing;
+        break;
+      case 'right':
+        rightX = cookingAreaRight - padding;
+        leftX = rightX - spacing;
+        break;
+      default: // center
+        const centerX = (cookingAreaLeft + cookingAreaRight) / 2;
+        leftX = centerX - spacing / 2;
+        rightX = centerX + spacing / 2;
+        break;
+    }
+
+    this.setStoveCoordinates(leftX, yPosition, rightX, yPosition);
+  }
+
+  private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
+    const gameWidth = this.cameras.main.width;
+    const gameHeight = this.cameras.main.height;
+    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
+    const panelHeight = this.layoutConfig.ingredientsPanelHeight;
+
+    let targetX, targetY;
+
+    if (x !== undefined && y !== undefined) {
+      targetX = x;
+      targetY = y;
+    } else {
+      // Horizontal alignment
+      switch (hAlign) {
+        case 'left':
+          targetX = padding || 0;
+          break;
+        case 'center':
+          targetX = (gameWidth - panelWidth) / 2;
+          break;
+        default: // right
+          targetX = gameWidth - panelWidth - (padding || 0);
+          break;
+      }
+
+      // Vertical alignment
+      switch (vAlign) {
+        case 'top':
+          targetY = padding || 0;
+          break;
+        case 'middle':
+          targetY = (gameHeight - panelHeight) / 2;
+          break;
+        default: // bottom
+          targetY = gameHeight - panelHeight - (padding || 0);
+          break;
+      }
+    }
+
+    this.ingredientsPanel.setPosition(targetX, targetY);
+  }
+
+  private setStoveCoordinates(leftX: number, leftY: number, rightX: number, rightY: number) {
+    // Set position for left stove and its zone
+    if (this.komporKiri) {
+      this.komporKiri.setPosition(leftX, leftY);
+      this.komporKiriZone.setPosition(leftX, leftY - 60);
+    }
+
+    // Set position for right stove and its zone
+    if (this.komporKanan) {
+      this.komporKanan.setPosition(rightX, rightY);
+      this.komporKananZone.setPosition(rightX, rightY - 60);
+    }
+  }
+
   private createCookingArea() {
     // Calculate cooking area center
     const cookingCenterX = (this.layoutConfig.cookingAreaLeft + this.layoutConfig.cookingAreaRight) / 2;
@@ -249,34 +349,24 @@ export default class NasiLapolaScene extends Phaser.Scene {
     const komporY = this.layoutConfig.cookingAreaBottom - 100;
     
     // Kompor kiri
-    const komporKiri = this.add.image(
-      cookingCenterX - this.layoutConfig.stoveSpacing/2, 
-      komporY, 
-      "Kompor"
-    ).setScale(this.layoutConfig.stoveScale);
+    this.komporKiri = this.add.image(0, 0, "Kompor").setScale(this.layoutConfig.stoveScale);
     
-    this.komporKiriZone = this.add.zone(
-      komporKiri.x, 
-      komporKiri.y - 60, 
-      120, 
-      120
-    ).setRectangleDropZone(120, 120);
+    this.komporKiriZone = this.add.zone(0, 0, 120, 120).setRectangleDropZone(120, 120);
     this.komporKiriZone.name = "komporKiri";
 
     // Kompor kanan
-    const komporKanan = this.add.image(
-      cookingCenterX + this.layoutConfig.stoveSpacing/2, 
-      komporY, 
-      "Kompor"
-    ).setScale(this.layoutConfig.stoveScale);
+    this.komporKanan = this.add.image(0, 0, "Kompor").setScale(this.layoutConfig.stoveScale);
     
-    this.komporKananZone = this.add.zone(
-      komporKanan.x, 
-      komporKanan.y - 60, 
-      120, 
-      120
-    ).setRectangleDropZone(120, 120);
+    this.komporKananZone = this.add.zone(0, 0, 120, 120).setRectangleDropZone(120, 120);
     this.komporKananZone.name = "komporKanan";
+
+    // Atur posisi kompor secara manual dengan koordinat (x, y).
+    // Anda bisa mengubah angka-angka di bawah ini untuk memindahkan kompor.
+    // Format: setStoveCoordinates(kiriX, kiriY, kananX, kananY)
+    this.setStoveCoordinates(650, 600, 1150, 600);
+
+    // Pemanggilan fungsi layout berbasis perataan (non-aktif).
+    // this.setupStoveLayout('center', 'bottom', this.layoutConfig.stoveSpacing, 100);
     
     // Staging zone
     this.stagingZone = this.add.zone(
