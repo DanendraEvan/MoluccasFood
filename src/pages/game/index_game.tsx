@@ -156,27 +156,27 @@ const InfoIndexPage = () => {
   const foodButtons = [
     {
       foodName: "kohukohu",
-      route: "/game?scene=kohukohu",
+      route: "/Game?scene=kohukohu",
       displayName: "Kohu-Kohu"
     },
     {
       foodName: "nasilapola", 
-      route: "/game?scene=nasilapola",
+      route: "/Game?scene=nasilapola",
       displayName: "Nasi Lapola"
     },
     {
       foodName: "colocolo",
-      route: "/game?scene=colocolo", 
+      route: "/Game?scene=colocolo", 
       displayName: "Colo-Colo"
     },
     {
       foodName: "ikankuahkuning",
-      route: "/game?scene=ikankuahkuning",
+      route: "/Game?scene=ikankuahkuning",
       displayName: "Ikan Kuah Kuning"
     },
     {
       foodName: "papeda",
-      route: "/game?scene=papeda",
+      route: "/Game?scene=papeda",
       displayName: "Papeda"
     }
   ];
