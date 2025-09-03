@@ -239,6 +239,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Update step display
     this.updateStepDisplay();
+    this.createBackButton();
   }
 
   private calculateLayout() {
@@ -1061,5 +1062,29 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       "campuran_bumbu_halus": 0.4
     };
     return scaleMap[itemName] || 0.15;
+  }
+
+  private createBackButton() {
+    const backButton = this.add.text(50, 50, '⌂ Home', {
+      font: '24px Chewy',
+      color: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 15, y: 10 }
+    });
+    
+    backButton.setInteractive();
+    backButton.on('pointerdown', () => {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/menu';
+      }
+    });
+    
+    backButton.on('pointerover', () => {
+      backButton.setStyle({ backgroundColor: '#333333' });
+    });
+    
+    backButton.on('pointerout', () => {
+      backButton.setStyle({ backgroundColor: '#000000' });
+    });
   }
 }

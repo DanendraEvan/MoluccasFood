@@ -13,17 +13,9 @@ export default class ColoColoScene extends Phaser.Scene {
   private pisauArea: Phaser.GameObjects.Rectangle;
   private isDragging: boolean = false;
   private dragTarget: Phaser.GameObjects.Image | null = null;
-  private gameState: {
+    private gameState: {
     telenanState: string;
     ulekanState: string;
-    hasPisau: boolean;
-    hasBawangPutih: boolean;
-    hasCabai: boolean;
-    hasDaunJeruk: boolean;
-    hasJerukNipis: boolean;
-    hasMunthu: boolean;
-    hasKecap: boolean;
-    hasPiring: boolean;
   };
 
   // UI Components
@@ -38,6 +30,7 @@ export default class ColoColoScene extends Phaser.Scene {
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
   private stagingZone!: Phaser.GameObjects.Zone;
+  private telenanSelected = false;
 
   // Layout configuration
   private layoutConfig = {
@@ -45,10 +38,10 @@ export default class ColoColoScene extends Phaser.Scene {
     headerHeight: 60,
     
     // Ingredients panel
-    ingredientsPanelWidth: 350,
+    ingredientsPanelWidth: 375,
     ingredientsPanelX: 0, // Will be calculated
     ingredientsPanelY: 155,
-    ingredientsPanelHeight: 450,
+    ingredientsPanelHeight: 600,
     
     // Cooking area
     cookingAreaLeft: 20,
@@ -58,14 +51,14 @@ export default class ColoColoScene extends Phaser.Scene {
     
     // Dialog panel
     dialogPanelHeight: 120,
-    dialogPanelY: 0, // Will be calculated
-    dialogPanelLeft: 15,
+    dialogPanelY: 1000, // Will be calculated
+    dialogPanelLeft: 120,
     dialogPanelRight: 290,
 
     // Character
-    characterX: 1010,
-    characterY: 500,
-    
+    characterX: 400,
+    characterY: 1000,
+
     // Staging area
     stagingAreaX: 200,
     stagingAreaY: 300,
@@ -77,32 +70,44 @@ export default class ColoColoScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Selamat datang kembali, Koki! Mari kita buat pendamping hidangan yang luar biasa: Sambal Colo-colo Kecap. Resep ini mudah, tapi hasilnya bisa membuat siapa pun ketagihan. Siap?",
+      text: "Selamat datang kembali, Koki! Mari kita buat Sambal Colo-colo. Pertama, siapkan talenan dan potong cabai rawit.",
       character: "karakter1",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Pertama, siapkan talenan dan bahan-bahan utama kita: cabai rawit dan bawang merah. Silakan iris keduanya, lalu satukan irisan di atas talenan.",
+      text: "Bagus! Sekarang, potong bawang putih di atas talenan.",
       character: "karakter2",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Selanjutnya, ambil mangkok dan tuangkan kecap manis ke dalamnya. Setelah itu, masukkan irisan cabai dan bawang merah tadi. Campurkan semuanya dengan baik.",
+      text: "Selanjutnya, tuangkan kecap ke dalam mangkok. Setelah itu, klik talenan lalu klik mangkok untuk memindahkan bahan-bahan yang sudah dipotong.",
       character: "karakter3",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Untuk sentuhan terakhir, kita butuh sedikit rasa asam yang segar. Ambil jeruk nipis, peras airnya ke dalam mangkok, lalu aduk semua bahan hingga tercampur rata.",
+      text: "Tambahkan daun jeruk untuk aroma yang lebih segar.",
       character: "karakter4",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Lihat! Sambal colo-colo kecapmu sudah jadi. Mudah, cepat, dan pastinya enak. Selamat menyajikan!",
+      text: "Peras jeruk nipis ke dalam mangkok untuk sentuhan rasa asam.",
       character: "karakter5",
+      isCompleted: false
+    },
+    {
+      id: 6,
+      text: "Ambil munthu dan ulek semua bahan di dalam mangkok hingga tercampur rata.",
+      character: "karakter1",
+      isCompleted: false
+    },
+    {
+      id: 7,
+      text: "Luar biasa! Sambal colo-colo kecapmu sudah jadi. Saatnya disajikan!",
+      character: "karakter2",
       isCompleted: false
     }
   ];
@@ -170,14 +175,6 @@ export default class ColoColoScene extends Phaser.Scene {
     this.gameState = {
       telenanState: 'telenan',
       ulekanState: 'ulekan',
-      hasPisau: false,
-      hasBawangPutih: false,
-      hasCabai: false,
-      hasDaunJeruk: false,
-      hasJerukNipis: false,
-      hasMunthu: false,
-      hasKecap: false,
-      hasPiring: false
     };
 
     // Create game elements in the cooking area
@@ -194,7 +191,7 @@ export default class ColoColoScene extends Phaser.Scene {
     this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
 
     // Set up drag and drop events
-    this.setupDragAndDrop();
+    this.setupInteractions();
 
     // Update step display
     this.updateStepDisplay();
@@ -261,58 +258,25 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private createCookingArea() {
-    // Create initial telenan (cutting board) in cooking area
-    this.gameObjects.telenan = this.add.image(400, 400, 'telenan');
-    this.gameObjects.telenan.setInteractive({ draggable: true });
-    this.gameObjects.telenan.setScale(0.6);
+    const cookingAreaCenterX = (this.cameras.main.width - this.layoutConfig.ingredientsPanelWidth) / 2;
+    const cookingAreaCenterY = (this.cameras.main.height / 2) + 50; // Adjusted Y position
+
+    // Position telenan to the left-center
+    const telenanX = cookingAreaCenterX - 250; // Adjusted X position
+    this.gameObjects.telenan = this.add.image(telenanX, cookingAreaCenterY, 'telenan');
+    this.gameObjects.telenan.setInteractive({ dropZone: true });
+    this.gameObjects.telenan.setScale(0.8);
     this.gameObjects.telenan.setData('type', 'telenan');
     this.gameObjects.telenan.setData('currentState', 'telenan');
+    this.gameObjects.telenan.setData('homeX', telenanX);
+    this.gameObjects.telenan.setData('homeY', cookingAreaCenterY);
 
-    // Create ulekan (mortar and pestle) in cooking area
-    this.gameObjects.ulekan = this.add.image(700, 400, 'ulekan');
-    this.gameObjects.ulekan.setInteractive({ draggable: true });
+    // Position ulekan to the right of telenan, initially hidden
+    const ulekanX = telenanX + 500; // Adjusted X position for more distance
+    this.gameObjects.ulekan = this.add.image(ulekanX, cookingAreaCenterY, 'ulekan');
     this.gameObjects.ulekan.setScale(0.6);
-
-    // Create staging zone
-    this.stagingZone = this.add.zone(
-      this.layoutConfig.cookingAreaLeft + this.layoutConfig.stagingAreaX,
-      this.layoutConfig.cookingAreaTop + this.layoutConfig.stagingAreaY,
-      this.layoutConfig.stagingAreaWidth,
-      this.layoutConfig.stagingAreaHeight
-    ).setRectangleDropZone(this.layoutConfig.stagingAreaWidth, this.layoutConfig.stagingAreaHeight);
-    this.stagingZone.name = "staging";
-
-    // Visual indicator for staging area
-    const stagingGraphics = this.add.graphics();
-    stagingGraphics.fillStyle(0x2A1810, 0.95);
-    stagingGraphics.fillRoundedRect(
-      this.stagingZone.x - this.stagingZone.width/2,
-      this.stagingZone.y - this.stagingZone.height/2,
-      this.stagingZone.width,
-      this.stagingZone.height,
-      20
-    );
-    stagingGraphics.lineStyle(2, 0x8B4513, 0.8);
-    stagingGraphics.strokeRoundedRect(
-      this.stagingZone.x - this.stagingZone.width/2,
-      this.stagingZone.y - this.stagingZone.height/2,
-      this.stagingZone.width,
-      this.stagingZone.height,
-      20
-    );
-    
-    const stagingLabel = this.add.text(
-      this.stagingZone.x,
-      this.stagingZone.y,
-      "Area Persiapan",
-      {
-        fontSize: '14px',
-        fontFamily: 'Chewy, cursive',
-        color: '#FFE4B5',
-        align: 'center',
-        fontStyle: 'bold'
-      }
-    ).setOrigin(0.5, 0.5);
+    this.gameObjects.ulekan.setInteractive({ dropZone: true });
+    this.gameObjects.ulekan.setVisible(false);
   }
 
   private createIngredientsPanel() {
@@ -353,30 +317,40 @@ export default class ColoColoScene extends Phaser.Scene {
       { key: "piring_colo_colo", name: "Piring", scale: 0.4 }
     ];
 
-    // Manual grid layout
+    // --- Dynamic Centered Grid Layout ---
     const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 4;
-    const startY = 100;
-    const spacingX = panelWidth / 2;
-    const spacingY = 90;
+    const panelHeight = this.layoutConfig.ingredientsPanelHeight;
+    const titleAreaHeight = 80; // Space for the title
+
     const itemsPerRow = 2;
+    const numRows = Math.ceil(ingredients.length / itemsPerRow);
+
+    const itemCell = { width: 140, height: 120 }; // Width and height of the area for each item
+    const gridPadding = { horizontal: 20, vertical: 20 }; // Padding around the entire grid
+
+    const gridWidth = (itemsPerRow * itemCell.width);
+    const gridHeight = (numRows * itemCell.height);
+
+    const startX = (panelWidth - gridWidth) / 2;
+    const startY = titleAreaHeight + (panelHeight - titleAreaHeight - gridHeight) / 2;
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
       const col = i % itemsPerRow;
-      const x = startX + (col * spacingX);
-      const y = startY + (row * spacingY);
+      
+      const x = startX + (col * itemCell.width) + (itemCell.width / 2);
+      const y = startY + (row * itemCell.height) + (itemCell.height / 2);
 
       // Item background
       const itemBg = this.add.graphics();
       itemBg.fillStyle(0x000000, 0.25);
-      itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.fillRoundedRect(x - 55, y - 45, 110, 90, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
-      itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.strokeRoundedRect(x - 55, y - 45, 110, 90, 12);
       this.ingredientsPanel.add(itemBg);
 
       // Item image
-      const item = this.add.image(x, y, ingredient.key)
+      const item = this.add.image(x, y - 10, ingredient.key)
         .setInteractive()
         .setScale(ingredient.scale)
         .setName(ingredient.key);
@@ -386,10 +360,10 @@ export default class ColoColoScene extends Phaser.Scene {
       this.ingredientsPanel.add(item);
 
       // Item label
-      const label = this.add.text(x, y + 40, ingredient.name, {
-        fontSize: '14px',
+      const label = this.add.text(x, y + 35, ingredient.name, {
+        fontSize: '18px',
         fontFamily: 'Chewy, cursive',
-        color: '#FFE4B5',
+        color: '#FFFFFF',
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
@@ -401,9 +375,9 @@ export default class ColoColoScene extends Phaser.Scene {
         label.setColor('#FFFFFF');
         itemBg.clear();
         itemBg.fillStyle(0xFFD700, 0.15);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.fillRoundedRect(x - 55, y - 45, 110, 90, 12);
         itemBg.lineStyle(1, 0xFFD700, 0.6);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.strokeRoundedRect(x - 55, y - 45, 110, 90, 12);
       });
 
       item.on('pointerout', () => {
@@ -411,9 +385,9 @@ export default class ColoColoScene extends Phaser.Scene {
         label.setColor('#FFE4B5');
         itemBg.clear();
         itemBg.fillStyle(0x000000, 0.25);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.fillRoundedRect(x - 55, y - 45, 110, 90, 12);
         itemBg.lineStyle(1, 0x8B4513, 0.4);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.strokeRoundedRect(x - 55, y - 45, 110, 90, 12);
       });
     });
   }
@@ -451,7 +425,7 @@ export default class ColoColoScene extends Phaser.Scene {
 
     // Step text
     this.stepText = this.add.text(110, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '15px',
+      fontSize: '25px',
       fontFamily: 'Chewy, cursive',
       color: '#2C1810',
       wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
@@ -487,7 +461,7 @@ export default class ColoColoScene extends Phaser.Scene {
     // Update panel title
     this.panelTitle.setText("BAHAN & ALAT");
     this.panelTitle.setStyle({
-      fontSize: '14px',
+      fontSize: '24px',
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -500,15 +474,10 @@ export default class ColoColoScene extends Phaser.Scene {
     this.menuToggleButton.setPosition(30, 30);
     this.menuToggleButton.setScale(0.05);
     this.menuToggleButton.setInteractive();
-    this.setupMenuButtonEvents();
-  }
-
-  private setupMenuButtonEvents() {
     this.menuToggleButton.off('pointerover');
     this.menuToggleButton.off('pointerout');
     this.menuToggleButton.off('pointerdown');
     this.menuToggleButton.off('pointerup');
-
     this.menuToggleButton.on('pointerover', () => {
       this.menuToggleButton.setTexture("menu_hover");
     });
@@ -527,6 +496,7 @@ export default class ColoColoScene extends Phaser.Scene {
   private toggleIngredientsPanel() {
     this.isIngredientsPanelOpen = !this.isIngredientsPanelOpen;
     
+    // Animate panel visibility
     const targetAlpha = this.isIngredientsPanelOpen ? 1 : 0.3;
     const targetX = this.isIngredientsPanelOpen ? 
       this.layoutConfig.ingredientsPanelX : 
@@ -540,6 +510,7 @@ export default class ColoColoScene extends Phaser.Scene {
       ease: 'Power2'
     });
 
+    // Hide/show ingredients
     this.ingredientItems.forEach(item => {
       item.setVisible(this.isIngredientsPanelOpen);
       item.setActive(this.isIngredientsPanelOpen);
@@ -578,111 +549,181 @@ export default class ColoColoScene extends Phaser.Scene {
       this.currentStep++;
       this.updateStepDisplay();
       this.showSuccessFeedback();
+
+      // When we reach step 3 (index 2), make the ulekan visible
+      if (this.currentStep === 2) {
+        this.gameObjects.ulekan.setVisible(true);
+        this.tweens.add({
+            targets: this.gameObjects.ulekan,
+            alpha: { from: 0, to: 1 },
+            duration: 500
+        });
+      }
+
     } else if (this.currentStep === this.gameSteps.length - 1) {
       this.gameSteps[this.currentStep].isCompleted = true;
       this.showCompletionCelebration();
     }
   }
 
-  private setupDragAndDrop() {
-    this.input.on('dragstart', (pointer: any, gameObject: Phaser.GameObjects.Image) => {
-      this.isDragging = true;
-      this.dragTarget = gameObject;
+  private setupInteractions() {
+    // General drag and drop for ingredients from the panel
+    this.input.on('dragstart', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
+      this.children.bringToTop(gameObject);
       gameObject.setTint(0x00ff00);
+      // Store original position
+      gameObject.setData('dragStartX', gameObject.x);
+      gameObject.setData('dragStartY', gameObject.y);
     });
 
-    this.input.on('drag', (pointer: any, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
+    this.input.on('drag', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
       gameObject.x = dragX;
       gameObject.y = dragY;
     });
-
-    this.input.on('dragend', (pointer: any, gameObject: Phaser.GameObjects.Image) => {
-      this.isDragging = false;
-      gameObject.clearTint();
-      
-      this.checkDropTarget(gameObject);
-      
-      if (!this.isValidDrop(gameObject)) {
-        this.resetIngredientPosition(gameObject);
-      }
+    
+    this.input.on('dragend', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
+        gameObject.clearTint();
+        if (!dropped) {
+            this.resetIngredientPosition(gameObject);
+        }
     });
+
+    this.input.on('drop', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
+        const ingredientType = gameObject.name;
+
+        const telenanBounds = this.gameObjects.telenan.getBounds();
+        const ulekanBounds = this.gameObjects.ulekan.getBounds();
+        const gameObjectBounds = gameObject.getBounds();
+
+        // Check for drop on telenan for regular ingredients
+        if (Phaser.Geom.Intersects.RectangleToRectangle(gameObjectBounds, telenanBounds)) {
+            if (ingredientType !== 'telenan_full') { // Ensure we don't drop telenan on itself
+                this.handleTelenanDrop(ingredientType, gameObject);
+                return;
+            }
+        }
+
+        // Check for drop on ulekan for regular ingredients
+        if (this.gameObjects.ulekan.visible && Phaser.Geom.Intersects.RectangleToRectangle(gameObjectBounds, ulekanBounds)) {
+            this.handleUlekanDrop(ingredientType, gameObject);
+            return;
+        }
+
+        // If not dropped on any valid zone, reset position
+        this.resetIngredientPosition(gameObject);
+    });
+
+    // Click handlers for the new tap-to-transfer system
+    this.gameObjects.telenan.on('pointerdown', () => this.handleTelenanClick());
+    this.gameObjects.ulekan.on('pointerdown', () => this.handleUlekanClick());
   }
 
-  private checkDropTarget(gameObject: Phaser.GameObjects.Image) {
-    const type = gameObject.getData('type') || gameObject.name;
-    const currentState = gameObject.getData('currentState');
-    
-    // Check if dropped on telenan
-    if (this.isNear(gameObject, this.gameObjects.telenan, 100)) {
-      this.handleTelenanDrop(type);
-    }
-    
-    // Check if dropped on ulekan
-    if (this.isNear(gameObject, this.gameObjects.ulekan, 100)) {
-      const dropType = currentState || type;
-      this.handleUlekanDrop(dropType);
+  private handleTelenanClick() {
+    // Only allow selecting the telenan at the right step and state
+    if (this.currentStep === 2 && this.gameState.telenanState === 'telenan_cabai_bawang_potong') {
+        this.telenanSelected = true;
+        this.gameObjects.telenan.setTint(0x00ff00); // Highlight tint
     }
   }
 
-  private handleTelenanDrop(ingredientType: string) {
-    console.log(`handleTelenanDrop called with: ${ingredientType}, current state: ${this.gameState.telenanState}`);
-    
-    if (ingredientType === 'cabai' && this.gameState.telenanState === 'telenan' && this.currentStep === 1) {
-      console.log('Cabai ditambahkan ke telenan');
-      this.transformTelenan('telenan_cabai');
-      this.gameState.hasCabai = true;
-      this.hideIngredient('cabai');
-    } else if (ingredientType === 'bawang_putih' && this.gameState.telenanState === 'telenan_cabai_potong' && this.currentStep === 1) {
-      console.log('Bawang putih ditambahkan ke telenan_cabai_potong');
-      this.transformTelenan('telenan_cabai_bawang_putih');
-      this.gameState.hasBawangPutih = true;
-      this.hideIngredient('bawang_putih');
-    } else if (ingredientType === 'Pisau' && this.gameState.telenanState === 'telenan_cabai' && this.currentStep === 1) {
-      console.log('Pisau memotong telenan_cabai!');
-      this.transformTelenan('telenan_cabai_potong');
-      this.gameState.hasPisau = true;
-      this.animatePisauCut();
-      this.showCuttingFeedback();
-    } else if (ingredientType === 'Pisau' && this.gameState.telenanState === 'telenan_cabai_bawang_putih' && this.currentStep === 1) {
-      console.log('Pisau memotong telenan_cabai_bawang_putih!');
-      this.transformTelenan('telenan_cabai_bawang_potong');
-      this.gameState.hasPisau = true;
-      this.animatePisauCut();
-      this.showCuttingFeedback();
-      this.nextStep(); // Move to step 2 after cutting is complete
+  private handleUlekanClick() {
+    // Check if the telenan has been selected first, and it's the right step and state
+    if (this.telenanSelected && this.currentStep === 2 && this.gameState.ulekanState === 'ulekan_kecap') {
+        // Transfer ingredients
+        this.transformUlekan('ulekan_cabe_bawang');
+        this.gameObjects.telenan.setVisible(false).setActive(false);
+        
+        // Reset selection state
+        this.telenanSelected = false;
+        this.gameObjects.telenan.clearTint();
+
+        this.nextStep(); // Advance to step 4 (daun jeruk)
+    }
+  }
+
+  private handleTelenanDrop(ingredientType: string, ingredientObject: Phaser.GameObjects.Image) {
+    console.log(`handleTelenanDrop called with: ${ingredientType}, current step: ${this.currentStep}, telenan state: ${this.gameState.telenanState}`);
+
+    // Step 1: Place chili, then cut
+    if (this.currentStep === 0) {
+        if (ingredientType === 'cabai' && this.gameState.telenanState === 'telenan') {
+            this.transformTelenan('telenan_cabai');
+            this.hideIngredient('cabai');
+            ingredientObject.destroy();
+        } else if (ingredientType === 'Pisau' && this.gameState.telenanState === 'telenan_cabai') {
+            this.animatePisauCut(ingredientObject, () => {
+                this.transformTelenan('telenan_cabai_potong');
+                this.resetIngredientPosition(ingredientObject);
+                this.nextStep();
+            });
+        } else {
+            this.handleIncorrectDrop(ingredientObject);
+        }
+    } 
+    // Step 2: Place garlic, then cut
+    else if (this.currentStep === 1) {
+        if (ingredientType === 'bawang_putih' && this.gameState.telenanState === 'telenan_cabai_potong') {
+            this.transformTelenan('telenan_cabai_bawang_putih');
+            this.hideIngredient('bawang_putih');
+            ingredientObject.destroy();
+        } else if (ingredientType === 'Pisau' && this.gameState.telenanState === 'telenan_cabai_bawang_putih') {
+            this.animatePisauCut(ingredientObject, () => {
+                this.transformTelenan('telenan_cabai_bawang_potong');
+                this.resetIngredientPosition(ingredientObject);
+                // ** CHANGE: No longer making it draggable. It's now clickable. **
+                this.nextStep();
+            });
+        } else {
+            this.handleIncorrectDrop(ingredientObject);
+        }
     } else {
-      console.log(`Invalid combination: ${ingredientType} with state ${this.gameState.telenanState}`);
+        this.handleIncorrectDrop(ingredientObject);
     }
   }
 
-  private handleUlekanDrop(ingredientType: string) {
+  private handleUlekanDrop(ingredientType: string, ingredientObject: Phaser.GameObjects.Image) {
     console.log(`handleUlekanDrop called with: ${ingredientType}, current ulekan state: ${this.gameState.ulekanState}`);
-    
+
+    // Step 3 Part 1: Add kecap
     if (ingredientType === 'kecap' && this.gameState.ulekanState === 'ulekan' && this.currentStep === 2) {
-      console.log('Kecap ditambahkan ke ulekan');
       this.transformUlekan('ulekan_kecap');
-      this.gameState.hasKecap = true;
       this.hideIngredient('kecap');
-    } else if (ingredientType === 'telenan_cabai_bawang_potong' && this.gameState.ulekanState === 'ulekan_kecap' && this.currentStep === 2) {
-      console.log('Telenan_cabai_bawang_potong di-drop ke ulekan_kecap!');
-      this.transformUlekan('ulekan_cabe_bawang');
-      this.hideTelenan();
-      this.showUlekanTransformationFeedback('ulekan_cabe_bawang');
-      this.nextStep(); // Move to step 3 after combining ingredients
-    } else if (ingredientType === 'jeruk_nipis' && this.gameState.ulekanState === 'ulekan_cabe_bawang' && this.currentStep === 3) {
-      console.log('Jeruk nipis ditambahkan ke ulekan');
+      ingredientObject.destroy();
+      // NOTE: The click interaction for telenan is now the next logical step for the user
+    } 
+    // Step 4: Add daun jeruk
+    else if (ingredientType === 'daun_jeruk' && this.gameState.ulekanState === 'ulekan_cabe_bawang' && this.currentStep === 3) {
+      this.transformUlekan('ulekan_daun');
+      this.hideIngredient('daun_jeruk');
+      ingredientObject.destroy();
+      this.nextStep(); // Advance to step 5 (jeruk nipis)
+    }
+    // Step 5: Add jeruk nipis
+    else if (ingredientType === 'jeruk_nipis' && this.gameState.ulekanState === 'ulekan_daun' && this.currentStep === 4) {
       this.transformUlekan('ulekan_nipis');
-      this.gameState.hasJerukNipis = true;
+      this.gameObjects.ulekan.setScale(0.6); // Maintain original scale
       this.hideIngredient('jeruk_nipis');
-      this.nextStep(); // Move to final step
-    } else if (ingredientType === 'piring_colo_colo' && this.gameState.ulekanState === 'ulekan_nipis' && this.currentStep === 4) {
-      console.log('Piring colo-colo ditambahkan untuk penyajian');
+      ingredientObject.destroy();
+      this.nextStep(); // Advance to step 6 (munthu)
+    } 
+    // Step 6: Ulek with munthu
+    else if (ingredientType === 'munthu' && this.gameState.ulekanState === 'ulekan_nipis' && this.currentStep === 5) {
+        this.animateMunthuUlek(ingredientObject, () => {
+            // The transformUlekan is now handled inside the animation function
+            this.resetIngredientPosition(ingredientObject);
+            this.nextStep(); // Advance to plating
+        });
+    }
+    // Step 7: Plating
+    else if (ingredientType === 'piring_colo_colo' && this.gameState.ulekanState === 'ulekan_munthu' && this.currentStep === 6) {
       this.completeColoColo();
-      this.gameState.hasPiring = true;
       this.hideIngredient('piring_colo_colo');
+      ingredientObject.destroy();
       this.nextStep(); // Complete the recipe
-    } else {
-      console.log(`Invalid combination for ulekan: ${ingredientType} with state ${this.gameState.ulekanState}`);
+    } 
+    // Invalid action
+    else {
+      this.handleIncorrectDrop(ingredientObject);
     }
   }
 
@@ -703,13 +744,6 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private completeColoColo() {
-    this.add.text(400, 300, 'Colo-Colo Selesai!', {
-      font: '48px Chewy',
-      color: '#00ff00',
-      backgroundColor: '#000000',
-      padding: { x: 20, y: 10 }
-    }).setOrigin(0.5);
-    
     this.gameObjects.ulekan.setTexture('colo_colo_finished');
     this.gameState.ulekanState = 'colo_colo_finished';
   }
@@ -729,42 +763,104 @@ export default class ColoColoScene extends Phaser.Scene {
     }
   }
 
-  private isNear(obj1: Phaser.GameObjects.Image, obj2: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle, distance: number): boolean {
-    const dx = obj1.x - obj2.x;
-    const dy = obj1.y - obj2.y;
-    return Math.sqrt(dx * dx + dy * dy) < distance;
-  }
-
-  private isValidDrop(gameObject: Phaser.GameObjects.Image): boolean {
-    return this.isNear(gameObject, this.gameObjects.telenan, 100) ||
-           this.isNear(gameObject, this.gameObjects.ulekan, 100);
-  }
-
   private resetIngredientPosition(gameObject: Phaser.GameObjects.Image) {
+    let x, y;
+
+    // If the object is the telenan, return it to its home position
+    if (gameObject.name === 'telenan_full') {
+        x = gameObject.getData('homeX');
+        y = gameObject.getData('homeY');
+    } else {
+        // Otherwise, return to where the drag started
+        x = gameObject.getData('dragStartX');
+        y = gameObject.getData('dragStartY');
+    }
+
     this.tweens.add({
       targets: gameObject,
-      x: gameObject.input.dragStartX,
-      y: gameObject.input.dragStartY,
+      x: x,
+      y: y,
       duration: 400,
       ease: 'Back.easeOut'
     });
   }
 
-  private animatePisauCut() {
-    const pisauItem = this.ingredientItems.find(item => item.name === 'Pisau');
-    if (pisauItem) {
-      this.tweens.add({
-        targets: pisauItem,
-        angle: 15,
-        duration: 100,
-        ease: 'Power2',
+  private handleIncorrectDrop(gameObject: Phaser.GameObjects.Image) {
+    // Shake the camera
+    this.cameras.main.shake(200, 0.01);
+
+    // Vibrate the game object
+    this.tweens.add({
+        targets: gameObject,
+        x: gameObject.x + 10,
         yoyo: true,
-        repeat: 1,
+        repeat: 5,
+        duration: 30,
+        ease: 'Sine.easeInOut',
         onComplete: () => {
-          pisauItem.setAngle(0);
+            // Return to original position after shaking
+            this.resetIngredientPosition(gameObject);
         }
-      });
-    }
+    });
+  }
+
+  private animatePisauCut(pisau: Phaser.GameObjects.Image, onComplete: () => void) {
+    this.tweens.add({
+        targets: pisau,
+        x: this.gameObjects.telenan.x,
+        y: this.gameObjects.telenan.y - 20, // Start slightly above
+        duration: 200,
+        ease: 'Power2',
+        onComplete: () => {
+            this.tweens.add({
+                targets: pisau,
+                y: this.gameObjects.telenan.y + 20, // Move down
+                duration: 150,
+                ease: 'Sine.easeInOut',
+                yoyo: true, // Go back up
+                repeat: 2, // Repeat 2 times for 3 cuts total
+                onComplete: () => {
+                    onComplete();
+                }
+            });
+        }
+    });
+  }
+
+  private animateMunthuUlek(munthu: Phaser.GameObjects.Image, onComplete: () => void) {
+    // First, move the munthu to the ulekan
+    this.tweens.add({
+        targets: munthu,
+        x: this.gameObjects.ulekan.x,
+        y: this.gameObjects.ulekan.y - 50, // Position it above the ulekan
+        duration: 300,
+        ease: 'Power2',
+        onComplete: () => {
+            // Hide the original munthu image from the panel
+            this.hideIngredient('munthu');
+            munthu.setVisible(false);
+
+            // Start the ulek animation with the ulekan itself
+            const ulekAnimTextures = ['ulekan_munthu', 'ulekan_munthu2'];
+            let textureIndex = 0;
+            const ulekAnimation = this.time.addEvent({
+                delay: 200, // Speed of the ulek animation
+                callback: () => {
+                    this.gameObjects.ulekan.setTexture(ulekAnimTextures[textureIndex % ulekAnimTextures.length]);
+                    textureIndex++;
+                },
+                repeat: 5 // Number of ulek movements (total 6 frames)
+            });
+
+            // After the animation, set the final state and call the callback
+            const duration = ulekAnimation.delay * (ulekAnimation.repeatCount + 1);
+            this.time.delayedCall(duration, () => {
+                ulekAnimation.destroy();
+                this.transformUlekan('ulekan_munthu');
+                onComplete();
+            });
+        }
+    });
   }
 
   private showCuttingFeedback() {
@@ -781,71 +877,11 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private showTransformationFeedback(newState: string) {
-    let message = '';
-    let color = '#00ff00';
-    
-    switch (newState) {
-      case 'telenan_cabai':
-        message = 'Cabai ditambahkan ke telenan';
-        break;
-      case 'telenan_cabai_potong':
-        message = 'Cabai berhasil dipotong!';
-        color = '#ff6600';
-        break;
-      case 'telenan_cabai_bawang_putih':
-        message = 'Bawang putih ditambahkan';
-        break;
-      case 'telenan_cabai_bawang_potong':
-        message = 'Bawang putih berhasil dipotong!';
-        color = '#ff6600';
-        break;
-      default:
-        message = 'Telenan berubah';
-    }
-    
-    const feedbackText = this.add.text(400, 380, message, {
-      font: '20px Chewy',
-      color: color,
-      backgroundColor: '#000000',
-      padding: { x: 10, y: 5 }
-    }).setOrigin(0.5);
-    
-    this.time.delayedCall(2000, () => {
-      feedbackText.destroy();
-    });
+    // This function is now empty to prevent showing text feedback
   }
 
   private showUlekanTransformationFeedback(newState: string) {
-    let message = '';
-    let color = '#00ff00';
-    
-    switch (newState) {
-      case 'ulekan_kecap':
-        message = 'Kecap ditambahkan ke mangkok!';
-        color = '#8B4513';
-        break;
-      case 'ulekan_cabe_bawang':
-        message = 'Cabai dan bawang putih dicampur dengan kecap!';
-        color = '#ff6600';
-        break;
-      case 'ulekan_nipis':
-        message = 'Jeruk nipis ditambahkan ke sambal!';
-        color = '#FFA500';
-        break;
-      default:
-        message = 'Mangkok berubah';
-    }
-    
-    const feedbackText = this.add.text(400, 420, message, {
-      font: '20px Chewy',
-      color: color,
-      backgroundColor: '#000000',
-      padding: { x: 15, y: 8 }
-    }).setOrigin(0.5);
-    
-    this.time.delayedCall(2000, () => {
-      feedbackText.destroy();
-    });
+    // This function is now empty to prevent showing text feedback
   }
 
   private showSuccessFeedback() {
@@ -955,12 +991,12 @@ export default class ColoColoScene extends Phaser.Scene {
       alpha: 1,
       duration: 500,
       ease: 'Power2',
-      delay: this.tweens.stagger(100)
+      stagger: 100
     });
   }
 
   private createBackButton() {
-    const backButton = this.add.text(50, 50, '← Back', {
+    const backButton = this.add.text(50, 50, '⌂ Home', {
       font: '24px Chewy',
       color: '#ffffff',
       backgroundColor: '#000000',
@@ -970,7 +1006,7 @@ export default class ColoColoScene extends Phaser.Scene {
     backButton.setInteractive();
     backButton.on('pointerdown', () => {
       if (typeof window !== 'undefined') {
-        window.location.href = '/SelectFood';
+        window.location.href = '/menu';
       }
     });
     
