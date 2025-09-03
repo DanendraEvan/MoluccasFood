@@ -1,6 +1,7 @@
 // src/components/MusicButton.tsx - FIXED: With loading state indicator
 import React, { useState } from 'react';
 import { useMusic } from '../contexts/MusicContext';
+import Image from 'next/image';
 
 interface MusicButtonProps {
   className?: string;
@@ -64,9 +65,11 @@ const MusicButton: React.FC<MusicButtonProps> = ({
       disabled={isLoading}
     >
       <div className="relative">
-        <img
+        <Image
           src={getButtonImage()}
           alt={`${isPlaying ? 'Music On' : 'Music Off'} Button`}
+          width={100}
+          height={100}
           className="w-auto h-auto max-w-[100px] max-h-[100px] md:max-w-[100px] md:max-h-[100px] drop-shadow-lg"
           style={{ 
             background: 'transparent',

@@ -2,6 +2,7 @@
 import React, { ReactNode, useRef } from 'react';
 import { useRouter } from 'next/router';
 import MusicButton from './MusicButton';
+import Image from 'next/image';
 
 interface KitchenBackgroundWrapperProps {
   children: ReactNode;
@@ -62,10 +63,11 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
         onMouseDown={() => setIsActive(true)}
         onMouseUp={() => setIsActive(false)}
       >
-        <img
+        <Image
           src={getImageSrc()}
           alt="Home Button"
-          style={{ width: '108px', height: '108px' }}
+          width={108}
+          height={108}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';

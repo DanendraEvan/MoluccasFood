@@ -1,3 +1,7 @@
+import React from 'react';
+import Link from 'next/link';
+import { useMusic } from '../contexts/MusicContext';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import GameButton from './GameButton';
 

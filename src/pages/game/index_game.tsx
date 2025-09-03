@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import MusicButton from '../../components/MusicButton';
+import Image from 'next/image';
 
 // Background Wrapper Component
 interface BackgroundWrapperProps {
@@ -57,7 +58,7 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route, displayName })
   };
 
   return (
-    <div className="p-4 bg-transparent">
+    <div className="bg-transparent" style={{ padding: '20px', margin: '15px' }}>
       <button
         className="transition-transform duration-200 hover:scale-105 focus:outline-none bg-transparent border-none p-0 m-0 block"
         onMouseEnter={() => setIsHovered(true)}
@@ -75,9 +76,11 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route, displayName })
           outline: 'none'
         }}
       >
-        <img
+        <Image
           src={getImageSrc()}
           alt={`Button ${displayName || foodName}`}
+          width={240}
+          height={240}
           className="w-auto h-auto max-w-[180px] max-h-[180px] md:max-w-[240px] md:max-h-[240px] drop-shadow-lg block"
           style={{ 
             background: 'transparent',
@@ -135,9 +138,11 @@ const HomeButton: React.FC = () => {
         backgroundColor: 'transparent'
       }}
     >
-      <img
+      <Image
         src={getImageSrc()}
         alt="Home Button"
+        width={100}
+        height={100}
         className="w-auto h-auto max-w-[100px] max-h-[100px] md:max-w-[100px] md:max-h-[100px] drop-shadow-lg"
         style={{ 
           background: 'transparent',
@@ -156,27 +161,27 @@ const InfoIndexPage = () => {
   const foodButtons = [
     {
       foodName: "kohukohu",
-      route: "/game?scene=kohukohu",
+      route: "/game/scene_loader?scene=kohukohu",
       displayName: "Kohu-Kohu"
     },
     {
       foodName: "nasilapola", 
-      route: "/game?scene=nasilapola",
+      route: "/game/scene_loader?scene=nasilapola",
       displayName: "Nasi Lapola"
     },
     {
       foodName: "colocolo",
-      route: "/game?scene=colocolo", 
+      route: "/game/scene_loader?scene=colocolo", 
       displayName: "Colo-Colo"
     },
     {
       foodName: "ikankuahkuning",
-      route: "/game?scene=ikankuahkuning",
+      route: "/game/scene_loader?scene=ikankuahkuning",
       displayName: "Ikan Kuah Kuning"
     },
     {
       foodName: "papeda",
-      route: "/game?scene=papeda",
+      route: "/game/scene_loader?scene=papeda",
       displayName: "Papeda"
     }
   ];
@@ -244,10 +249,10 @@ const InfoIndexPage = () => {
           </div>
 
           {/* Food Buttons Grid dalam formasi 2-3 */}
-          <div className="flex flex-col items-center gap-8 md:gap-10 mb-16">
+          <div className="flex flex-col items-center mb-16" style={{ gap: '80px' }}>
             
             {/* Row 1 - Top 2 buttons (Kohu-Kohu dan Nasi Lapola) */}
-            <div className="flex flex-row gap-5 md:gap-11 justify-center items-center">
+            <div className="flex flex-row justify-center items-center" style={{ gap: '60px' }}>
               <FoodButton 
                 foodName={foodButtons[0].foodName}
                 route={foodButtons[0].route}
@@ -261,7 +266,7 @@ const InfoIndexPage = () => {
             </div>
 
             {/* Row 2 - Bottom 3 buttons (Colo-Colo, Ikan Kuah Kuning, dan Papeda) */}
-            <div className="flex flex-row gap-8 md:gap-12 justify-center items-center">
+            <div className="flex flex-row justify-center items-center" style={{ gap: '50px' }}>
               <FoodButton 
                 foodName={foodButtons[2].foodName}
                 route={foodButtons[2].route}

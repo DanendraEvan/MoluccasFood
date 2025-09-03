@@ -1,48 +1,181 @@
-// src/game/scenes/IkanKuahKuningScene.ts
-import Phaser from 'phaser';
+// src/game/scenes/IkanKuahKuningScene.ts - Enhanced with NasiLapola UI System
+import * as Phaser from "phaser";
+
+// State untuk panci dan ulekan
+type CookingState =
+  | "empty"
+  | "wajan"
+  | "wajan_bumbu_halus"
+  | "wajan_lengkuas_daun_bawang"
+  | "wajan_daging_air_daun_jahe"
+  | "wajan_daun_bawang_tomat"
+  | "wajan_asam_jawa"
+  | "ulekan"
+  | "ulekan_bumbu_halus"
+  | "campuran_bumbu_halus"
+  | "finished";
+
+interface GameStep {
+  id: number;
+  text: string;
+  character: string;
+  isCompleted: boolean;
+}
 
 export default class IkanKuahKuningScene extends Phaser.Scene {
-  private gameObjects: { [key: string]: Phaser.GameObjects.Image } = {};
-  private progressText: Phaser.GameObjects.Text | null = null;
-  private wajanArea: Phaser.GameObjects.Rectangle;
-  private isDragging: boolean = false;
-  private dragTarget: Phaser.GameObjects.Image | null = null;
-  private gameState: {
-    wajanState: string;
-    ulekanState: string;
-    hasBawangPutih: boolean;
-    hasBawangMerah: boolean;
-    hasCabai: boolean;
-    hasKunyit: boolean;
-    hasLengkuas: boolean;
-    hasJahe: boolean;
-    hasDaunSalam: boolean;
-    hasDaunSerai: boolean;
-    hasDaunJeruk: boolean;
-    hasAsamJawa: boolean;
-    hasGaram: boolean;
-    hasGula: boolean;
-    hasDagingIkan: boolean;
-    hasAir: boolean;
-    hasTomat: boolean;
-    hasDaunBawang: boolean;
-    hasMunthu: boolean;
-    hasMangkuk: boolean;
+  // Definisikan semua objek game
+  private wajan!: Phaser.GameObjects.Image;
+  private ulekan!: Phaser.GameObjects.Image;
+  private kompor!: Phaser.GameObjects.Image;
+  private wajanZone!: Phaser.GameObjects.Zone;
+  private ulekanZone!: Phaser.GameObjects.Zone;
+  private stagingZone!: Phaser.GameObjects.Zone;
+
+  // State untuk peralatan masak
+  private stateWajan: CookingState = "wajan";
+  private stateUlekan: CookingState = "ulekan";
+
+  // Game state untuk bahan-bahan
+  private gameState = {
+    hasBawangPutih: false,
+    hasBawangMerah: false,
+    hasCabai: false,
+    hasKunyit: false,
+    hasLengkuas: false,
+    hasJahe: false,
+    hasDaunSalam: false,
+    hasDaunSerai: false,
+    hasDaunJeruk: false,
+    hasAsamJawa: false,
+    hasGaram: false,
+    hasGula: false,
+    hasDagingIkan: false,
+    hasAir: false,
+    hasTomat: false,
+    hasDaunBawang: false,
+    hasMangkuk: false
   };
 
+  // UI Components
+  private ingredientsPanel!: Phaser.GameObjects.Container;
+  private dialogPanel!: Phaser.GameObjects.Container;
+  private menuToggleButton!: Phaser.GameObjects.Image;
+  private characterImage!: Phaser.GameObjects.Image;
+  private stepText!: Phaser.GameObjects.Text;
+  private isIngredientsPanelOpen = true;
+  private currentStep = 0;
+  private ingredientItems: Phaser.GameObjects.Image[] = [];
+  private panelBg!: Phaser.GameObjects.Graphics;
+  private panelTitle!: Phaser.GameObjects.Text;
+  private campuranBumbuHalus: Phaser.GameObjects.Image | null = null;
+  private ingredientsContentContainer!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
+  private scrollableArea!: Phaser.GameObjects.Zone;
+  private scrollContentHeight: number = 0;
+  private draggedItemOriginalParent: Phaser.GameObjects.Container | null = null;
+  private draggedItemOriginalX: number = 0;
+  private draggedItemOriginalY: number = 0;
+  private ingredientsContentMask: Phaser.Display.Masks.GeometryMask | null = null;
+  private scrollbarThumb!: Phaser.GameObjects.Graphics;
+  private isScrollbarDragging: boolean = false;
+  private scrollbarDragStartY: number = 0;
+  private contentStartY: number = 0;
+
+  // Layout configuration
+  private layoutConfig = {
+    // Header bar
+    headerHeight: 60,
+    
+    // Ingredients panel
+    ingredientsPanelWidth: 400,
+    ingredientsPanelX: 0, // Will be calculated
+    ingredientsPanelY: 155,
+    ingredientsPanelHeight: 550,
+    
+    // Cooking area
+    cookingAreaLeft: 20,
+    cookingAreaTop: 70,
+    cookingAreaRight: 290,
+    cookingAreaBottom: 180,
+    
+    // Dialog panel
+    dialogPanelHeight: 90,
+    dialogPanelY: 900, // Will be calculated
+    dialogPanelLeft: 50,
+    dialogPanelRight: 20,
+
+    // Character
+    characterX: 1000,
+    characterY: 500,
+
+    // Cooking equipment
+    equipmentScale: 0.6,
+    
+    // Staging area
+    stagingAreaX: 200,
+    stagingAreaY: 300,
+    stagingAreaWidth: 300,
+    stagingAreaHeight: 225
+  };
+
+  // Game steps dengan dialog yang diminta
+  private gameSteps: GameStep[] = [
+    {
+      id: 1,
+      text: "Pertama, kita siapkan dulu bumbu halus-nya. Ambil semua bawang merah, bawang putih, kunyit, dan cabai merah keriting. Sekarang, ulek semuanya sampai halus ya!",
+      character: "karakter1.png",
+      isCompleted: false
+    },
+    {
+      id: 2,
+      text: "Hebat! Bumbu sudah siap. Sekarang, panaskan wajan-mu. Setelah panas, tumis bumbu halus yang tadi kamu ulek. Aduk-aduk sampai wanginya tercium!",
+      character: "karakter2.png",
+      isCompleted: false
+    },
+    {
+      id: 3,
+      text: "Lanjut! Sekarang giliran bahan-bahan aromatik. Masukkan lengkuas, serai, dan daun salam ke dalam wajan. Aduk lagi ya, biar semua bumbu tercampur rata.",
+      character: "karakter3.png",
+      isCompleted: false
+    },
+    {
+      id: 4,
+      text: "Sempurna! Sekarang saatnya bahan utama. Masukkan potongan ikan, irisan jahe, daun jeruk, dan tuang air secukupnya.",
+      character: "karakter4.png",
+      isCompleted: false
+    },
+    {
+      id: 5,
+      text: "Hampir selesai! Sekarang masukkan potongan tomat, serta tambahkan garam dan gula.",
+      character: "karakter5.png",
+      isCompleted: false
+    },
+    {
+      id: 6,
+      text: "Satu lagi yang penting! Masukkan air asam jawa yang sudah dilarutkan. Ini rahasia rasa segarnya, lho!",
+      character: "karakter6.png",
+      isCompleted: false
+    },
+    {
+      id: 7,
+      text: "Terakhir, masak sebentar sampai ikannya matang sempurna. Setelah itu, pindahkan ke mangkuk saji. Ikan Kuah Kuning lezatmu sudah siap! Misi selesai!",
+      character: "karakter1.png",
+      isCompleted: false
+    }
+  ];
+
   constructor() {
-    super('IkanKuahKuningScene');
+    super("IkanKuahKuningScene");
   }
 
   preload() {
-    // Preload background
-    this.load.image('background', '/assets/backgrounds/kitchen.png');
-    
-    // Preload hasil masakan selesai
+    this.load.image("background", "/assets/backgrounds/kitchen.png");
+    this.load.image("Kompor", "/assets/foods/kohu_kohu/Kompor.png");
+
+    // Hasil masakan selesai
     this.load.image('ikan_kuah_kuning_finished', '/assets/foods/ikan_kuahkuning/Ikan Kuah Kuning.png');
     this.load.image('mangkuk_coklat', '/assets/foods/ikan_kuahkuning/MangkukCoklat.png');
     
-    // ===== PRELOAD BAHAN-BAHAN =====
     // Bahan utama
     this.load.image('daging_ikan', '/assets/foods/ikan_kuahkuning/DagingIkan.png');
     this.load.image('air', '/assets/foods/ikan_kuahkuning/Air.png');
@@ -67,11 +200,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.load.image('gula', '/assets/foods/ikan_kuahkuning/Gula1.png');
     this.load.image('tomat', '/assets/foods/ikan_kuahkuning/Tomat.png');
     
-    // Bahan pelengkap
-    this.load.image('munthu', '/assets/foods/ikan_kuahkuning/Munthu 3.png');
-    
-    // ===== PRELOAD TOOLS/PERALATAN =====
-    // Ulekan dan bumbu halus
+    // Peralatan
     this.load.image('ulekan', '/assets/foods/ikan_kuahkuning/Ulekan1.png');
     this.load.image('ulekan_bumbu_halus', '/assets/foods/ikan_kuahkuning/UlekanBumbuHalus.png');
     this.load.image('campuran_bumbu_halus', '/assets/foods/ikan_kuahkuning/CampuranBumbuHalus.png');
@@ -83,560 +212,1175 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.load.image('wajan_daging_air_daun_jahe', '/assets/foods/ikan_kuahkuning/WajanDagingAirDaunJahe.png');
     this.load.image('wajan_daun_bawang_tomat', '/assets/foods/ikan_kuahkuning/WajanDaunBawangTomat.png');
     this.load.image('wajan_lengkuas_daun_bawang', '/assets/foods/ikan_kuahkuning/WajanLengkuasDaunBawang.png');
+
+    // UI Elements
+    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
+    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
+    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
+
+    // Characters
+    this.load.image("karakter1", "/assets/karakter/karakter1.png");
+    this.load.image("karakter2", "/assets/karakter/karakter2.png");
+    this.load.image("karakter3", "/assets/karakter/karakter3.png");
+    this.load.image("karakter4", "/assets/karakter/karakter4.png");
+    this.load.image("karakter5", "/assets/karakter/karakter5.png");
+    this.load.image("karakter6", "/assets/karakter/karakter6.png");
+
+    // Nasi Lapola Assets
+    this.load.image("PanciAir", "/assets/foods/nasi_lapola/PanciAir.png");
+    this.load.image("PanciAir2", "/assets/foods/nasi_lapola/PanciAir2.png");
+    this.load.image("Kacang", "/assets/foods/nasi_lapola/Kacang.png");
+    this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
+    this.load.image("Beras", "/assets/foods/nasi_lapola/Beras.png");
+    this.load.image("Garam", "/assets/foods/nasi_lapola/Garam.png");
+    this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.png");
+
+    // Variasi Panci
+    this.load.image("PanciKacang", "/assets/foods/nasi_lapola/PanciKacang.png");
+    this.load.image("PanciSaring", "/assets/foods/nasi_lapola/PanciSaring.png");
+    this.load.image("PanciKelapa", "/assets/foods/nasi_lapola/PanciKelapa.png");
+    this.load.image("PanciBeras", "/assets/foods/nasi_lapola/PanciBeras.png");
+    this.load.image("PanciKelapaGaram", "/assets/foods/nasi_lapola/PanciKelapaGaram.png");
+    this.load.image("PanciKacang2", "/assets/foods/nasi_lapola/PanciKacang2.png");
+    this.load.image("PanciBerasKelapa", "/assets/foods/nasi_lapola/PanciBerasKelapa.png");
+    this.load.image("PanciNasiLapola", "/assets/foods/nasi_lapola/PanciNasiLapola.png");
+
+    // Animasi Aduk
+    this.load.image("PanciAirSepatula", "/assets/foods/nasi_lapola/PanciAirSepatula.png");
+    this.load.image("PanciAirSepatula2", "/assets/foods/nasi_lapola/PanciAirSepatula2.png");
+    this.load.image("PanciAirSepatula3", "/assets/foods/nasi_lapola/PanciAirSepatula3.png");
+    this.load.image("AdukKacang", "/assets/foods/nasi_lapola/AdukKacang.png");
+    this.load.image("AdukKacang2", "/assets/foods/nasi_lapola/AdukKacang2.png");
+    this.load.image("Piring", "/assets/foods/nasi_lapola/Piring.png");
+    this.load.image("KukusNasi", "/assets/foods/nasi_lapola/KukusNasi.png");
+    this.load.image("NasiLapola", "/assets/foods/nasi_lapola/NasiLapola.png");
   }
 
   create() {
-    const bg = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'background');
-    const scaleX = this.cameras.main.width / bg.width;
-    const scaleY = this.cameras.main.height / bg.height;
-    const scale = Math.max(scaleX, scaleY);
-    bg.setScale(scale).setScrollFactor(0);
-
-    // Initialize game state
-    this.gameState = {
-      wajanState: 'wajan',
-      ulekanState: 'ulekan',
-      hasBawangPutih: false,
-      hasBawangMerah: false,
-      hasCabai: false,
-      hasKunyit: false,
-      hasLengkuas: false,
-      hasJahe: false,
-      hasDaunSalam: false,
-      hasDaunSerai: false,
-      hasDaunJeruk: false,
-      hasAsamJawa: false,
-      hasGaram: false,
-      hasGula: false,
-      hasDagingIkan: false,
-      hasAir: false,
-      hasTomat: false,
-      hasDaunBawang: false,
-      hasMunthu: false,
-      hasMangkuk: false
-    };
-
-    // Create initial wajan (pan) - left side
-    this.gameObjects.wajan = this.add.image(200, 400, 'wajan');
-    this.gameObjects.wajan.setInteractive({ draggable: true });
-    this.gameObjects.wajan.setScale(0.6);
-    this.gameObjects.wajan.setData('type', 'wajan');
-    this.gameObjects.wajan.setData('currentState', 'wajan');
-
-    // Create kompor (stove) below wajan
-    this.createKompor();
-
-    // Create ulekan (mortar and pestle) - left side
-    this.gameObjects.ulekan = this.add.image(200, 600, 'ulekan');
-    this.gameObjects.ulekan.setInteractive({ draggable: true });
-    this.gameObjects.ulekan.setScale(0.6);
-
-    // Create ingredient objects - right side vertical layout
-    this.createIngredient('bawang_putih', 700, 150, 0.4);
-    this.createIngredient('bawang_merah', 700, 220, 0.4);
-    this.createIngredient('cabai', 700, 290, 0.4);
-    this.createIngredient('kunyit', 700, 360, 0.4);
-    this.createIngredient('daun_salam', 700, 430, 0.4);
-    this.createIngredient('lengkuas', 700, 500, 0.4);
-    this.createIngredient('daun_serai', 700, 570, 0.4);
-    this.createIngredient('daging_ikan', 700, 640, 0.4);
-    this.createIngredient('air', 700, 710, 0.4);
-    this.createIngredient('daun_jeruk', 700, 180, 0.4);
-    this.createIngredient('jahe', 750, 130, 0.4);
-    this.createIngredient('garam', 750, 150, 0.4);
-    this.createIngredient('gula', 750, 220, 0.4);
-    this.createIngredient('tomat', 700, 200, 0.4);
-    this.createIngredient('daun_bawang', 700, 130, 0.4);
-    this.createIngredient('asam_jawa', 750, 290, 0.4);
-    // this.createIngredient('munthu', 700, 1270, 0.4);
-    this.createIngredient('mangkuk_coklat', 750, 640, 0.4);
-
-    // Create wajan area - right side
-    this.createWajanArea();
-
-    // Set up drag and drop events
-    this.setupDragAndDrop();
-
-    // Add instruction text
-    this.add.text(400, 100, 'Drag ingredients to ulekan first, then to wajan!', {
-      font: '24px Chewy',
-      color: '#000000',
-      backgroundColor: '#ffffff',
-      padding: { x: 10, y: 5 }
-    }).setOrigin(0.5);
-
-    // Add back button
-    this.createBackButton();
-  }
-
-  private createIngredient(key: string, x: number, y: number, scale: number = 1) {
-    this.gameObjects[key] = this.add.image(x, y, key);
-    this.gameObjects[key].setInteractive({ draggable: true });
-    this.gameObjects[key].setScale(scale);
-    this.gameObjects[key].setData('type', key);
-  }
-
-  private createKompor() {
-    // Create kompor (stove) below wajan
-    const kompor = this.add.rectangle(200, 500, 120, 80, 0x8B4513, 0.8);
-    kompor.setData('type', 'kompor');
+    this.add.image(0, 0, "background").setOrigin(0);
     
-    // Add text to show it's a kompor
-    this.add.text(200, 500, 'KOMPOR\n(Stove)', {
-      font: '14px Chewy',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 5, y: 2 }
-    }).setOrigin(0.5);
+    // Calculate layout positions
+    this.calculateLayout();
+
+    // Create game elements in the cooking area
+    this.createCookingArea();
+
+    // Create UI components
+    this.createIngredientsPanel();
+    this.createDialogPanel();
+
+    // Initial update of panel visuals
+    this.updateIngredientsPanelVisuals();
+
+    // Setup ingredient panel layout
+    this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
+
+    // Initialize drag and drop
+    this.initDragAndDrop();
+
+    // Update step display
+    this.updateStepDisplay();
   }
 
-  private showUlekanProgress() {
-    // Hitung progress bahan yang sudah ditambahkan
-    let progress = 0;
-    if (this.gameState.hasBawangPutih) progress++;
-    if (this.gameState.hasBawangMerah) progress++;
-    if (this.gameState.hasCabai) progress++;
-    if (this.gameState.hasKunyit) progress++;
+  private calculateLayout() {
+    const gameWidth = this.cameras.main.width;
+    const gameHeight = this.cameras.main.height;
+
+    // Calculate ingredients panel position
+    this.layoutConfig.ingredientsPanelX = gameWidth - this.layoutConfig.ingredientsPanelWidth - 15;
     
-    // Hapus progress text lama jika ada
-    if (this.progressText) {
-      this.progressText.destroy();
+    // Calculate dialog panel position - use the configured value instead of calculating
+    // this.layoutConfig.dialogPanelY = gameHeight - this.layoutConfig.dialogPanelHeight - 15;
+    
+    // Update cooking area bounds
+    this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
+    this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
+  }
+
+  private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
+    const gameWidth = this.cameras.main.width;
+    const gameHeight = this.cameras.main.height;
+    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
+    const panelHeight = this.layoutConfig.ingredientsPanelHeight;
+
+    let targetX, targetY;
+
+    if (x !== undefined && y !== undefined) {
+      targetX = x;
+      targetY = y;
+    } else {
+      // Horizontal alignment
+      switch (hAlign) {
+        case 'left':
+          targetX = padding || 0;
+          break;
+        case 'center':
+          targetX = (gameWidth - panelWidth) / 2;
+          break;
+        default: // right
+          targetX = gameWidth - panelWidth - (padding || 0);
+          break;
+      }
+
+      // Vertical alignment
+      switch (vAlign) {
+        case 'top':
+          targetY = padding || 0;
+          break;
+        case 'middle':
+          targetY = (gameHeight - panelHeight) / 2;
+          break;
+        default: // bottom
+          targetY = gameHeight - panelHeight - (padding || 0);
+          break;
+      }
     }
+
+    this.ingredientsPanel.setPosition(targetX, targetY);
+  }
+
+  private createCookingArea() {
+    // Kompor
+    this.kompor = this.add.image(700, 700, "Kompor").setScale(this.layoutConfig.equipmentScale);
     
-    // Tampilkan progress text
-    this.progressText = this.add.text(200, 580, `Progress: ${progress}/4 bahan`, {
-      font: '16px Chewy',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 10, y: 5 }
-    }).setOrigin(0.5);
+    // Wajan
+    this.wajan = this.add.image(650, 540, "wajan")
+      .setScale(this.layoutConfig.equipmentScale)
+      .setInteractive();
+    this.input.setDraggable(this.wajan);
+
+    // Ulekan
+    this.ulekan = this.add.image(1200, 600, "ulekan")
+      .setScale(this.layoutConfig.equipmentScale)
+      .setInteractive();
+    this.input.setDraggable(this.ulekan);
+
+    // Create drop zones
+    this.wajanZone = this.add.zone(650, 540, 120, 120).setRectangleDropZone(120, 120);
+    this.wajanZone.name = "wajanZone";
+
+    this.ulekanZone = this.add.zone(1200, 600, 120, 120).setRectangleDropZone(120, 120);
+    this.ulekanZone.name = "ulekanZone";
     
-    // Hapus progress text setelah 2 detik
-    this.time.delayedCall(2000, () => {
-      if (this.progressText) {
-        this.progressText.destroy();
-        this.progressText = null;
+    // Staging zone
+    this.stagingZone = this.add.zone(
+      this.layoutConfig.cookingAreaLeft + this.layoutConfig.stagingAreaX,
+      this.layoutConfig.cookingAreaTop + this.layoutConfig.stagingAreaY,
+      this.layoutConfig.stagingAreaWidth,
+      this.layoutConfig.stagingAreaHeight
+    ).setRectangleDropZone(this.layoutConfig.stagingAreaWidth, this.layoutConfig.stagingAreaHeight);
+    this.stagingZone.name = "staging";
+
+    // Visual indicator untuk staging area
+    const stagingGraphics = this.add.graphics();
+    stagingGraphics.fillStyle(0x2A1810, 0.95);
+    stagingGraphics.fillRoundedRect(
+      this.stagingZone.x - this.stagingZone.width/2,
+      this.stagingZone.y - this.stagingZone.height/2,
+      this.stagingZone.width,
+      this.stagingZone.height,
+      20
+    );
+    stagingGraphics.lineStyle(2, 0x8B4513, 0.8);
+    stagingGraphics.strokeRoundedRect(
+      this.stagingZone.x - this.stagingZone.width/2,
+      this.stagingZone.y - this.stagingZone.height/2,
+      this.stagingZone.width,
+      this.stagingZone.height,
+      20
+    );
+    
+    const stagingLabel = this.add.text(
+      this.stagingZone.x,
+      this.stagingZone.y,
+      "Area Staging",
+      {
+        fontSize: '14px',
+        fontFamily: 'Chewy, cursive',
+        color: '#FFE4B5',
+        align: 'center',
+        fontStyle: 'bold'
+      }
+    ).setOrigin(0.5, 0.5);
+  }
+
+  private createIngredientsPanel() {
+    // Create ingredients panel container (main container for the whole panel)
+    this.ingredientsPanel = this.add.container(
+      this.layoutConfig.ingredientsPanelX,
+      this.layoutConfig.ingredientsPanelY
+    );
+
+    // Panel background
+    this.panelBg = this.add.graphics();
+    this.ingredientsPanel.add(this.panelBg);
+
+    // Panel title
+    this.panelTitle = this.add.text(0, 0, "", {});
+    this.ingredientsPanel.add(this.panelTitle);
+
+    // Menu toggle button
+    this.menuToggleButton = this.add.image(0, 0, "menu_normal");
+    this.ingredientsPanel.add(this.menuToggleButton);
+
+    // Create a scrollable area (zone) for ingredients
+    const scrollableAreaX = 15; // Relative to ingredientsPanel
+    const scrollableAreaY = 100; // Relative to ingredientsPanel, below title
+    const scrollableAreaWidth = this.layoutConfig.ingredientsPanelWidth - 70; // Panel width minus padding
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - scrollableAreaY - 5; // Remaining height
+
+    this.scrollableArea = this.add.zone(
+      scrollableAreaX + scrollableAreaWidth / 2,
+      scrollableAreaY + scrollableAreaHeight / 2,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    ).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(this.scrollableArea);
+
+    // Create a container for the actual ingredient items
+    this.ingredientsContentContainer = this.add.container(scrollableAreaX, scrollableAreaY);
+    this.ingredientsPanel.add(this.ingredientsContentContainer);
+
+    // Set up a clipping mask for the ingredients content
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillRect(0, 0, scrollableAreaWidth, scrollableAreaHeight); // Define mask in local coordinates
+    this.ingredientsContentMask = maskGraphics.createGeometryMask(); // Store the mask object
+    this.ingredientsContentContainer.setMask(this.ingredientsContentMask); // Apply the stored mask
+
+    // Position the maskGraphics to align with the scrollable area in world coordinates
+    maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+    maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+
+    // Create scrollbar background
+    this.scrollbar = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbar);
+    
+    // Create scrollbar thumb (draggable part)
+    this.scrollbarThumb = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbarThumb);
+
+    this.createIngredients();
+
+    // Enable mouse wheel scrolling
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[], deltaX: number, deltaY: number, deltaZ: number) => {
+      // Check if the mouse pointer is within the ingredients panel's scrollable area
+      const panelBounds = new Phaser.Geom.Rectangle(
+        this.ingredientsPanel.x + scrollableAreaX,
+        this.ingredientsPanel.y + scrollableAreaY,
+        scrollableAreaWidth,
+        scrollableAreaHeight
+      );
+
+      if (Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        this.handleScroll(deltaY);
       }
     });
+  }
+
+  private createIngredients() {
+    // Destroy existing ingredient items to prevent duplicates
+    this.ingredientItems.forEach(item => item.destroy());
+    this.ingredientItems = [];
+    this.ingredientsContentContainer.removeAll(true); // Clear previous items from the container
+
+    const ingredients = [
+      { key: "bawang_putih", name: "Bawang Putih", scale: 0.15 },
+      { key: "bawang_merah", name: "Bawang Merah", scale: 0.15 },
+      { key: "cabai", name: "Cabai", scale: 0.15 },
+      { key: "kunyit", name: "Kunyit", scale: 0.15 },
+      { key: "lengkuas", name: "Lengkuas", scale: 0.15 },
+      { key: "jahe", name: "Jahe", scale: 0.15 },
+      { key: "daun_salam", name: "Daun Salam", scale: 0.15 },
+      { key: "daun_serai", name: "Daun Serai", scale: 0.15 },
+      { key: "daun_jeruk", name: "Daun Jeruk", scale: 0.15 },
+      { key: "daun_bawang", name: "Daun Bawang", scale: 0.15 },
+      { key: "daging_ikan", name: "Daging Ikan", scale: 0.15 },
+      { key: "air", name: "Air", scale: 0.15 },
+      { key: "tomat", name: "Tomat", scale: 0.15 },
+      { key: "garam", name: "Garam", scale: 0.15 },
+      { key: "gula", name: "Gula", scale: 0.15 },
+      { key: "asam_jawa", name: "Asam Jawa", scale: 0.15 },
+      { key: "mangkuk_coklat", name: "Mangkuk", scale: 0.15 }
+    ];
+
+    // Manual grid layout
+    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
+    const startX = panelWidth / 6;
+    const startY = 100; // Adjusted startY for content container
+    const spacingX = panelWidth / 2;
+    const spacingY = 90;
+    const itemsPerRow = 2;
+
+    let maxContentY = 0;
+
+    ingredients.forEach((ingredient, i) => {
+      const row = Math.floor(i / itemsPerRow);
+      const col = i % itemsPerRow;
+      const x = startX + (col * spacingX);
+      const y = startY + (row * spacingY);
+
+      // Item background
+      const itemBg = this.add.graphics();
+      itemBg.fillStyle(0x000000, 0.25);
+      itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.lineStyle(1, 0x8B4513, 0.4);
+      itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      this.ingredientsContentContainer.add(itemBg); // Add to content container
+
+      // Item image
+      const item = this.add.image(x, y, ingredient.key)
+        .setInteractive()
+        .setScale(ingredient.scale)
+        .setName(ingredient.key);
+
+      this.ingredientItems.push(item);
+      this.input.setDraggable(item);
+      this.ingredientsContentContainer.add(item); // Add to content container
+
+      // Item label
+      const label = this.add.text(x, y + 40, ingredient.name, {
+        fontSize: '14px',
+        fontFamily: 'Chewy, cursive',
+        color: '#FFE4B5',
+        align: 'center',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
+      this.ingredientsContentContainer.add(label); // Add to content container
+
+      // Hover effects
+      item.on('pointerover', () => {
+        item.setScale(ingredient.scale * 1.15);
+        label.setColor('#FFFFFF');
+        itemBg.clear();
+        itemBg.fillStyle(0xFFD700, 0.15);
+        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.lineStyle(1, 0xFFD700, 0.6);
+        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      });
+
+      item.on('pointerout', () => {
+        item.setScale(ingredient.scale);
+        label.setColor('#FFE4B5');
+        itemBg.clear();
+        itemBg.fillStyle(0x000000, 0.25);
+        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.lineStyle(1, 0x8B4513, 0.4);
+        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      });
+      maxContentY = Math.max(maxContentY, y + 40); // Track the lowest point of content
+    });
+
+    this.scrollContentHeight = maxContentY + startY; // Calculate total content height
+    this.updateScrollbar(); // Initial update of scrollbar
+  }
+
+  private createDialogPanel() {
+    // Create dialog panel container
+    this.dialogPanel = this.add.container(
+      this.layoutConfig.dialogPanelLeft,
+      this.layoutConfig.dialogPanelY
+    );
+
+    // const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
+    const dialogWidth = this.layoutConfig.cookingAreaRight - 200;
+
+    // Panel background
+    const dialogBg = this.add.graphics();
+    dialogBg.fillStyle(0xFFFFF0, 0.95);
+    dialogBg.fillRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
+    dialogBg.lineStyle(2, 0x8B4513, 0.6);
+    dialogBg.strokeRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
+    this.dialogPanel.add(dialogBg);
+
+    // Character container
+    const characterContainer = this.add.graphics();
+    characterContainer.fillStyle(0x8B4513, 0.1);
+    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    characterContainer.lineStyle(2, 0x8B4513, 0.4);
+    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    this.dialogPanel.add(characterContainer);
+
+    // Character image
+    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
+      .setScale(0.4)
+      .setOrigin(0.5, 0.5);
+    this.dialogPanel.add(this.characterImage);
+
+    // Step text
+    this.stepText = this.add.text(200, this.layoutConfig.dialogPanelHeight/2, "", {
+      fontSize: '15px',
+      fontFamily: 'Chewy, cursive',
+      color: '#2C1810',
+      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
+      align: 'left',
+      lineSpacing: 4
+    }).setOrigin(0, 0.5);
+    this.dialogPanel.add(this.stepText);
+
+    // Progress bar
+    const progressBg = this.add.graphics();
+    progressBg.fillStyle(0x8B4513, 0.2);
+    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
+    this.dialogPanel.add(progressBg);
+
+    const progressBar = this.add.graphics();
+    progressBar.fillStyle(0xFFD700, 1);
+    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * (1/7), 6, 3);
+    this.dialogPanel.add(progressBar);
+  }
+
+  private updateIngredientsPanelVisuals() {
+    // Clear and redraw panel background
+    this.panelBg.clear();
+    this.panelBg.fillStyle(0x2A1810, 0.95);
+    this.panelBg.fillRoundedRect(0, 0, this.layoutConfig.ingredientsPanelWidth, this.layoutConfig.ingredientsPanelHeight, 20);
+    this.panelBg.lineStyle(2, 0x8B4513, 0.8);
+    this.panelBg.strokeRoundedRect(0, 0, this.layoutConfig.ingredientsPanelWidth, this.layoutConfig.ingredientsPanelHeight, 20);
+
+    // Redraw panel header
+    this.panelBg.fillStyle(0x4A3428, 0.9);
+    this.panelBg.fillRoundedRect(10, 10, this.layoutConfig.ingredientsPanelWidth - 20, 40, 8);
+
+    // Update panel title position and text
+    this.panelTitle.setText("BAHAN & ALAT");
+    this.panelTitle.setStyle({
+      fontSize: '14px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFE4B5',
+      align: 'center',
+      fontStyle: 'bold'
+    });
+    this.panelTitle.setPosition(this.layoutConfig.ingredientsPanelWidth/2, 30);
+    this.panelTitle.setOrigin(0.5, 0.5);
+
+    // Update menu toggle button position and interactivity
+    this.menuToggleButton.setPosition(30, 30);
+    this.menuToggleButton.setScale(0.05);
+    this.menuToggleButton.setInteractive();
+    this.menuToggleButton.off('pointerover');
+    this.menuToggleButton.off('pointerout');
+    this.menuToggleButton.off('pointerdown');
+    this.menuToggleButton.off('pointerup');
+    this.menuToggleButton.on('pointerover', () => {
+      this.menuToggleButton.setTexture("menu_hover");
+    });
+    this.menuToggleButton.on('pointerout', () => {
+      this.menuToggleButton.setTexture("menu_normal");
+    });
+    this.menuToggleButton.on('pointerdown', () => {
+      this.menuToggleButton.setTexture("menu_active");
+      this.toggleIngredientsPanel();
+    });
+    this.menuToggleButton.on('pointerup', () => {
+      this.menuToggleButton.setTexture("menu_hover");
+    });
+
+    this.updateScrollbar(); // Update scrollbar visuals
+  }
+
+  private toggleIngredientsPanel() {
+    this.isIngredientsPanelOpen = !this.isIngredientsPanelOpen;
+    
+    // Animate panel visibility
+    const targetAlpha = this.isIngredientsPanelOpen ? 1 : 0.3;
+    const targetX = this.isIngredientsPanelOpen ? 
+      this.layoutConfig.ingredientsPanelX : 
+      this.cameras.main.width - 50;
+
+    this.tweens.add({
+      targets: this.ingredientsPanel,
+      alpha: targetAlpha,
+      x: targetX,
+      duration: 300,
+      ease: 'Power2'
+    });
+
+    // Hide/show ingredients
+    this.ingredientItems.forEach(item => {
+      item.setVisible(this.isIngredientsPanelOpen);
+      item.setActive(this.isIngredientsPanelOpen);
+    });
+  }
+
+  private updateStepDisplay() {
+    if (this.currentStep < this.gameSteps.length) {
+      const step = this.gameSteps[this.currentStep];
+      this.stepText.setText(`${step.id}. ${step.text}`);
+      this.characterImage.setTexture(step.character.replace('.png', ''));
+      
+      // Animate text appearance
+      this.stepText.setAlpha(0);
+      this.tweens.add({
+        targets: this.stepText,
+        alpha: 1,
+        duration: 500,
+        ease: 'Power2'
+      });
+
+      // Update progress bar
+      const progressPercentage = (this.currentStep + 1) / this.gameSteps.length;
+      const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
+      
+      // Find and update progress bar
+      const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
+      progressBar.clear();
+      progressBar.fillStyle(0xFFD700, 1);
+      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
+    }
+  }
+
+  private nextStep() {
+    if (this.currentStep < this.gameSteps.length - 1) {
+      this.gameSteps[this.currentStep].isCompleted = true;
+      this.currentStep++;
+      this.updateStepDisplay();
+      
+      // Success feedback
+      this.cameras.main.flash(200, 144, 238, 144, false);
+    } else {
+      // Game complete - create final Ikan Kuah Kuning dish
+      this.createFinalDish();
+    }
+  }
+
+  private createFinalDish() {
+    // Mark game as completed
+    this.gameSteps[this.currentStep].isCompleted = true;
+    
+    // Create final Ikan Kuah Kuning dish in staging area
+    this.time.delayedCall(1000, () => {
+      const finalDish = this.add.image(
+        this.stagingZone.x,
+        this.stagingZone.y,
+        "ikan_kuah_kuning_finished"
+      ).setScale(0.5).setInteractive();
+      
+      finalDish.setName("ikan_kuah_kuning");
+      
+      // Success animation
+      this.tweens.add({
+        targets: finalDish,
+        scaleX: 0.6,
+        scaleY: 0.6,
+        duration: 500,
+        yoyo: true,
+        repeat: 2,
+        ease: 'Power2'
+      });
+      
+      // Show completion message
+      const completionText = this.add.text(
+        this.cameras.main.width / 2,
+        this.cameras.main.height / 2 - 100,
+        "🎉 Ikan Kuah Kuning Selesai! 🎉",
+        {
+          fontSize: '32px',
+          color: '#FFD700',
+          fontStyle: 'bold'
+        }
+      ).setOrigin(0.5);
+      
+      this.tweens.add({
+        targets: completionText,
+        alpha: 0,
+        y: completionText.y - 50,
+        duration: 3000,
+        delay: 2000,
+        onComplete: () => completionText.destroy()
+      });
+      
+      this.showSuccessFeedback();
+    });
+  }
+
+  private initDragAndDrop() {
+    this.input.on("dragstart", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
+      this.draggedItemOriginalParent = gameObject.parentContainer;
+      this.draggedItemOriginalX = gameObject.x;
+      this.draggedItemOriginalY = gameObject.y;
+    
+      if (gameObject.parentContainer) {
+        const parent = gameObject.parentContainer;
+        
+        parent.remove(gameObject);
+        this.add.existing(gameObject);
+    
+        // Set posisi langsung ke posisi pointer/cursor
+        gameObject.x = pointer.worldX;
+        gameObject.y = pointer.worldY;
+      }
+    
+      gameObject.setDepth(1000);
+    });
+    
+
+    // Drag update - langsung ikuti pointer
+    this.input.on("drag", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
+      // Langsung set ke posisi pointer tanpa parameter dragX/dragY
+      gameObject.x = pointer.worldX;
+      gameObject.y = pointer.worldY;
+      
+      // Visual feedback saat drag
+      gameObject.setTint(0xFFFFAA);
+    });
+
+    // Drag selesai
+    this.input.on("dragend", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
+      // Reset efek visual
+      gameObject.clearTint();
+      gameObject.setDepth(0); // Reset depth
+
+      // Jika dilepas di luar panel scroll (worldX > 300) → biarkan di posisi cursor
+      if (pointer.worldX > 300) {
+        // Item tetap di posisi terakhir cursor (sudah diatur di drag event)
+        console.log(`Item ${gameObject.name} dropped outside scrollbar at ${gameObject.x}, ${gameObject.y}`);
+        return; // Item tetap di posisi cursor
+      }
+
+      // Kalau dilepas di dalam panel scroll → balikin ke parent / posisi awal
+      if (!dropped) {
+        const originalScale = this.getOriginalScale(gameObject.name);
+        gameObject.setScale(originalScale);
+
+        if (this.draggedItemOriginalParent) {
+          // Convert world position back to local position
+          const localPos = this.draggedItemOriginalParent.getWorldTransformMatrix().applyInverse(gameObject.x, gameObject.y);
+          this.draggedItemOriginalParent.add(gameObject);
+          gameObject.setPosition(this.draggedItemOriginalX, this.draggedItemOriginalY);
+          gameObject.setInteractive();
+        } else {
+          if (gameObject.input && gameObject.input.dragStartX !== undefined && gameObject.input.dragStartY !== undefined) {
+            this.tweens.add({
+              targets: gameObject,
+              x: gameObject.input.dragStartX,
+              y: gameObject.input.dragStartY,
+              duration: 400,
+              ease: 'Back.easeOut'
+            });
+          }
+        }
+      }
+
+      // Re-enable mask hanya jika item dikembalikan ke container
+      if (pointer.worldX <= 300 && this.ingredientsContentContainer && this.ingredientsContentMask) {
+        this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+      }
+
+      // Reset properti yang disimpan
+      this.draggedItemOriginalParent = null;
+      this.draggedItemOriginalX = 0;
+      this.draggedItemOriginalY = 0;
+    });
+
+
+    // Enhanced drop handling
+    this.input.on("drop", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
+      const droppedKey = gameObject.name;
+      console.log(`Dropped ${droppedKey} on zone:`, dropZone?.name);
+      console.log(`Current step: ${this.currentStep}, Ulekan state: ${this.stateUlekan}`);
+
+      // Step 1: Add ingredients to ulekan for bumbu halus
+      if (dropZone === this.ulekanZone && this.stateUlekan === "ulekan" && this.currentStep === 0) {
+        if (droppedKey === "bawang_putih" && !this.gameState.hasBawangPutih) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasBawangPutih = true;
+            this.checkUlekanComplete();
+          });
+        }
+        else if (droppedKey === "bawang_merah" && !this.gameState.hasBawangMerah) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasBawangMerah = true;
+            this.checkUlekanComplete();
+          });
+        }
+        else if (droppedKey === "cabai" && !this.gameState.hasCabai) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasCabai = true;
+            this.checkUlekanComplete();
+          });
+        }
+        else if (droppedKey === "kunyit" && !this.gameState.hasKunyit) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasKunyit = true;
+            this.checkUlekanComplete();
+          });
+        }
+        else {
+          this.executeInvalidDrop(gameObject);
+        }
+      }
+      // Step 2: Add campuran bumbu halus to wajan
+      else if (dropZone === this.wajanZone && this.stateWajan === "wajan" && this.currentStep === 1) {
+        if (this.campuranBumbuHalus && gameObject === this.campuranBumbuHalus) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.wajan.setTexture("wajan_bumbu_halus");
+            this.stateWajan = "wajan_bumbu_halus";
+            this.nextStep();
+          });
+        }
+        else {
+          this.executeInvalidDrop(gameObject);
+        }
+      }
+      // Step 3: Add lengkuas, serai, daun salam to wajan
+      else if (dropZone === this.wajanZone && this.stateWajan === "wajan_bumbu_halus" && this.currentStep === 2) {
+        if (droppedKey === "lengkuas" && !this.gameState.hasLengkuas) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasLengkuas = true;
+            this.checkAromaticComplete();
+          });
+        }
+        else if (droppedKey === "daun_serai" && !this.gameState.hasDaunSerai) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasDaunSerai = true;
+            this.checkAromaticComplete();
+          });
+        }
+        else if (droppedKey === "daun_salam" && !this.gameState.hasDaunSalam) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasDaunSalam = true;
+            this.checkAromaticComplete();
+          });
+        }
+        else {
+          this.executeInvalidDrop(gameObject);
+        }
+      }
+      // Step 4: Add ikan, jahe, daun jeruk, air to wajan
+      else if (dropZone === this.wajanZone && this.stateWajan === "wajan_lengkuas_daun_bawang" && this.currentStep === 3) {
+        if (droppedKey === "daging_ikan" && !this.gameState.hasDagingIkan) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasDagingIkan = true;
+            this.checkMainIngredientComplete();
+          });
+        }
+        else if (droppedKey === "jahe" && !this.gameState.hasJahe) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasJahe = true;
+            this.checkMainIngredientComplete();
+          });
+        }
+        else if (droppedKey === "daun_jeruk" && !this.gameState.hasDaunJeruk) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasDaunJeruk = true;
+            this.checkMainIngredientComplete();
+          });
+        }
+        else if (droppedKey === "air" && !this.gameState.hasAir) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasAir = true;
+            this.checkMainIngredientComplete();
+          });
+        }
+        else {
+          this.executeInvalidDrop(gameObject);
+        }
+      }
+      // Step 5: Add tomat, garam, gula, daun_bawang to wajan
+      else if (dropZone === this.wajanZone && this.stateWajan === "wajan_daging_air_daun_jahe" && this.currentStep === 4) {
+        if (droppedKey === "tomat" && !this.gameState.hasTomat) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasTomat = true;
+            this.checkSeasoningComplete();
+          });
+        }
+        else if (droppedKey === "garam" && !this.gameState.hasGaram) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasGaram = true;
+            this.checkSeasoningComplete();
+          });
+        }
+        else if (droppedKey === "gula" && !this.gameState.hasGula) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasGula = true;
+            this.checkSeasoningComplete();
+          });
+        }
+        else if (droppedKey === "daun_bawang" && !this.gameState.hasDaunBawang) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.gameState.hasDaunBawang = true;
+            this.checkSeasoningComplete();
+          });
+        }
+        else {
+          this.executeInvalidDrop(gameObject);
+        }
+      }
+      // Step 6: Add asam jawa to wajan
+      else if (dropZone === this.wajanZone && this.stateWajan === "wajan_daun_bawang_tomat" && this.currentStep === 5) {
+        if (droppedKey === "asam_jawa" && !this.gameState.hasAsamJawa) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.wajan.setTexture("wajan_asam_jawa");
+            this.stateWajan = "wajan_asam_jawa";
+            this.gameState.hasAsamJawa = true;
+            this.nextStep();
+          });
+        }
+        else {
+          this.executeInvalidDrop(gameObject);
+        }
+      }
+      // Step 7: Add mangkuk to finish
+      else if (dropZone === this.wajanZone && this.stateWajan === "wajan_asam_jawa" && this.currentStep === 6) {
+        if (droppedKey === "mangkuk_coklat" && !this.gameState.hasMangkuk) {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.wajan.setTexture("ikan_kuah_kuning_finished");
+            this.stateWajan = "finished";
+            this.gameState.hasMangkuk = true;
+            this.nextStep();
+            this.showCompletionCelebration();
+          });
+        }
+        else {
+          this.executeInvalidDrop(gameObject);
+        }
+      }
+      // Invalid drop - return to original position
+      else {
+        this.executeInvalidDrop(gameObject);
+      }
+    });
+  }
+
+  // Helper methods for checking completion of steps
+  private checkUlekanComplete() {
+    if (this.gameState.hasBawangPutih && this.gameState.hasBawangMerah && 
+        this.gameState.hasCabai && this.gameState.hasKunyit) {
+      this.createCampuranBumbuHalus();
+    }
   }
 
   private createCampuranBumbuHalus() {
-    this.transformUlekan('ulekan_bumbu_halus');
+    // Transform ulekan to show bumbu halus
+    this.ulekan.setTexture("ulekan_bumbu_halus");
+    this.stateUlekan = "ulekan_bumbu_halus";
     
+    // Create campuran bumbu halus object after a delay
     this.time.delayedCall(2000, () => {
-      this.gameObjects.campuran_bumbu_halus = this.add.image(800, 300, 'campuran_bumbu_halus');
-      this.gameObjects.campuran_bumbu_halus.setInteractive({ draggable: true });
-      this.gameObjects.campuran_bumbu_halus.setScale(0.4);
-      this.gameObjects.campuran_bumbu_halus.setData('type', 'campuran_bumbu_halus');
+      this.campuranBumbuHalus = this.add.image(
+        this.stagingZone.x, 
+        this.stagingZone.y, 
+        "campuran_bumbu_halus"
+      ).setScale(0.4).setInteractive();
+      this.input.setDraggable(this.campuranBumbuHalus);
+      this.campuranBumbuHalus.setName("campuran_bumbu_halus");
       
-      if (this.progressText) {
-        this.progressText.destroy();
-        this.progressText = null;
+      // Hide ulekan_bumbu_halus when campuran_bumbu_halus appears in staging
+      this.ulekan.setVisible(false);
+      
+      this.nextStep();
+      this.showSuccessFeedback();
+    });
+  }
+
+  private checkAromaticComplete() {
+    if (this.gameState.hasLengkuas && this.gameState.hasDaunSerai && this.gameState.hasDaunSalam) {
+      this.wajan.setTexture("wajan_lengkuas_daun_bawang");
+      this.stateWajan = "wajan_lengkuas_daun_bawang";
+      this.nextStep();
+    }
+  }
+
+  private checkMainIngredientComplete() {
+    if (this.gameState.hasDagingIkan && this.gameState.hasJahe && 
+        this.gameState.hasDaunJeruk && this.gameState.hasAir) {
+      this.wajan.setTexture("wajan_daging_air_daun_jahe");
+      this.stateWajan = "wajan_daging_air_daun_jahe";
+      this.nextStep();
+    }
+  }
+
+  private checkSeasoningComplete() {
+    if (this.gameState.hasTomat && this.gameState.hasGaram && this.gameState.hasGula && this.gameState.hasDaunBawang) {
+      this.wajan.setTexture("wajan_daun_bawang_tomat");
+      this.stateWajan = "wajan_daun_bawang_tomat";
+      this.nextStep();
+    }
+  }
+
+  // Helper methods for better code organization
+  private executeSuccessfulDrop(gameObject: Phaser.GameObjects.Image, callback: () => void) {
+    // Fade out animation
+    this.tweens.add({
+      targets: gameObject,
+      alpha: 0,
+      scale: 0,
+      duration: 400,
+      ease: 'Power2.easeOut',
+      onComplete: () => {
+        gameObject.destroy();
+        callback();
+        this.showSuccessFeedback();
       }
-      
-      this.showUlekanTransformationFeedback('campuran_bumbu_halus_ready');
     });
   }
 
-  private createWajanArea() {
-  // Create wajan area - right side
-  this.wajanArea = this.add.rectangle(800, 200, 100, 100, 0x00ff00, 0.3);
-  this.wajanArea.setInteractive();
-  this.wajanArea.setData('type', 'wajan_area');
-    
-    // Add text to show it's a wajan area
-  this.add.text(800, 200, 'WAJAN\n(Pan)', {
-    font: '14px Chewy',
-    color: '#000000',
-    backgroundColor: '#ffffff',
-    padding: { x: 5, y: 2 }
-    }).setOrigin(0.5);
-  }
-
-  private setupDragAndDrop() {
-    this.input.on('dragstart', (pointer: any, gameObject: Phaser.GameObjects.Image) => {
-      this.isDragging = true;
-      this.dragTarget = gameObject;
-      gameObject.setTint(0x00ff00);
-    });
-
-    this.input.on('drag', (pointer: any, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
-      gameObject.x = dragX;
-      gameObject.y = dragY;
-    });
-
-    this.input.on('dragend', (pointer: any, gameObject: Phaser.GameObjects.Image) => {
-      this.isDragging = false;
-      gameObject.clearTint();
+  private executeInvalidDrop(gameObject: Phaser.GameObjects.Image) {
+    // Return item back to ingredients panel
+    if (this.draggedItemOriginalParent) {
+      // Add back to ingredients container
+      this.draggedItemOriginalParent.add(gameObject);
+      gameObject.setPosition(this.draggedItemOriginalX, this.draggedItemOriginalY);
+      gameObject.setInteractive();
       
-      // Check for valid drop targets
-      this.checkDropTarget(gameObject);
-      
-      // Reset position if not dropped on valid target
-      if (!this.isValidDrop(gameObject)) {
-        this.resetIngredientPosition(gameObject);
-      }
-    });
-  }
-
-  private checkDropTarget(gameObject: Phaser.GameObjects.Image) {
-    const type = gameObject.getData('type');
-    const currentState = gameObject.getData('currentState');
-    
-    // Check if dropped on wajan
-    if (this.isNear(gameObject, this.gameObjects.wajan, 100)) {
-      this.handleWajanDrop(type);
-    }
-    
-    // Check if dropped on ulekan
-    if (this.isNear(gameObject, this.gameObjects.ulekan, 100)) {
-      // Use currentState if available, otherwise use type
-      const dropType = currentState || type;
-      this.handleUlekanDrop(dropType);
-    }
-    
-    // Wajan area hanya untuk visual, tidak untuk logic cooking
-    // Logika cooking sekarang ada di handleWajanDrop
-  }
-
-  private handleWajanDrop(ingredientType: string) {
-    if (ingredientType === 'campuran_bumbu_halus' && this.gameState.wajanState === 'wajan') {
-      this.transformWajan('wajan_bumbu_halus');
-      this.hideIngredient('campuran_bumbu_halus');
-    } 
-    else if (ingredientType === 'daun_salam' && this.gameState.wajanState === 'wajan_bumbu_halus') {
-      this.gameState.hasDaunSalam = true;
-      this.hideIngredient('daun_salam');
-      this.checkDaunSalamLengkap();
-    } else if (ingredientType === 'lengkuas' && this.gameState.wajanState === 'wajan_bumbu_halus') {
-      this.gameState.hasLengkuas = true;
-      this.hideIngredient('lengkuas');
-      this.checkDaunSalamLengkap();
-    } else if (ingredientType === 'daun_serai' && this.gameState.wajanState === 'wajan_bumbu_halus') {
-      this.gameState.hasDaunSerai = true;
-      this.hideIngredient('daun_serai');
-      this.checkDaunSalamLengkap();
-    }
-    // Step 4: Drag daging_ikan, air, daun_jeruk, jahe ke wajan
-    else if (ingredientType === 'daging_ikan' && this.gameState.wajanState === 'wajan_lengkuas_daun_bawang') {
-      this.gameState.hasDagingIkan = true;
-      this.hideIngredient('daging_ikan');
-      this.checkDagingLengkap();
-    } else if (ingredientType === 'air' && this.gameState.wajanState === 'wajan_lengkuas_daun_bawang') {
-      this.gameState.hasAir = true;
-      this.hideIngredient('air');
-      this.checkDagingLengkap();
-    } else if (ingredientType === 'daun_jeruk' && this.gameState.wajanState === 'wajan_lengkuas_daun_bawang') {
-      this.gameState.hasDaunJeruk = true;
-      this.hideIngredient('daun_jeruk');
-      this.checkDagingLengkap();
-    } else if (ingredientType === 'jahe' && this.gameState.wajanState === 'wajan_lengkuas_daun_bawang') {
-      this.gameState.hasJahe = true;
-      this.hideIngredient('jahe');
-      this.checkDagingLengkap();
-    }
-    // Step 5: Drag garam, gula, tomat, daun_bawang ke wajan
-    else if (ingredientType === 'garam' && this.gameState.wajanState === 'wajan_daging_air_daun_jahe') {
-      this.gameState.hasGaram = true;
-      this.hideIngredient('garam');
-      this.checkGaramGulaLengkap();
-    } else if (ingredientType === 'gula' && this.gameState.wajanState === 'wajan_daging_air_daun_jahe') {
-      this.gameState.hasGula = true;
-      this.hideIngredient('gula');
-      this.checkGaramGulaLengkap();
-    } else if (ingredientType === 'tomat' && this.gameState.wajanState === 'wajan_daging_air_daun_jahe') {
-      this.gameState.hasTomat = true;
-      this.hideIngredient('tomat');
-      this.checkGaramGulaLengkap();
-    } else if (ingredientType === 'daun_bawang' && this.gameState.wajanState === 'wajan_daging_air_daun_jahe') {
-      this.gameState.hasDaunBawang = true;
-      this.hideIngredient('daun_bawang');
-      this.checkGaramGulaLengkap();
-    }
-    else if (ingredientType === 'asam_jawa' && this.gameState.wajanState === 'wajan_daun_bawang_tomat') {
-      this.transformWajan('wajan_asam_jawa');
-      this.gameState.hasAsamJawa = true;
-      this.hideIngredient('asam_jawa');
-    }
-    else if (ingredientType === 'mangkuk_coklat' && this.gameState.wajanState === 'wajan_asam_jawa') {
-      this.completeIkanKuahKuning();
-      this.gameState.hasMangkuk = true;
-      this.hideIngredient('mangkuk_coklat');
-    }
-  }
-
-  private handleUlekanDrop(ingredientType: string) {
-    console.log(`handleUlekanDrop called with: ${ingredientType}, current ulekan state: ${this.gameState.ulekanState}`);
-    
-    // Step 1: Drag semua bahan ke ulekan terlebih dahulu (gambar tidak berubah sampai semua selesai)
-    if (ingredientType === 'bawang_putih' && this.gameState.ulekanState === 'ulekan') {
-      console.log('Bawang putih ditambahkan ke ulekan');
-      this.gameState.hasBawangPutih = true;
-      this.hideIngredient('bawang_putih');
-      this.showUlekanProgress();
-    } else if (ingredientType === 'bawang_merah' && this.gameState.ulekanState === 'ulekan') {
-      console.log('Bawang merah ditambahkan ke ulekan');
-      this.gameState.hasBawangMerah = true;
-      this.hideIngredient('bawang_merah');
-      this.showUlekanProgress();
-    } else if (ingredientType === 'cabai' && this.gameState.ulekanState === 'ulekan') {
-      console.log('Cabai ditambahkan ke ulekan');
-      this.gameState.hasCabai = true;
-      this.hideIngredient('cabai');
-      this.showUlekanProgress();
-    } else if (ingredientType === 'kunyit' && this.gameState.ulekanState === 'ulekan') {
-      console.log('Kunyit ditambahkan ke ulekan');
-      this.gameState.hasKunyit = true;
-      this.hideIngredient('kunyit');
-      this.showUlekanProgress();
-      
-      // Setelah semua bumbu halus ditambahkan, baru ubah gambar ulekan
-      console.log('Checking bahan status:', {
-        bawangPutih: this.gameState.hasBawangPutih,
-        bawangMerah: this.gameState.hasBawangMerah,
-        cabai: this.gameState.hasCabai,
-        kunyit: this.gameState.hasKunyit
-      });
-      
-      if (this.gameState.hasBawangPutih && this.gameState.hasBawangMerah && this.gameState.hasCabai && this.gameState.hasKunyit) {
-        this.createCampuranBumbuHalus();
+      // Re-enable mask
+      if (this.ingredientsContentContainer && this.ingredientsContentMask) {
+        this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
       }
     } else {
-      console.log(`Invalid combination for ulekan: ${ingredientType} with state ${this.gameState.ulekanState}`);
+      // Fallback - animate back to original position
+      if (gameObject.input && gameObject.input.dragStartX !== undefined && gameObject.input.dragStartY !== undefined) {
+        this.tweens.add({
+          targets: gameObject,
+          x: gameObject.input.dragStartX,
+          y: gameObject.input.dragStartY,
+          duration: 400,
+          ease: 'Back.easeOut'
+        });
+      }
     }
-  }
-
-  // handlePisauDrop dihapus karena logika cutting sekarang ada di handleTelenanDrop
-  // Pisau area hanya untuk visual, tidak untuk logic cutting
-
-  private transformWajan(newState: string) {
-    console.log(`Transforming wajan from ${this.gameState.wajanState} to ${newState}`);
-    this.gameObjects.wajan.setTexture(newState);
-    this.gameState.wajanState = newState;
     
-    // Update wajan data to reflect new state
-    this.gameObjects.wajan.setData('currentState', newState);
+    // Shake effect
+    this.cameras.main.shake(150, 0.008);
     
-    // Show transformation feedback
-    this.showWajanTransformationFeedback(newState);
-  }
-
-  private transformUlekan(newState: string) {
-    console.log(`Transforming ulekan from ${this.gameState.ulekanState} to ${newState}`);
-    this.gameObjects.ulekan.setTexture(newState);
-    this.gameState.ulekanState = newState;
+    // Show brief error indicator
+    const errorText = this.add.text(gameObject.x, gameObject.y - 50, "❌", {
+      fontSize: '24px',
+      color: '#FF6B6B'
+    }).setOrigin(0.5);
     
-    // Show ulekan transformation feedback
-    this.showUlekanTransformationFeedback(newState);
-  }
-
-  private startMunthuAnimation() {
-    // Start the rotating animation
-    this.transformUlekan('ulekan_munthu');
-    
-    // Create rotation animation
     this.tweens.add({
-      targets: this.gameObjects.ulekan,
-      angle: 360,
-      duration: 1000,
-      ease: 'Linear',
-      onComplete: () => {
-        this.transformUlekan('ulekan_munthu2');
-        this.gameObjects.ulekan.setAngle(0);
-      }
+      targets: errorText,
+      y: errorText.y - 30,
+      alpha: 0,
+      duration: 800,
+      ease: 'Power2',
+      onComplete: () => errorText.destroy()
     });
   }
 
-  private completeIkanKuahKuning() {
-    // Show completion message
-    this.add.text(400, 300, 'Ikan Kuah Kuning Selesai!', {
-      font: '48px Chewy',
-      color: '#00ff00',
-      backgroundColor: '#000000',
-      padding: { x: 20, y: 10 }
+  private showSuccessFeedback() {
+    this.cameras.main.flash(150, 144, 238, 144, false);
+    
+    // Success particle burst
+    for (let i = 0; i < 5; i++) {
+      const particle = this.add.circle(
+        this.cameras.main.width / 2 + (Math.random() - 0.5) * 100,
+        this.cameras.main.height / 2 + (Math.random() - 0.5) * 100,
+        3 + Math.random() * 3,
+        0xFFD700
+      );
+      
+      this.tweens.add({
+        targets: particle,
+        y: particle.y - 60,
+        alpha: 0,
+        scale: 2,
+        duration: 1500,
+        ease: 'Power2',
+        onComplete: () => particle.destroy()
+      });
+    }
+  }
+
+  private showCompletionCelebration() {
+    this.time.delayedCall(1000, () => {
+      // Enhanced celebration effects
+      this.cameras.main.flash(500, 255, 215, 0, false);
+      
+      // Create celebration particles
+      for (let i = 0; i < 15; i++) {
+        const particle = this.add.circle(
+          this.cameras.main.width / 2 + (Math.random() - 0.5) * 300,
+          this.cameras.main.height / 2 + (Math.random() - 0.5) * 200,
+          4 + Math.random() * 4,
+          Math.random() > 0.5 ? 0xFFD700 : 0xFF6B6B
+        );
+        
+        this.tweens.add({
+          targets: particle,
+          y: particle.y - 120,
+          x: particle.x + (Math.random() - 0.5) * 100,
+          alpha: 0,
+          scale: 2.5,
+          duration: 2000 + Math.random() * 1000,
+          ease: 'Power2',
+          onComplete: () => particle.destroy()
+        });
+      }
+      
+      // Show completion dialog
+      this.showCompletionDialog();
+    });
+  }
+
+  private showCompletionDialog() {
+    const dialogWidth = 500;
+    const dialogHeight = 200;
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+
+    // Background overlay
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x000000, 0.8);
+    overlay.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
+
+    // Dialog background
+    const dialogBg = this.add.graphics();
+    dialogBg.fillStyle(0x2A1810, 0.95);
+    dialogBg.fillRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
+    dialogBg.lineStyle(4, 0xFFD700, 1);
+    dialogBg.strokeRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
+    
+    // Completion text
+    const completionTitle = this.add.text(centerX, centerY - 40, "🎉 SELAMAT! 🎉", {
+      fontSize: '32px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFD700',
+      align: 'center',
+      fontStyle: 'bold'
     }).setOrigin(0.5);
     
-    // Transform to finished ikan kuah kuning
-    this.gameObjects.ulekan.setTexture('ikan_kuah_kuning_finished');
-    this.gameState.ulekanState = 'ikan_kuah_kuning_finished';
+    const completionText = this.add.text(centerX, centerY, "Ikan Kuah Kuning Berhasil Dibuat!", {
+      fontSize: '24px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFFFFF',
+      align: 'center'
+    }).setOrigin(0.5);
+    
+    const completionSubtext = this.add.text(centerX, centerY + 35, "Anda telah menyelesaikan semua langkah dengan sempurna!", {
+      fontSize: '16px',
+      fontFamily: 'Chewy, cursive',
+      color: '#CCCCCC',
+      align: 'center'
+    }).setOrigin(0.5);
+    
+    // Animate dialog appearance
+    const dialogElements = [overlay, dialogBg, completionTitle, completionText, completionSubtext];
+    dialogElements.forEach(el => {
+      if (el && typeof el.setAlpha === 'function') {
+        el.setAlpha(0);
+      }
+    });
+
+    this.tweens.add({
+      targets: dialogElements,
+      alpha: 1,
+      duration: 500,
+      ease: 'Power2',
+      delay: this.tweens.stagger(100, { start: 0, ease: 'none' })
+    });
   }
 
-  private hideIngredient(ingredientType: string) {
-    if (this.gameObjects[ingredientType]) {
-      this.gameObjects[ingredientType].setVisible(false);
+  private handleScroll(deltaY: number) {
+    const scrollSpeed = 10; // Adjust as needed
+    let newY = this.ingredientsContentContainer.y - deltaY * scrollSpeed;
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 15; // Same as in createIngredientsPanel
+    const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+    // Clamp the newY value to prevent scrolling beyond content boundaries
+    newY = Math.max(-maxScroll, newY);
+    newY = Math.min(0, newY); // Cannot scroll above the top
+
+    this.ingredientsContentContainer.y = newY;
+    this.updateScrollbar();
+  }
+
+  private updateScrollbar() {
+    this.scrollbar.clear();
+    this.scrollbarThumb.clear();
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 100 - 15; // Same as in createIngredientsPanel
+    const scrollbarWidth = 12;
+    const scrollbarX = this.layoutConfig.ingredientsPanelWidth - scrollbarWidth - 8; // Position to the right of the panel
+    const scrollbarYOffset = 100; // Start below the title
+
+    if (this.scrollContentHeight > scrollableAreaHeight) {
+      // Draw scrollbar track (background)
+      this.scrollbar.fillStyle(0x4A3428, 0.6);
+      this.scrollbar.fillRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+      this.scrollbar.lineStyle(1, 0x8B4513, 0.8);
+      this.scrollbar.strokeRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+
+      // Calculate scrollbar thumb height based on content and visible area
+      const thumbHeight = Math.max(20, (scrollableAreaHeight / this.scrollContentHeight) * scrollableAreaHeight);
+
+      // Calculate scrollbar thumb position based on content container's scroll
+      const maxScroll = this.scrollContentHeight - scrollableAreaHeight;
+      const scrollPercentage = maxScroll > 0 ? Math.abs(this.ingredientsContentContainer.y) / maxScroll : 0;
+      const thumbY = scrollbarYOffset + (scrollableAreaHeight - thumbHeight) * scrollPercentage;
+
+      // Draw scrollbar thumb (draggable part)
+      this.scrollbarThumb.fillStyle(0x8B4513, 0.9);
+      this.scrollbarThumb.fillRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+      this.scrollbarThumb.lineStyle(1, 0xFFD700, 0.6);
+      this.scrollbarThumb.strokeRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+
+      // Make scrollbar thumb interactive for dragging
+      this.scrollbarThumb.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(scrollbarX, thumbY, scrollbarWidth, thumbHeight),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains
+      });
+      this.input.setDraggable(this.scrollbarThumb);
+
+      // Handle scrollbar thumb dragging
+      this.scrollbarThumb.off('dragstart');
+      this.scrollbarThumb.off('drag');
+      this.scrollbarThumb.off('dragend');
+      
+      this.scrollbarThumb.on('dragstart', () => {
+        this.isScrollbarDragging = true;
+        this.scrollbarDragStartY = thumbY;
+        this.contentStartY = this.ingredientsContentContainer.y;
+      });
+
+      this.scrollbarThumb.on('drag', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+        if (this.isScrollbarDragging) {
+          const deltaY = dragY - this.scrollbarDragStartY;
+          const scrollRatio = deltaY / (scrollableAreaHeight - thumbHeight);
+          const newContentY = this.contentStartY - (scrollRatio * maxScroll);
+          
+          // Clamp content position
+          this.ingredientsContentContainer.y = Phaser.Math.Clamp(newContentY, -maxScroll, 0);
+          this.updateScrollbar();
+        }
+      });
+
+      this.scrollbarThumb.on('dragend', () => {
+        this.isScrollbarDragging = false;
+      });
+      
+    } else {
+      // If content is not scrollable, hide scrollbar
+      this.scrollbar.setVisible(false);
+      this.scrollbarThumb.setVisible(false);
+      this.scrollbar.disableInteractive();
+      this.scrollbarThumb.disableInteractive();
     }
   }
 
-  private isNear(obj1: Phaser.GameObjects.Image, obj2: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle, distance: number): boolean {
-    const dx = obj1.x - obj2.x;
-    const dy = obj1.y - obj2.y;
-    return Math.sqrt(dx * dx + dy * dy) < distance;
-  }
-
-  private isValidDrop(gameObject: Phaser.GameObjects.Image): boolean {
-    // Check if dropped on any valid target
-    return this.isNear(gameObject, this.gameObjects.wajan, 100) ||
-           this.isNear(gameObject, this.gameObjects.ulekan, 100) ||
-           this.isNear(gameObject, this.wajanArea, 100);
-  }
-
-  private checkDaunSalamLengkap() {
-    if (this.gameState.hasDaunSalam && this.gameState.hasLengkuas && this.gameState.hasDaunSerai) {
-      this.transformWajan('wajan_lengkuas_daun_bawang');
-    }
-  }
-
-  private checkDagingLengkap() {
-    if (this.gameState.hasDagingIkan && this.gameState.hasAir && this.gameState.hasDaunJeruk && this.gameState.hasJahe) {
-      this.transformWajan('wajan_daging_air_daun_jahe');
-    }
-  }
-
-  private checkGaramGulaLengkap() {
-    if (this.gameState.hasGaram && this.gameState.hasGula && this.gameState.hasTomat && this.gameState.hasDaunBawang) {
-      this.transformWajan('wajan_daun_bawang_tomat');
-    }
-  }
-
-  private resetIngredientPosition(gameObject: Phaser.GameObjects.Image) {
-    const type = gameObject.getData('type');
-    const positions: { [key: string]: { x: number, y: number } } = {
-      'bawang_putih': { x: 700, y: 150 },
-      'bawang_merah': { x: 700, y: 220 },
-      'cabai': { x: 700, y: 290 },
-      'kunyit': { x: 700, y: 360 },
-      'daun_salam': { x: 700, y: 430 },
-      'lengkuas': { x: 700, y: 500 },
-      'daun_serai': { x: 700, y: 570 },
-      'daging_ikan': { x: 700, y: 640 },
-      'air': { x: 700, y: 710 },
-      'daun_jeruk': { x: 700, y: 180 },
-      'jahe': { x: 750, y: 230 },
-      'garam': { x: 750, y: 150 },
-      'gula': { x: 750, y: 220 },
-      'tomat': { x: 700, y: 100 },
-      'daun_bawang': { x: 700, y: 100 },
-      'asam_jawa': { x: 750, y: 290 },
-      'munthu': { x: 700, y: 1270 },
-      'mangkuk_coklat': { x: 750, y: 640 },
-      'campuran_bumbu_halus': { x: 800, y: 300 }
+  private getOriginalScale(itemName: string): number {
+    const scaleMap: { [key: string]: number } = {
+      "bawang_putih": 0.15,
+      "bawang_merah": 0.15,
+      "cabai": 0.15,
+      "kunyit": 0.15,
+      "lengkuas": 0.15,
+      "jahe": 0.15,
+      "daun_salam": 0.15,
+      "daun_serai": 0.15,
+      "daun_jeruk": 0.15,
+      "daun_bawang": 0.15,
+      "daging_ikan": 0.15,
+      "air": 0.15,
+      "tomat": 0.15,
+      "garam": 0.15,
+      "gula": 0.15,
+      "asam_jawa": 0.15,
+      "mangkuk_coklat": 0.15,
+      "campuran_bumbu_halus": 0.4
     };
-    
-    if (positions[type]) {
-      gameObject.x = positions[type].x;
-      gameObject.y = positions[type].y;
-    }
-  }
-
-  private createBackButton() {
-    // Create back button in top-left corner
-    const backButton = this.add.text(50, 50, '← Back', {
-      font: '24px Chewy',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 15, y: 10 }
-    });
-    
-    backButton.setInteractive();
-    backButton.on('pointerdown', () => {
-      // Navigate back to SelectFood page
-      if (typeof window !== 'undefined') {
-        window.location.href = '/SelectFood';
-      }
-    });
-    
-    backButton.on('pointerover', () => {
-      backButton.setStyle({ backgroundColor: '#333333' });
-    });
-    
-    backButton.on('pointerout', () => {
-      backButton.setStyle({ backgroundColor: '#000000' });
-    });
-  }
-
-
-
-  private showWajanTransformationFeedback(newState: string) {
-    // Show visual feedback for wajan transformation
-    let message = '';
-    let color = '#00ff00';
-    
-    switch (newState) {
-      case 'wajan_daging_air_daun_jahe':
-        message = 'Daging ikan, air, dan jahe ditambahkan ke wajan';
-        break;
-      case 'wajan_bumbu_halus':
-        message = 'Bumbu halus ditambahkan ke wajan!';
-        color = '#ff6600';
-        break;
-      case 'wajan_asam_jawa':
-        message = 'Asam jawa ditambahkan ke wajan';
-        color = '#8B4513';
-        break;
-      case 'wajan_daun_bawang_tomat':
-        message = 'Daun bawang dan tomat ditambahkan ke wajan';
-        color = '#228B22';
-        break;
-      case 'wajan_lengkuas_daun_bawang':
-        message = 'Lengkuas ditambahkan ke wajan';
-        color = '#8B4513';
-        break;
-      default:
-        message = 'Wajan berubah';
-    }
-    
-    const feedbackText = this.add.text(400, 380, message, {
-      font: '20px Chewy',
-      color: color,
-      backgroundColor: '#000000',
-      padding: { x: 10, y: 5 }
-    }).setOrigin(0.5);
-    
-    // Remove feedback after 2 seconds
-    this.time.delayedCall(2000, () => {
-      feedbackText.destroy();
-    });
-  }
-
-  private hideWajan() {
-    // Hide the wajan after it's been used in ulekan
-    if (this.gameObjects.wajan) {
-      this.gameObjects.wajan.setVisible(false);
-    }
-  }
-
-  private showUlekanTransformationFeedback(newState: string) {
-    // Show visual feedback for ulekan transformation
-    let message = '';
-    let color = '#00ff00';
-    
-    switch (newState) {
-      case 'ulekan_bumbu_halus':
-        message = 'Bumbu halus selesai diulek!';
-        color = '#ff6600';
-        break;
-      case 'campuran_bumbu_halus_ready':
-        message = 'Campuran bumbu halus siap digunakan!';
-        color = '#ff6600';
-        break;
-      default:
-        message = 'Ulekan berubah';
-    }
-    
-    const feedbackText = this.add.text(400, 420, message, {
-      font: '20px Chewy',
-      color: color,
-      backgroundColor: '#000000',
-      padding: { x: 15, y: 8 }
-    }).setOrigin(0.5);
-    
-    // Remove feedback after 2 seconds
-    this.time.delayedCall(2000, () => {
-      feedbackText.destroy();
-    });
-  }
-
-  update() {
-    // Add game logic here
+    return scaleMap[itemName] || 0.15;
   }
 }

@@ -1,20 +1,10 @@
-// src/pages/_app.tsx - FINAL MERGED VERSION
+// src/pages/_app.tsx
 import React, { useState, useEffect } from 'react';
 import type { AppProps } from 'next/app';
 import PageTracker from '../components/PageTracker';
 import MusicDebug from '../components/MusicDebug';
 import '../styles/globals.css';
-
-// Import MusicProvider only if it exists, otherwise use fallback
-let MusicProvider: React.FC<{ children: React.ReactNode }> | null = null;
-
-try {
-  const musicContext = require('../contexts/MusicContext');
-  MusicProvider = musicContext.MusicProvider;
-} catch (error) {
-  console.warn('MusicContext not found, using fallback provider');
-  MusicProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-}
+import { MusicProvider } from '../contexts/MusicContext';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [showDebug, setShowDebug] = useState(false);
@@ -28,10 +18,8 @@ function MyApp({ Component, pageProps }: AppProps) {
     }
   }, []);
 
-  const Provider = MusicProvider || (({ children }: { children: React.ReactNode }) => <>{children}</>);
-
   return (
-    <Provider>
+    <MusicProvider>
       <PageTracker />
       <Component {...pageProps} />
 
@@ -49,7 +37,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           </button>
         </div>
       )}
-    </Provider>
+    </MusicProvider>
   );
 }
 

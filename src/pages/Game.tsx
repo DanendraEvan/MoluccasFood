@@ -1,586 +1,288 @@
-// pages/game.tsx - Improved with CSS-based Layout Control
-import React, { useEffect, useRef, useState } from 'react';
+// src/pages/game/index_game.tsx - Fixed Navigation
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import KitchenBackgroundWrapper from '../components/KitchenBackgroundWrapper';
+import MusicButton from '@/components/MusicButton';
 
-// Scene configurations
-interface GameScene {
-  name: string;
-  displayName: string;
-  description: string;
-  backgroundColor: string;
+// Background Wrapper Component
+interface BackgroundWrapperProps {
+  children: React.ReactNode;
 }
 
-const gameScenes: Record<string, GameScene> = {
-  kohukohu: {
-    name: 'kohukohu',
-    displayName: 'Kohu-Kohu',
-    description: 'Pelajari cara membuat Kohu-Kohu tradisional Maluku dengan berbagai bahan segar',
-    backgroundColor: 'transparent'
-  },
-  nasilapola: {
-    name: 'nasilapola',
-    displayName: 'Nasi Lapola',
-    description: 'Masak Nasi Lapola yang lezat dari Maluku dengan kacang hijau dan kelapa',
-    backgroundColor: 'transparent'
-  },
-  colocolo: {
-    name: 'colocolo',
-    displayName: 'Colo-Colo',
-    description: 'Belajar membuat sambal Colo-Colo khas Maluku yang pedas dan segar',
-    backgroundColor: 'transparent'
-  },
-  ikankuahkuning: {
-    name: 'ikankuahkuning',
-    displayName: 'Ikan Kuah Kuning',
-    description: 'Masak Ikan Kuah Kuning yang nikmat dengan bumbu rempah khas Maluku',
-    backgroundColor: 'transparent'
-  },
-  papeda: {
-    name: 'papeda',
-    displayName: 'Papeda',
-    description: 'Pelajari cara membuat Papeda, makanan pokok tradisional Maluku',
-    backgroundColor: 'transparent'
-  }
-};
-
-const GamePage: React.FC = () => {
-  const router = useRouter();
-  const { scene } = router.query;
-  const gameContainerRef = useRef<HTMLDivElement>(null);
-  const phaserGameRef = useRef<any>(null);
-  const [currentScene, setCurrentScene] = useState<GameScene | null>(null);
-  const [gameStatus, setGameStatus] = useState<'loading' | 'ready' | 'playing' | 'demo'>('loading');
-  const [isGameActive, setIsGameActive] = useState(false);
-  const [phaserLoaded, setPhaserLoaded] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Initialize scene configuration
-  useEffect(() => {
-    if (!scene || typeof scene !== 'string') {
-      console.error('No scene specified');
-      router.push('/game/index_game');
-      return;
-    }
-
-    const sceneConfig = gameScenes[scene];
-    if (!sceneConfig) {
-      console.error(`Scene '${scene}' not found`);
-      router.push('/game/index_game');
-      return;
-    }
-
-    setCurrentScene(sceneConfig);
-    setLoadingProgress(20);
-  }, [scene, router]);
-
-  // Load Phaser and Scene
-  useEffect(() => {
-    const loadGame = async () => {
-      if (!currentScene) return;
-
-      setGameStatus('loading');
-      setLoadingProgress(30);
-      setErrorMessage(null);
-
-      try {
-        console.log(`Loading scene: ${currentScene.displayName}`);
-        
-        // Dynamic import Phaser
-        const Phaser = (await import('phaser')).default;
-        console.log('Phaser loaded successfully');
-        setLoadingProgress(50);
-
-        // Try to load the scene file
-        let SceneClass: any;
-        try {
-          switch(scene) {
-            case 'kohukohu':
-              SceneClass = (await import('../game/scenes/KohuKohuScene')).default;
-              break;
-            case 'papeda':
-              SceneClass = (await import('../game/scenes/PapedaScene')).default;
-              break;
-            case 'colocolo':
-              SceneClass = (await import('../game/scenes/ColoColoScene')).default;
-              break;
-            case 'nasilapola':
-              SceneClass = (await import('../game/scenes/NasiLapolaScene')).default;
-              break;
-            case 'ikankuahkuning':
-              SceneClass = (await import('../game/scenes/IkanKuahKuningScene')).default;
-              break;
-            default:
-              throw new Error(`Unknown scene: ${scene}`);
-          }
-          
-          console.log(`Scene class loaded: ${SceneClass.name}`);
-          setPhaserLoaded(true);
-          setLoadingProgress(100);
-          setGameStatus('ready');
-        } catch (importError) {
-          console.error('Error importing scene:', importError);
-          setPhaserLoaded(false);
-          setGameStatus('demo');
-          setErrorMessage(`Scene ${scene} tidak ditemukan. Mode demo akan diaktifkan.`);
-          setLoadingProgress(100);
-        }
-
-      } catch (error) {
-        console.error('Error loading game:', error);
-        setGameStatus('demo');
-        setPhaserLoaded(false);
-        setErrorMessage('Terjadi kesalahan saat memuat game. Mode demo akan diaktifkan.');
-        setLoadingProgress(100);
-      }
-    };
-
-    if (currentScene) {
-      loadGame();
-    }
-  }, [currentScene, scene]);
-
-  // Start game handler
-  const handleStartGame = async () => {
-    if (!currentScene || !gameContainerRef.current) {
-      console.error('Game cannot start: missing scene or container');
-      setErrorMessage('Game tidak dapat dimulai: komponen tidak tersedia');
-      return;
-    }
-
-    setIsGameActive(true);
-    setGameStatus('playing');
-
-    if (phaserLoaded) {
-      try {
-        // Dynamic import Phaser again for game creation
-        const Phaser = (await import('phaser')).default;
-        
-        // Import the correct scene class
-        let SceneClass: any;
-        switch(scene) {
-          case 'kohukohu':
-            SceneClass = (await import('../game/scenes/KohuKohuScene')).default;
-            break;
-          case 'papeda':
-            SceneClass = (await import('../game/scenes/PapedaScene')).default;
-            break;
-          case 'colocolo':
-            SceneClass = (await import('../game/scenes/ColoColoScene')).default;
-            break;
-          case 'nasilapola':
-            SceneClass = (await import('../game/scenes/NasiLapolaScene')).default;
-            break;
-          case 'ikankuahkuning':
-            SceneClass = (await import('../game/scenes/IkanKuahKuningScene')).default;
-            break;
-          default:
-            throw new Error(`Unknown scene: ${scene}`);
-        }
-
-        // Enhanced Phaser Game Configuration with transparent background
-        const config = {
-          type: Phaser.AUTO,
-          width: 1920,
-          height: 1080,
-          parent: gameContainerRef.current,
-          backgroundColor: 'transparent',
-          transparent: true,
-          scene: SceneClass,
-          physics: {
-            default: 'arcade',
-            arcade: {
-              gravity: { y: 0, x: 0 },
-              debug: false
-            }
-          },
-          scale: {
-            mode: Phaser.Scale.FIT,
-            autoCenter: Phaser.Scale.CENTER_BOTH,
-            width: 1920,
-            height: 1080
-          },
-          render: {
-            antialias: true,
-            pixelArt: false,
-            transparent: true,
-            clearBeforeRender: true,
-            preserveDrawingBuffer: false
-          },
-          input: {
-            mouse: {
-              target: gameContainerRef.current
-            },
-            touch: {
-              target: gameContainerRef.current
-            }
-          },
-          dom: {
-            createContainer: true
-          },
-          callbacks: {
-            preBoot: (game: any) => {
-              console.log('Phaser game pre-boot');
-            },
-            postBoot: (game: any) => {
-              console.log('Phaser game post-boot');
-            }
-          }
-        };
-
-        console.log('Creating Enhanced Phaser Game...');
-        
-        // Destroy existing game if any
-        if (phaserGameRef.current) {
-          phaserGameRef.current.destroy(true);
-          phaserGameRef.current = null;
-        }
-
-        // Create new game
-        phaserGameRef.current = new Phaser.Game(config);
-        
-        // Add event listeners for game events
-        if (phaserGameRef.current) {
-          phaserGameRef.current.events.on('ready', () => {
-            console.log('Phaser game ready');
-          });
-          
-          phaserGameRef.current.events.on('step', () => {
-            // Game step event
-          });
-        }
-        
-        console.log('Enhanced Game created successfully');
-
-      } catch (error) {
-        console.error('Error creating Phaser game:', error);
-        setGameStatus('demo');
-        setErrorMessage('Gagal membuat game Phaser. Mode demo akan diaktifkan.');
-      }
-    } else {
-      // Demo mode
-      console.log(`Starting demo mode for: ${currentScene.displayName}`);
-      setGameStatus('demo');
-    }
-  };
-
-  // Back to menu handler
-  const handleBackToMenu = async () => {
-    try {
-      // Destroy game before navigation
-      if (phaserGameRef.current) {
-        phaserGameRef.current.destroy(true);
-        phaserGameRef.current = null;
-      }
-      
-      await router.push('/game/index_game');
-    } catch (error) {
-      console.error('Navigation error:', error);
-    }
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (phaserGameRef.current) {
-        console.log('Cleaning up Phaser game...');
-        try {
-          phaserGameRef.current.destroy(true);
-          phaserGameRef.current = null;
-        } catch (error) {
-          console.error('Error cleaning up Phaser game:', error);
-        }
-      }
-    };
-  }, []);
-
-  // Demo mode component
-  const DemoModeComponent: React.FC = () => (
-    <div className="start-game-overlay">
-      <div className="start-game-content">
-        <h2 className="start-game-title">
-          Mode Demo - {currentScene?.displayName}
-        </h2>
-        <p className="start-game-description">
-          {currentScene?.description}
-        </p>
-        <div style={{
-          marginBottom: '24px',
-          padding: '16px',
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(255, 193, 7, 0.2))',
-          borderRadius: '12px',
-          border: '1px solid rgba(245, 158, 11, 0.5)'
-        }}>
-          <p style={{ fontSize: '14px', color: '#FCD34D' }}>
-            Scene game belum tersedia. Ini adalah tampilan demo untuk menunjukkan
-            antarmuka game. Fitur interaktif belum dapat digunakan.
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button
-            onClick={handleBackToMenu}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #6B7280, #4B5563)',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '16px',
-              fontFamily: 'Chewy, cursive',
-              fontWeight: 'bold',
-              color: 'white',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #4B5563, #374151)';
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #6B7280, #4B5563)';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            Kembali ke Menu
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Error screen component
-  const ErrorScreen: React.FC<{ error: string }> = ({ error }) => (
+const InfoBackgroundWrapper: React.FC<BackgroundWrapperProps> = ({ children }) => {
+  return (
     <div
+      className="w-screen h-screen relative"
       style={{
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #1F2937, #111827)',
-        color: 'white',
-        fontFamily: 'Chewy, cursive'
+        backgroundImage: "url('/assets/backgrounds/menu.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
-      <div style={{ textAlign: 'center', maxWidth: '500px', padding: '40px' }}>
-        <h1
-          style={{
-            fontSize: '48px',
-            fontWeight: 'bold',
-            marginBottom: '16px',
-            color: '#F87171'
-          }}
-        >
-          Oops! Terjadi Kesalahan
-        </h1>
-        <p
-          style={{
-            fontSize: '18px',
-            marginBottom: '24px',
-            opacity: '0.8',
-            lineHeight: '1.5'
-          }}
-        >
-          {error}
-        </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-              border: 'none',
-              borderRadius: '12px',
-              color: 'white',
-              fontSize: '16px',
-              fontFamily: 'Chewy, cursive',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #2563EB, #1D4ED8)';
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #3B82F6, #2563EB)';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            Muat Ulang
-          </button>
-          <button
-            onClick={handleBackToMenu}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #6B7280, #4B5563)',
-              border: 'none',
-              borderRadius: '12px',
-              color: 'white',
-              fontSize: '16px',
-              fontFamily: 'Chewy, cursive',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #4B5563, #374151)';
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #6B7280, #4B5563)';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            Kembali ke Menu
-          </button>
-        </div>
-      </div>
+      {children}
     </div>
   );
+};
 
-  // Show error page if scene not found
-  if (!currentScene && gameStatus !== 'loading') {
-    return (
-      <ErrorScreen error={`Scene game "${scene}" tidak ditemukan atau tidak tersedia.`} />
-    );
-  }
+interface FoodButtonProps {
+  foodName: string;
+  route: string;
+  displayName?: string;
+}
+
+const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route, displayName }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const router = useRouter();
+
+  const handleClick = async () => {
+    try {
+      setIsActive(true);
+      console.log(`Navigating to: ${route}`); // Debug log
+      
+      // Menggunakan setTimeout untuk efek visual, kemudian navigate
+      setTimeout(async () => {
+        await router.push(route);
+      }, 150);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      setIsActive(false);
+    }
+  };
+
+  const getImageSrc = () => {
+    if (isActive) return `/assets/ui/buttons/${foodName}/${foodName}_active.png`;
+    if (isHovered) return `/assets/ui/buttons/${foodName}/${foodName}_hover.png`;
+    return `/assets/ui/buttons/${foodName}/${foodName}_normal.png`;
+  };
+
+  return (
+    <div className="p-4 bg-transparent">
+      <button
+        className="transition-transform duration-200 hover:scale-105 focus:outline-none bg-transparent border-none p-0 m-0 block"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setIsActive(false);
+        }}
+        onMouseDown={() => setIsActive(true)}
+        onMouseUp={() => setIsActive(false)}
+        onClick={handleClick}
+        style={{ 
+          background: 'transparent',
+          backgroundColor: 'transparent',
+          boxShadow: 'none',
+          outline: 'none'
+        }}
+      >
+        <img
+          src={getImageSrc()}
+          alt={`Button ${displayName || foodName}`}
+          className="w-auto h-auto max-w-[180px] max-h-[180px] md:max-w-[240px] md:max-h-[240px] drop-shadow-lg block"
+          style={{ 
+            background: 'transparent',
+            backgroundColor: 'transparent',
+            border: 'none',
+            outline: 'none'
+          }}
+          onError={(e) => {
+            console.log(`Error loading image: ${getImageSrc()}`);
+          }}
+        />
+      </button>
+    </div>
+  );
+};
+
+const HomeButton: React.FC = () => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const router = useRouter();
+
+  const handleClick = async () => {
+    try {
+      setIsActive(true);
+      console.log('Navigating to: /menu'); // Debug log
+      
+      setTimeout(async () => {
+        await router.push('/menu');
+      }, 150);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      setIsActive(false);
+    }
+  };
+
+  const getImageSrc = () => {
+    if (isActive) return '/assets/ui/buttons/home/home_active.png';
+    if (isHovered) return '/assets/ui/buttons/home/home_hover.png';
+    return '/assets/ui/buttons/home/home_normal.png';
+  };
+
+  return (
+    <button
+      className="transition-transform duration-200 hover:scale-105 focus:outline-none bg-transparent border-none"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setIsActive(false);
+      }}
+      onMouseDown={() => setIsActive(true)}
+      onMouseUp={() => setIsActive(false)}
+      onClick={handleClick}
+      style={{ 
+        background: 'transparent',
+        backgroundColor: 'transparent'
+      }}
+    >
+      <img
+        src={getImageSrc()}
+        alt="Home Button"
+        className="w-auto h-auto max-w-[100px] max-h-[100px] md:max-w-[100px] md:max-h-[100px] drop-shadow-lg"
+        style={{ 
+          background: 'transparent',
+          backgroundColor: 'transparent'
+        }}
+      />
+    </button>
+  );
+};
+
+const InfoIndexPage = () => {
+  const router = useRouter();
+
+  // Food button data for easier management
+  // Route ke halaman game dengan parameter scene
+  const foodButtons = [
+    {
+      foodName: "kohukohu",
+      route: "/game?scene=KohuKohuScene",
+      displayName: "Kohu-Kohu"
+    },
+    {
+      foodName: "nasilapola", 
+      route: "/game?scene=NasiLapolaScene",
+      displayName: "Nasi Lapola"
+    },
+    {
+      foodName: "colocolo",
+      route: "/game?scene=ColoColoScene", 
+      displayName: "Colo-Colo"
+    },
+    {
+      foodName: "ikankuahkuning",
+      route: "/game?scene=IkanKuahKuningScene",
+      displayName: "Ikan Kuah Kuning"
+    },
+    {
+      foodName: "papeda",
+      route: "/game?scene=PapedaScene",
+      displayName: "Papeda"
+    }
+  ];
 
   return (
     <>
-      {/* Enhanced CSS Animations */}
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-        
-        @keyframes slideInUp {
-          from { opacity: 0; transform: translateY(50px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
-          50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
-        }
-        
-        .fade-in {
-          animation: fadeIn 0.5s ease-out;
-        }
-        
-        .pulse {
-          animation: pulse 2s infinite;
-        }
-        
-        .slide-in-up {
-          animation: slideInUp 0.6s ease-out;
-        }
-        
-        .glow-effect {
-          animation: glow 2s ease-in-out infinite;
-        }
-        
-        /* Game wrapper specific styles */
-        .game-wrapper * {
-          box-sizing: border-box;
-        }
-        
-        .game-wrapper canvas {
-          display: block !important;
-          margin: 0 auto !important;
-          background: transparent !important;
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: contain !important;
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          z-index: 5 !important;
-        }
-        
-        .phaser-game-container {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          padding: 0 !important;
-          z-index: 5 !important;
+      {/* Global CSS untuk menghilangkan semua background abu-abu */}
+      <style jsx global>{`
+        button, img, div {
           background-color: transparent !important;
-          overflow: hidden !important;
+          box-shadow: none !important;
         }
-        
-        /* Enhanced loading styles */
-        .loading-progress-bar {
-          background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
-          background-size: 200% 100%;
-          animation: shimmer 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-          .game-wrapper canvas {
-            width: 100vw !important;
-            height: 100vh !important;
-          }
+        .next-image-wrapper, 
+        .next-image, 
+        [data-nimg], 
+        img[data-nimg] {
+          background: transparent !important;
+          background-color: transparent !important;
         }
       `}</style>
+      
+      <InfoBackgroundWrapper>
+        {/* Button Container - Home and Music buttons close together */}
+        <div 
+          className="absolute z-30 flex items-center"
+          style={{
+            top: '22px',
+            left: '20px',
+            gap: '0px'
+          }}
+        >
+          {/* Home Button with negative margin to pull music button closer */}
+          <div style={{ marginRight: '-10px', zIndex: 31 }}>
+            <HomeButton />
+          </div>
 
-      <KitchenBackgroundWrapper
-        sceneTitle={currentScene?.displayName || 'Loading...'}
-        sceneDescription={currentScene?.description || 'Memuat deskripsi game...'}
-        backgroundColor={currentScene?.backgroundColor || 'transparent'}
-        isGameActive={isGameActive}
-        onStartGame={handleStartGame}
-        showStartButton={gameStatus === 'ready'}
-        gameStatus={gameStatus}
-      >
-        <div className="game-wrapper">
-          {/* Demo Mode Screen */}
-          {gameStatus === 'demo' && isGameActive && <DemoModeComponent />}
-
-          {/* Main Game Container - Full screen transparent container */}
-          <div
-            ref={gameContainerRef}
-            className="phaser-game-container"
-            style={{
-              position: 'absolute',
-              top: '0',
-              left: '0',
-              right: '0',
-              bottom: '0',
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'transparent',
-              overflow: 'hidden',
-              zIndex: gameStatus === 'playing' ? 10 : 1
-            }}
-          />
+          {/* Music Button */}
+          <div style={{ zIndex: 30 }}>
+            <MusicButton />
+          </div>
         </div>
-      </KitchenBackgroundWrapper>
+        
+        {/* Main Content Container */}
+        <div className="flex flex-col items-center justify-center min-h-screen px-6 py-16">
+          
+          {/* Title dengan ukuran custom dan padding yang dapat diatur */}
+          <div 
+            className="mb-16 md:mb-20"
+            style={{
+              marginBottom: '20px', // Ganti nilai ini untuk padding bawah judul (dalam px)
+            }}
+          >
+            <h2 
+              className="font-chewy font-bold leading-tight text-center"
+              style={{ 
+                color: '#2C1810',
+                background: 'transparent',
+                fontSize: '3rem', // Ganti nilai ini untuk ukuran teks (misal: 3rem, 5rem, 6rem, dll)
+                paddingLeft: '16px', // Ganti nilai ini untuk padding kiri teks
+                paddingRight: '16px', // Ganti nilai ini untuk padding kanan teks
+              }}
+            >
+              MULAI GAME
+            </h2>
+          </div>
+
+          {/* Food Buttons Grid dalam formasi 2-3 */}
+          <div className="flex flex-col items-center gap-8 md:gap-10 mb-16">
+            
+            {/* Row 1 - Top 2 buttons (Kohu-Kohu dan Nasi Lapola) */}
+            <div className="flex flex-row gap-5 md:gap-11 justify-center items-center">
+              <FoodButton 
+                foodName={foodButtons[0].foodName}
+                route={foodButtons[0].route}
+                displayName={foodButtons[0].displayName}
+              />
+              <FoodButton 
+                foodName={foodButtons[1].foodName}
+                route={foodButtons[1].route}
+                displayName={foodButtons[1].displayName}
+              />
+            </div>
+
+            {/* Row 2 - Bottom 3 buttons (Colo-Colo, Ikan Kuah Kuning, dan Papeda) */}
+            <div className="flex flex-row gap-8 md:gap-12 justify-center items-center">
+              <FoodButton 
+                foodName={foodButtons[2].foodName}
+                route={foodButtons[2].route}
+                displayName={foodButtons[2].displayName}
+              />
+              <FoodButton 
+                foodName={foodButtons[3].foodName}
+                route={foodButtons[3].route}
+                displayName={foodButtons[3].displayName}
+              />
+              <FoodButton 
+                foodName={foodButtons[4].foodName}
+                route={foodButtons[4].route}
+                displayName={foodButtons[4].displayName}
+              />
+            </div>
+          </div>
+        </div>
+      </InfoBackgroundWrapper>
     </>
   );
 };
 
-export default GamePage;
+export default InfoIndexPage;

@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import MusicButton from '../../components/MusicButton';
+import Image from 'next/image';
 
 // Background Wrapper Component
 interface BackgroundWrapperProps {
@@ -62,9 +63,11 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route }) => {
         onMouseUp={() => setIsActive(false)}
         onClick={handleClick}
       >
-        <img
+        <Image
           src={getImageSrc()}
           alt={`Button ${foodName}`}
+          width={240}
+          height={240}
           className="w-auto h-auto max-w-[180px] max-h-[180px] md:max-w-[240px] md:max-h-[240px] drop-shadow-lg block"
           onError={() => {
             console.log(`Error loading image: ${getImageSrc()}`);
@@ -105,9 +108,11 @@ const HomeButton: React.FC = () => {
       onMouseUp={() => setIsActive(false)}
       onClick={handleClick}
     >
-      <img
+      <Image
         src={getImageSrc()}
         alt="Home Button"
+        width={100}
+        height={100}
         className="w-auto h-auto max-w-[100px] max-h-[100px] md:max-w-[100px] md:max-h-[100px] drop-shadow-lg"
       />
     </button>

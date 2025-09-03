@@ -1,5 +1,5 @@
 // src/contexts/MusicContext.tsx - FINAL MERGED VERSION
-import React, { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, ReactNode, useCallback } from 'react';
 
 interface MusicContextType {
   isPlaying: boolean;
@@ -28,8 +28,14 @@ export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
   const isInitialized = useRef(false);
   const monitoringInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ Monitoring logic (dari versi monitoring)
-  const startMonitoring = () => {
+  const stopMonitoring = useCallback(() => {
+    if (monitoringInterval.current) {
+      clearInterval(monitoringInterval.current);
+      monitoringInterval.current = null;
+    }
+  }, []);
+
+  const startMonitoring = useCallback(() => {
     if (monitoringInterval.current) {
       clearInterval(monitoringInterval.current);
     }
@@ -60,27 +66,20 @@ export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
         }
       }
     }, 100);
-  };
-
-  const stopMonitoring = () => {
-    if (monitoringInterval.current) {
-      clearInterval(monitoringInterval.current);
-      monitoringInterval.current = null;
-    }
-  };
+  }, [isPlaying, currentTrack]);
 
   // ✅ Check file existence
-  const checkFileExists = async (trackNum: number): Promise<boolean> => {
+  const checkFileExists = useCallback(async (trackNum: number): Promise<boolean> => {
     try {
       const response = await fetch(`/assets/bgm/bgm${trackNum}.mp3`, { method: 'HEAD' });
       return response.ok;
     } catch {
       return false;
     }
-  };
+  }, []);
 
   // ✅ Load and play track
-  const loadTrack = async (trackNum: number) => {
+  const loadTrack = useCallback(async (trackNum: number) => {
     if (!audioRef.current || !hasUserInteracted) return;
 
     console.log(`🎵 Loading BGM${trackNum}...`);
@@ -133,7 +132,7 @@ export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [hasUserInteracted, isPlaying, checkFileExists, stopMonitoring, startMonitoring]);
 
   // ✅ Initialize audio element
   useEffect(() => {
@@ -156,13 +155,13 @@ export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
       }
       isInitialized.current = false;
     };
-  }, []);
+  }, [stopMonitoring]);
 
   // ✅ Track changes
   useEffect(() => {
     if (!isInitialized.current || !hasUserInteracted) return;
     loadTrack(currentTrack);
-  }, [currentTrack, hasUserInteracted]);
+  }, [currentTrack, hasUserInteracted, loadTrack]);
 
   // ✅ Play/pause state
   useEffect(() => {
@@ -179,7 +178,7 @@ export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
         stopMonitoring();
       }
     }
-  }, [isPlaying, hasUserInteracted, isLoading]);
+  }, [isPlaying, hasUserInteracted, isLoading, startMonitoring, stopMonitoring]);
 
   const startMusic = async () => {
     if (hasUserInteracted) return;

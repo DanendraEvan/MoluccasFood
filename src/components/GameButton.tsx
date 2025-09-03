@@ -1,5 +1,6 @@
 // src/components/GameButton.tsx
 import React, { useState } from "react";
+import Image from 'next/image';
 
 interface GameButtonProps {
   normal: string;
@@ -59,9 +60,11 @@ const GameButton: React.FC<GameButtonProps> = ({
   };
 
   return (
-    <img
+    <Image
       src={currentSrc}
       alt={alt}
+      width={width}
+      height={height}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseDown={handleMouseDown}
@@ -73,8 +76,6 @@ const GameButton: React.FC<GameButtonProps> = ({
           : 'cursor-pointer hover:scale-105 active:scale-95'
       }`}
       style={{
-        width: `${width}px`,
-        height: `${height}px`,
         objectFit: 'contain',
         filter: disabled ? 'grayscale(50%)' : 'none',
         transition: 'all 0.2s ease',

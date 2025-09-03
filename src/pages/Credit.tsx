@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import CreditInfoWrapper from '../components/CreditInfoWrapper';
 import MusicButton from '../components/MusicButton';
+import Image from 'next/image';
 
 type ButtonState = 'normal' | 'hover' | 'active';
 
@@ -92,12 +93,12 @@ const CreditPage: React.FC = () => {
             zIndex: 51 // Higher z-index to ensure home button is on top
           }}
         >
-          <img
+          <Image
             src={getHomeButtonImage()}
             alt="Home Button"
+            width={100}
+            height={100}
             style={{ 
-              width: '100px',
-              height: '100px',
               objectFit: 'contain'
             }}
           />
