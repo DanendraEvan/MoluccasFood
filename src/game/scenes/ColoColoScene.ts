@@ -208,7 +208,7 @@ export default class ColoColoScene extends Phaser.Scene {
     this.layoutConfig.ingredientsPanelX = gameWidth - this.layoutConfig.ingredientsPanelWidth - 15;
     
     // Calculate dialog panel position
-    this.layoutConfig.dialogPanelY = gameHeight - this.layoutConfig.dialogPanelHeight - 15;
+        this.layoutConfig.dialogPanelY = gameHeight - this.layoutConfig.dialogPanelHeight - 100;
     
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
@@ -701,7 +701,6 @@ export default class ColoColoScene extends Phaser.Scene {
     // Step 5: Add jeruk nipis
     else if (ingredientType === 'jeruk_nipis' && this.gameState.ulekanState === 'ulekan_daun' && this.currentStep === 4) {
       this.transformUlekan('ulekan_nipis');
-      this.gameObjects.ulekan.setScale(0.5); // Maintain consistent scale
       this.hideIngredient('jeruk_nipis');
       ingredientObject.destroy();
       this.nextStep(); // Advance to step 6 (munthu)
