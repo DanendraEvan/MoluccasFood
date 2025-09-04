@@ -9,7 +9,7 @@ type ButtonState = 'normal' | 'hover' | 'active';
 // Configuration object untuk pengaturan ukuran
 const UI_CONFIG = {
   homeButton: {
-    size: 100, // Ukuran home button dalam pixel
+    size: 120, // Ukuran home button dalam pixel - diperbesar dari 100
     position: { top: 24, left: 24 } // Posisi dari top dan left dalam pixel
   },
   titleBox: {

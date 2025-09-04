@@ -9,7 +9,7 @@ type ButtonState = 'normal' | 'hover' | 'active';
 // Configuration object untuk pengaturan ukuran
 const UI_CONFIG = {
   homeButton: {
-    size: 100, // Ukuran home button dalam pixel
+    size: 120, // Ukuran home button dalam pixel - diperbesar dari 100
     position: { top: 24, left: 24 } // Posisi dari top dan left dalam pixel
   },
   titleBox: {
@@ -99,8 +99,8 @@ const KohukohutPage: React.FC = () => {
           <Image
             src={getHomeButtonImage()}
             alt="Home Button"
-            width={UI_CONFIG.homeButton.size}
-            height={UI_CONFIG.homeButton.size}
+            width={80}
+            height={80}
             className="w-auto h-auto"
             style={{
               background: 'transparent',

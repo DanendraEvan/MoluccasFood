@@ -9,7 +9,7 @@ type BowlState =
   | "tambahanSepatula"
   | "aduk"
   | "piringKelapa"
-  | "piring_on_staging"
+  | "piring_on_plating"
   | "piring_with_kelapa"
   | "finished";
 
@@ -42,7 +42,7 @@ export default class KohuKohuScene extends Phaser.Scene {
   // Drop zones
   private wajanZone!: Phaser.GameObjects.Zone;
   private teflonZone!: Phaser.GameObjects.Zone;
-  private stagingZone!: Phaser.GameObjects.Zone;
+  private platingZone!: Phaser.GameObjects.Zone;
   private plateZone: Phaser.GameObjects.Zone | null = null;
 
   // State untuk setiap cooking vessel
@@ -86,7 +86,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     cookingAreaBottom: 180,
     
     // Dialog panel
-    dialogPanelHeight: 90,
+    dialogPanelHeight: 120,
     dialogPanelY: 900, // Will be calculated
     dialogPanelLeft: 50,
     dialogPanelRight: 20,
@@ -100,11 +100,11 @@ export default class KohuKohuScene extends Phaser.Scene {
     stoveScale: 0.35,
     vesselScale: 0.35,
     
-    // Staging area
-    stagingAreaX: 200,
-    stagingAreaY: 300,
-    stagingAreaWidth: 300,
-    stagingAreaHeight: 225
+    // Plating area (renamed from staging)
+    platingAreaX: 200,
+    platingAreaY: 300,
+    platingAreaWidth: 300,
+    platingAreaHeight: 225
   }
 
   // Game steps for Kohu Kohu
@@ -141,7 +141,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     },
     {
       id: 6,
-      text: "Bagus! Sekarang ambil piring dari panel bahan dan letakkan di area saji di sebelah kiri.",
+      text: "Bagus! Sekarang ambil piring dari panel bahan dan letakkan di area plating di sebelah kiri.",
       character: "karakter5.png",
       isCompleted: false
     },
@@ -306,18 +306,15 @@ export default class KohuKohuScene extends Phaser.Scene {
     // Kompor positioning
     const komporY = this.layoutConfig.cookingAreaBottom - 100;
     
-    // --- Kompor kiri untuk WAJAN ---
+    // --- Kompor kiri untuk WAJAN - Fixed position ---
     this.KomporWajan = this.add.image(650, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
     this.wajanZone = this.add.zone(650, 540, 120, 120).setRectangleDropZone(120, 120);
     this.wajanZone.name = "wajanZone";
     this.Wajan = this.add.image(this.wajanZone.x, this.wajanZone.y, "Wajan").setScale(this.layoutConfig.vesselScale);
     this.Wajan.setData('initialScale', this.layoutConfig.vesselScale);
-
-    // --- Kompor kanan untuk TEFLON ---
-    this.Wajan = this.add.image(this.wajanZone.x, this.wajanZone.y, "Wajan").setScale(this.layoutConfig.vesselScale);
     this.Wajan.setData('targetWidth', this.Wajan.displayWidth);
 
-    // --- Kompor kanan untuk TEFLON ---
+    // --- Kompor kanan untuk TEFLON - Fixed position ---
     this.KomporTeflon = this.add.image(1150, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
     this.teflonZone = this.add.zone(1150, 540, 120, 120).setRectangleDropZone(120, 120);
     this.teflonZone.name = "teflonZone";
@@ -328,38 +325,38 @@ export default class KohuKohuScene extends Phaser.Scene {
     this.Teflon.setData('targetWidth', this.Teflon.displayWidth);
     this.Teflon.setData('initialScale', this.layoutConfig.vesselScale);
     
-    // Staging zone
-    this.stagingZone = this.add.zone(
-      this.layoutConfig.cookingAreaLeft + this.layoutConfig.stagingAreaX,
-      this.layoutConfig.cookingAreaTop + this.layoutConfig.stagingAreaY,
-      this.layoutConfig.stagingAreaWidth,
-      this.layoutConfig.stagingAreaHeight
-    ).setRectangleDropZone(this.layoutConfig.stagingAreaWidth, this.layoutConfig.stagingAreaHeight);
-    this.stagingZone.name = "staging";
+    // Plating zone
+    this.platingZone = this.add.zone(
+      this.layoutConfig.cookingAreaLeft + this.layoutConfig.platingAreaX,
+      this.layoutConfig.cookingAreaTop + this.layoutConfig.platingAreaY,
+      this.layoutConfig.platingAreaWidth,
+      this.layoutConfig.platingAreaHeight
+    ).setRectangleDropZone(this.layoutConfig.platingAreaWidth, this.layoutConfig.platingAreaHeight);
+    this.platingZone.name = "plating";
 
-    // Visual indicator untuk staging area
-    const stagingGraphics = this.add.graphics();
-    stagingGraphics.fillStyle(0x2A1810, 0.95);
-    stagingGraphics.fillRoundedRect(
-      this.stagingZone.x - this.stagingZone.width/2,
-      this.stagingZone.y - this.stagingZone.height/2,
-      this.stagingZone.width,
-      this.stagingZone.height,
+    // Visual indicator untuk plating area
+    const platingGraphics = this.add.graphics();
+    platingGraphics.fillStyle(0x2A1810, 0.95);
+    platingGraphics.fillRoundedRect(
+      this.platingZone.x - this.platingZone.width/2,
+      this.platingZone.y - this.platingZone.height/2,
+      this.platingZone.width,
+      this.platingZone.height,
       20
     );
-    stagingGraphics.lineStyle(2, 0x8B4513, 0.8);
-    stagingGraphics.strokeRoundedRect(
-      this.stagingZone.x - this.stagingZone.width/2,
-      this.stagingZone.y - this.stagingZone.height/2,
-      this.stagingZone.width,
-      this.stagingZone.height,
+    platingGraphics.lineStyle(2, 0x8B4513, 0.8);
+    platingGraphics.strokeRoundedRect(
+      this.platingZone.x - this.platingZone.width/2,
+      this.platingZone.y - this.platingZone.height/2,
+      this.platingZone.width,
+      this.platingZone.height,
       20
     );
     
-    const stagingLabel = this.add.text(
-      this.stagingZone.x,
-      this.stagingZone.y,
-      "Area Staging",
+    const platingLabel = this.add.text(
+      this.platingZone.x,
+      this.platingZone.y,
+      "Area Plating",
       {
         fontSize: '24px',
         fontFamily: 'Chewy, cursive',
@@ -400,13 +397,13 @@ export default class KohuKohuScene extends Phaser.Scene {
     const ingredients = [
       { key: "Kelapa", name: "Kelapa", scale: 0.2 },
       { key: "Kemangi", name: "Kemangi", scale: 0.18 },
-      { key: "Kol", name: "Kol", scale: 0.15 },
-      { key: "BawangPutih", name: "Bawang Putih", scale: 0.18 },
-      { key: "Cabe", name: "Cabe", scale: 0.2 },
+      { key: "Kol", name: "Sawi", scale: 0.15 },
+      { key: "BawangPutih", name: "Tauge", scale: 0.18 },
+      { key: "Cabe", name: "Cabai", scale: 0.2 },
       { key: "BawangMerah", name: "Bawang Merah", scale: 0.16 },
-      { key: "Daging", name: "Daging", scale: 0.18 },
+      { key: "Daging", name: "Daging Cakalang", scale: 0.18 },
       { key: "MinyakIkan", name: "Minyak Ikan", scale: 0.16 },
-      { key: "Sepatula", name: "Spatula", scale: 0.18 },
+      { key: "Sepatula", name: "Spatula", scale: 0.12 }, // Ukuran spatula diperkecil
       { key: "Piring", name: "Piring", scale: 0.17 }
     ];
 
@@ -498,23 +495,23 @@ export default class KohuKohuScene extends Phaser.Scene {
     // Character container
     const characterContainer = this.add.graphics();
     characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
     characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
     this.dialogPanel.add(characterContainer);
 
     // Character image
-    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.4)
+    this.characterImage = this.add.image(55, this.layoutConfig.dialogPanelHeight/2, "karakter1")
+      .setScale(0.36)
       .setOrigin(0.5, 0.5);
     this.dialogPanel.add(this.characterImage);
 
     // Step text
-    this.stepText = this.add.text(110, this.layoutConfig.dialogPanelHeight/2, "", {
+    this.stepText = this.add.text(120, this.layoutConfig.dialogPanelHeight/2, "", {
       fontSize: '25px',
       fontFamily: 'Chewy, cursive',
       color: '#2C1810',
-      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
+      wordWrap: { width: dialogWidth - 160, useAdvancedWrap: true },
       align: 'left',
       lineSpacing: 4
     }).setOrigin(0, 0.5);
@@ -523,12 +520,12 @@ export default class KohuKohuScene extends Phaser.Scene {
     // Progress bar
     const progressBg = this.add.graphics();
     progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
+    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, dialogWidth - 40, 6, 3);
     this.dialogPanel.add(progressBg);
 
     const progressBar = this.add.graphics();
     progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * (1/6), 6, 3);
+    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * (1/6), 6, 3);
     this.dialogPanel.add(progressBar);
   }
 
@@ -606,7 +603,7 @@ export default class KohuKohuScene extends Phaser.Scene {
   private updateStepDisplay() {
     if (this.currentStep < this.gameSteps.length) {
       const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(`${step.id}. ${step.text}`);
+      this.stepText.setText(step.text); // Hilangkan angka, langsung tampilkan dialog
       this.characterImage.setTexture(step.character.replace('.png', ''));
       
       // Animate text appearance
@@ -626,7 +623,7 @@ export default class KohuKohuScene extends Phaser.Scene {
       const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
       progressBar.clear();
       progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
+      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * progressPercentage, 6, 3);
     }
   }
 
@@ -646,6 +643,13 @@ export default class KohuKohuScene extends Phaser.Scene {
       // Store original position
       gameObject.setData('dragStartX', gameObject.x);
       gameObject.setData('dragStartY', gameObject.y);
+      
+             // Store original scale with special handling for spatula
+       let originalScale = gameObject.getData('originalScale') || 0.2;
+       if (gameObject.name === 'Sepatula') {
+         originalScale = 0.15; // Consistent spatula size
+         gameObject.setData('originalScale', originalScale);
+       }
     });
 
     this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
@@ -658,7 +662,14 @@ export default class KohuKohuScene extends Phaser.Scene {
       gameObject.clearTint();
       
       if (!dropped) {
-        const originalScale = gameObject.getData('originalScale') || 0.2;
+        // Restore original scale based on object type
+        let originalScale = gameObject.getData('originalScale') || 0.2;
+        
+                 // Special handling for spatula to maintain consistent size
+         if (gameObject.name === 'Sepatula') {
+           originalScale = 0.15; // Consistent spatula size
+         }
+        
         gameObject.setScale(originalScale);
         
         this.tweens.add({
@@ -673,6 +684,9 @@ export default class KohuKohuScene extends Phaser.Scene {
 
     this.input.on("drop", (pointer: any, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
       const droppedKey = gameObject.name;
+      
+      // Debug: Log drop attempt
+      console.log(`Drop attempt: ${droppedKey} on ${dropZone.name}, Current step: ${this.currentStep}, Wajan state: ${this.wajanState}`);
 
       // Step 1: Add coconut to teflon
       if (dropZone === this.teflonZone && this.bowlState === "empty" && droppedKey === "Kelapa" && this.currentStep === 0) {
@@ -692,10 +706,17 @@ export default class KohuKohuScene extends Phaser.Scene {
       }
       // Step 2: Stir the coconut
       else if (dropZone === this.teflonZone && this.bowlState === "sangrai" && droppedKey === "Sepatula" && this.currentStep === 1) {
+        // Set ukuran spatula yang konsisten sebelum digunakan
+        this.setSpatulaScale(gameObject);
         this.executeStirringAnimation(gameObject);
       }
-      // Step 3: Add kemangi to wajan first
-      else if (dropZone === this.wajanZone && this.wajanState === "empty" && droppedKey === "Kemangi" && this.currentStep === 2) {
+      // Step 3: Add kemangi to wajan first - Reset wajan di awal step
+      else if (dropZone === this.wajanZone && droppedKey === "Kemangi" && this.currentStep === 2) {
+        // Reset wajan sepenuhnya di awal step 3
+        if (this.wajanState === "empty") {
+          this.resetWajanCompletely();
+        }
+        
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, "Tambahankemangi");
           this.wajanState = "kemangi";
@@ -717,7 +738,8 @@ export default class KohuKohuScene extends Phaser.Scene {
         });
       }
       // Step 4: Add cabe and bawang merah together
-      else if (dropZone === this.wajanZone && this.wajanState === "bawangPutih" && this.currentStep === 3) {
+      else if (dropZone === this.wajanZone && this.currentStep === 3 && (droppedKey === "Cabe" || droppedKey === "BawangMerah")) {
+        console.log(`Step 4: Adding ${droppedKey}`); // Debug log
         if (droppedKey === "Cabe") {
           this.hasCabe = true;
           this.executeSuccessfulDrop(gameObject, () => {});
@@ -726,42 +748,55 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.executeSuccessfulDrop(gameObject, () => {});
         }
         
+        // Setelah kedua bahan dimasukkan, update texture wajan tanpa menggeser posisi
         if (this.hasCabe && this.hasBawangMerah) {
+          console.log("Both cabe and bawang merah added, updating texture"); // Debug log
+          // Simpan posisi wajan saat ini
+          const currentX = this.Wajan.x;
+          const currentY = this.Wajan.y;
+          const currentScale = this.Wajan.scale;
+          
           this.setVesselTexture(this.Wajan, "tambahanCabeBawangMerah");
           this.wajanState = "cabeBawangMerah";
+          
+          // Kembalikan posisi dan scale wajan
+          this.Wajan.setPosition(currentX, currentY);
+          this.Wajan.setScale(currentScale);
         }
       }
       // Step 4: Add daging after cabe and bawang merah
       else if (dropZone === this.wajanZone && this.wajanState === "cabeBawangMerah" && droppedKey === "Daging" && this.currentStep === 3) {
+        console.log("Step 4: Adding daging"); // Debug log
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, "tambahanDaging");
           this.wajanState = "daging";
-          this.nextStep();
+          this.nextStep(); // Lanjut ke step 5
         });
       }
       // Step 5: Add minyak ikan
       else if (dropZone === this.wajanZone && this.wajanState === "daging" && droppedKey === "MinyakIkan" && this.currentStep === 4) {
+        console.log("Step 5: Adding minyak ikan"); // Debug log
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, "tambahanMinyak");
           this.wajanState = "minyak";
           this.nextStep(); // Advances to step 6 ("...ambil piring...")
         });
       }
-      // Step 6: Place plate on staging area
-      else if (dropZone === this.stagingZone && this.bowlState === "sangrai" && droppedKey === "Piring" && this.currentStep === 5) {
+      // Step 6: Place plate on plating area
+      else if (dropZone === this.platingZone && this.bowlState === "sangrai" && droppedKey === "Piring" && this.currentStep === 5) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.finalPlate = this.add.image(this.stagingZone.x, this.stagingZone.y, 'Piring');
+          this.finalPlate = this.add.image(this.platingZone.x, this.platingZone.y, 'Piring');
           this.finalPlate.setScale(0.4);
           this.finalPlate.setData('targetWidth', this.finalPlate.displayWidth); // Store the initial width
           const plateBounds = this.finalPlate.getBounds();
           this.plateZone = this.add.zone(this.finalPlate.x, this.finalPlate.y, plateBounds.width, plateBounds.height).setRectangleDropZone(plateBounds.width, plateBounds.height);
           this.plateZone.name = "plateZone";
-          this.bowlState = "piring_on_staging";
+          this.bowlState = "piring_on_plating";
           this.nextStep(); // Advances to step 7 ("Letakkan kelapa sangrai...")
         });
       }
       // Step 7: Teflon to Plate
-      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_on_staging" && gameObject === this.Teflon && this.currentStep === 6) {
+      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_on_plating" && gameObject === this.Teflon && this.currentStep === 6) {
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.finalPlate!, 'PiringKelapa');
           this.Teflon.destroy();
@@ -773,6 +808,8 @@ export default class KohuKohuScene extends Phaser.Scene {
       }
       // Step 8, Part 1: Use Spatula on Wajan to prepare it for moving
       else if (dropZone === this.wajanZone && this.wajanState === "minyak" && droppedKey === "Sepatula" && this.currentStep === 7) {
+        // Set ukuran spatula yang konsisten sebelum digunakan
+        this.setSpatulaScale(gameObject);
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, 'SepatuladanSayur');
           this.wajanState = "ready_to_plate";
@@ -815,6 +852,29 @@ export default class KohuKohuScene extends Phaser.Scene {
         this.showSuccessFeedback();
       }
     });
+  }
+
+  // Function untuk membersihkan wajan sebelum menambahkan bahan baru
+  private clearWajan() {
+    // Reset wajan ke state kosong
+    this.setVesselTexture(this.Wajan, "Wajan");
+    this.wajanState = "empty";
+    // Jangan reset hasCabe dan hasBawangMerah karena masih dalam proses step yang sama
+  }
+
+  // Function untuk reset wajan sepenuhnya (untuk step baru)
+  private resetWajanCompletely() {
+    this.setVesselTexture(this.Wajan, "Wajan");
+    this.wajanState = "empty";
+    this.hasCabe = false;
+    this.hasBawangMerah = false;
+  }
+
+  // Function untuk mengatur ukuran spatula yang konsisten
+  private setSpatulaScale(spatula: Phaser.GameObjects.Image) {
+    // Set ukuran spatula yang lebih kecil dan konsisten
+    spatula.setScale(0.15); // Ukuran yang lebih kecil dari sebelumnya
+    spatula.setData('initialScale', 0.15);
   }
 
   private executeSuccessfulMove(gameObject: Phaser.GameObjects.Image, targetX: number, targetY: number) {
@@ -1071,5 +1131,8 @@ export default class KohuKohuScene extends Phaser.Scene {
       const newScale = targetWidth / newBaseWidth;
       vessel.setScale(newScale);
     }
+    
+    // Debug: Log perubahan texture
+    console.log(`Wajan texture changed to: ${textureKey}, State: ${this.wajanState}`);
   }
 }

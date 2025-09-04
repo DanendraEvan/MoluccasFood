@@ -1,5 +1,5 @@
 // src/components/KitchenBackgroundWrapper.tsx - Simplified with Fixed Imports
-import React, { ReactNode, useRef } from 'react';
+import React, { ReactNode, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import MusicButton from './MusicButton';
 import Image from 'next/image';
@@ -13,6 +13,8 @@ interface KitchenBackgroundWrapperProps {
   onStartGame?: () => void;
   showStartButton?: boolean;
   gameStatus?: 'loading' | 'ready' | 'playing' | 'demo';
+  homeButtonSize?: number; // Prop untuk mengatur ukuran home button
+  onHomeButtonSizeChange?: (size: number) => void; // Callback untuk mengubah ukuran
 }
 
 const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
@@ -23,10 +25,42 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
   isGameActive = false,
   onStartGame,
   showStartButton = true,
-  gameStatus = 'ready'
+  gameStatus = 'ready',
+  homeButtonSize = 108, // Default size
+  onHomeButtonSizeChange
 }) => {
   const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [currentHomeButtonSize, setCurrentHomeButtonSize] = useState(homeButtonSize);
+
+  // Function untuk mengubah ukuran home button
+  const changeHomeButtonSize = (newSize: number) => {
+    setCurrentHomeButtonSize(newSize);
+    if (onHomeButtonSizeChange) {
+      onHomeButtonSizeChange(newSize);
+    }
+  };
+
+  // Function untuk mendapatkan ukuran home button yang optimal berdasarkan screen size
+  const getOptimalHomeButtonSize = () => {
+    if (typeof window !== 'undefined') {
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 768) {
+        return 80; // Mobile
+      } else if (screenWidth < 1024) {
+        return 100; // Tablet
+      } else {
+        return 120; // Desktop
+      }
+    }
+    return currentHomeButtonSize;
+  };
+
+  // Function untuk reset ukuran home button ke default
+  const resetHomeButtonSize = () => {
+    const optimalSize = getOptimalHomeButtonSize();
+    changeHomeButtonSize(optimalSize);
+  };
 
   // Simple Home Button Component
   const HomeButton: React.FC = () => {
@@ -62,19 +96,32 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
         }}
         onMouseDown={() => setIsActive(true)}
         onMouseUp={() => setIsActive(false)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
+          margin: 0,
+          cursor: 'pointer',
+          transition: 'transform 0.2s ease'
+        }}
       >
         <Image
           src={getImageSrc()}
           alt="Home Button"
-          width={108}
-          height={108}
+          width={currentHomeButtonSize}
+          height={currentHomeButtonSize}
+          style={{
+            width: `${currentHomeButtonSize}px`,
+            height: `${currentHomeButtonSize}px`,
+            objectFit: 'contain'
+          }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
             const parent = target.parentElement!;
             parent.innerHTML = '🏠';
             parent.style.color = '#FFD700';
-            parent.style.fontSize = '24px';
+            parent.style.fontSize = `${currentHomeButtonSize * 0.22}px`;
           }}
         />
       </button>
@@ -174,6 +221,29 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
       </div>
     </div>
   );
+};
+
+// Export functions untuk digunakan di luar komponen
+export const useHomeButtonSize = () => {
+  const [size, setSize] = useState(108);
+  
+  const changeSize = (newSize: number) => {
+    setSize(Math.max(60, Math.min(200, newSize))); // Batasi ukuran antara 60-200px
+  };
+  
+  const resetToDefault = () => setSize(108);
+  const setToSmall = () => setSize(80);
+  const setToMedium = () => setSize(108);
+  const setToLarge = () => setSize(120);
+  
+  return {
+    size,
+    changeSize,
+    resetToDefault,
+    setToSmall,
+    setToMedium,
+    setToLarge
+  };
 };
 
 export default KitchenBackgroundWrapper;

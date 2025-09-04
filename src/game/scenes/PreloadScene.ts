@@ -37,21 +37,34 @@ export class Preloader extends Scene {
     // UI / Logo
     this.load.image("logo", "logo.png");
 
-    // Cooking assets
-    this.load.image("Tepung", "public/assets/flour.png");
-    this.load.image("Mangkuk", "bowl.png");
-    this.load.image("Mangkuk_isi", "public/assets/DenganTepung.png");
-    this.load.image("dropZone", "public/assets/DropZOne.png");
+    // Cooking assets - memperbaiki path yang salah
+    this.load.image("Tepung", "foods/flour.png");
+    this.load.image("Mangkuk", "foods/bowl.png");
+    this.load.image("Mangkuk_isi", "foods/DenganTepung.png");
+    this.load.image("dropZone", "foods/DropZOne.png");
 
     // Background dapur
-    this.load.image("background", "Background.png");
+    this.load.image("background", "backgrounds/kitchen.png");
 
     // Bahan tambahan
-    this.load.image("star", "star.png");
+    this.load.image("star", "foods/star.png");
+    
+    // Character assets untuk dialog
+    this.load.image("karakter1", "characters/karakter1.png");
+    this.load.image("karakter2", "characters/karakter2.png");
+    this.load.image("karakter3", "characters/karakter3.png");
+    this.load.image("karakter4", "characters/karakter4.png");
+    this.load.image("karakter5", "characters/karakter5.png");
+    
+    // UI buttons
+    this.load.image("menu_button", "ui/buttons/menu/menu_normal.png");
+    this.load.image("menu_button_hover", "ui/buttons/menu/menu_hover.png");
+    this.load.image("menu_button_active", "ui/buttons/menu/menu_active.png");
   }
 
   create() {
-    // Setelah selesai loading, langsung ke MainMenu
-    this.scene.start("MainMenu");
+    // Setelah selesai loading, langsung ke scene yang sesuai
+    // Untuk sementara, kita akan langsung ke scene pertama
+    this.scene.start("PapedaScene");
   }
 }

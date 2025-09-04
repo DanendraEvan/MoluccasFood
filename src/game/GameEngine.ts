@@ -1,5 +1,6 @@
 // src/game/GameEngine.ts
 import Phaser from 'phaser';
+import { Preloader } from './scenes/PreloadScene';
 import PapedaScene from './scenes/PapedaScene';
 import KohuKohuScene from './scenes/KohuKohuScene';
 import NasiLapolaScene from './scenes/NasiLapolaScene';
@@ -17,13 +18,20 @@ const सीन्स = {
 export const createGame = (food: keyof typeof सीन्स) => {
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: '100%',
-    height: '100%',
+    width: 1024,
+    height: 768,
     parent: 'game-container',
-    scene: [सीन्स[food]],
+    scene: [Preloader, सीन्स[food]],
     scale: {
-      mode: Phaser.Scale.RESIZE,
+      mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+    physics: {
+      default: 'arcade',
+      arcade: {
+        gravity: { x: 0, y: 0 },
+        debug: false
+      }
     }
   };
 

@@ -9,7 +9,7 @@ type ButtonState = 'normal' | 'hover' | 'active';
 
 const UI_CONFIG = {
   homeButton: {
-    size: 100,
+    size: 120, // Ukuran home button dalam pixel - diperbesar dari 100
     position: { top: 22, left: 2 }
   },
   titleBox: {
@@ -96,8 +96,8 @@ const CreditPage: React.FC = () => {
           <Image
             src={getHomeButtonImage()}
             alt="Home Button"
-            width={100}
-            height={100}
+            width={6}
+            height={6}
             style={{ 
               objectFit: 'contain'
             }}

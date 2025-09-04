@@ -1,7 +1,9 @@
-// src/pages/game/index_game.tsx - Fixed Navigation
+// src/pages/game/index_game.tsx - Updated with HomeButton Size Control
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import MusicButton from '@/components/MusicButton';
+import KitchenBackgroundWrapper from '@/components/KitchenBackgroundWrapper';
+import HomeButtonSizeController from '@/components/HomeButtonSizeController';
 
 // Background Wrapper Component
 interface BackgroundWrapperProps {
@@ -94,62 +96,10 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route, displayName })
   );
 };
 
-const HomeButton: React.FC = () => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isActive, setIsActive] = useState(false);
-  const router = useRouter();
-
-  const handleClick = async () => {
-    try {
-      setIsActive(true);
-      console.log('Navigating to: /menu'); // Debug log
-      
-      setTimeout(async () => {
-        await router.push('/menu');
-      }, 150);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      setIsActive(false);
-    }
-  };
-
-  const getImageSrc = () => {
-    if (isActive) return '/assets/ui/buttons/home/home_active.png';
-    if (isHovered) return '/assets/ui/buttons/home/home_hover.png';
-    return '/assets/ui/buttons/home/home_normal.png';
-  };
-
-  return (
-    <button
-      className="transition-transform duration-200 hover:scale-105 focus:outline-none bg-transparent border-none"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsActive(false);
-      }}
-      onMouseDown={() => setIsActive(true)}
-      onMouseUp={() => setIsActive(false)}
-      onClick={handleClick}
-      style={{ 
-        background: 'transparent',
-        backgroundColor: 'transparent'
-      }}
-    >
-      <img
-        src={getImageSrc()}
-        alt="Home Button"
-        className="w-auto h-auto max-w-[100px] max-h-[100px] md:max-w-[100px] md:max-h-[100px] drop-shadow-lg"
-        style={{ 
-          background: 'transparent',
-          backgroundColor: 'transparent'
-        }}
-      />
-    </button>
-  );
-};
-
 const InfoIndexPage = () => {
   const router = useRouter();
+  const [homeButtonSize, setHomeButtonSize] = useState(120);
+  const [showSizeController, setShowSizeController] = useState(false);
 
   // Food button data for easier management
   // Route ke halaman game dengan parameter scene
@@ -181,6 +131,11 @@ const InfoIndexPage = () => {
     }
   ];
 
+  const handleHomeButtonSizeChange = (newSize: number) => {
+    setHomeButtonSize(newSize);
+    console.log(`Home button size changed to: ${newSize}px`);
+  };
+
   return (
     <>
       {/* Global CSS untuk menghilangkan semua background abu-abu */}
@@ -199,25 +154,31 @@ const InfoIndexPage = () => {
       `}</style>
       
       <InfoBackgroundWrapper>
-        {/* Button Container - Home and Music buttons close together */}
-        <div 
-          className="absolute z-30 flex items-center"
+        {/* HomeButton Size Controller */}
+        <HomeButtonSizeController 
+          onSizeChange={handleHomeButtonSizeChange}
+          showControls={showSizeController}
+        />
+        
+        {/* Toggle Button untuk menampilkan/menyembunyikan controller */}
+        <button
+          onClick={() => setShowSizeController(!showSizeController)}
           style={{
-            top: '22px',
-            left: '20px',
-            gap: '0px'
+            position: 'fixed',
+            top: '10px',
+            right: '200px',
+            padding: '8px 12px',
+            background: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            zIndex: 1001
           }}
         >
-          {/* Home Button with negative margin to pull music button closer */}
-          <div style={{ marginRight: '-10px', zIndex: 31 }}>
-            <HomeButton />
-          </div>
-
-          {/* Music Button */}
-          <div style={{ zIndex: 30 }}>
-            <MusicButton />
-          </div>
-        </div>
+          {showSizeController ? 'Hide Controls' : 'Show Controls'}
+        </button>
         
         {/* Main Content Container */}
         <div className="flex flex-col items-center justify-center min-h-screen px-6 py-16">
