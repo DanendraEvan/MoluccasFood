@@ -80,7 +80,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
     cookingAreaBottom: 180, // Account for dialog panel
     
     // Dialog panel
-    dialogPanelHeight: 90,
+    dialogPanelHeight: 120,
     dialogPanelY: 900, // Will be calculated
     dialogPanelLeft: 50,
     dialogPanelRight: 20,
@@ -414,13 +414,13 @@ export default class NasiLapolaScene extends Phaser.Scene {
       this.komporKiriZone.x, 
       this.komporKiriZone.y, 
       "PanciAir"
-    ).setScale(this.layoutConfig.potScale).setInteractive();
+    ).setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
     
     this.panciKanan = this.add.image(
       this.komporKananZone.x, 
       this.komporKananZone.y, 
       "PanciSaring"
-    ).setScale(this.layoutConfig.potScale).setInteractive();
+    ).setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
   }
 
   private createIngredientsPanel() {
@@ -487,7 +487,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
       const item = this.add.image(x, y, ingredient.key)
         .setInteractive()
         .setScale(ingredient.scale)
-        .setName(ingredient.key);
+        .setName(ingredient.key)
+        .setData('originalScale', ingredient.scale);
 
       this.ingredientItems.push(item);
       this.input.setDraggable(item);
@@ -546,23 +547,23 @@ export default class NasiLapolaScene extends Phaser.Scene {
     // Character container
     const characterContainer = this.add.graphics();
     characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
     characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
     this.dialogPanel.add(characterContainer);
 
     // Character image
-    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.4)
+    this.characterImage = this.add.image(55, this.layoutConfig.dialogPanelHeight/2, "karakter1")
+      .setScale(0.36)
       .setOrigin(0.5, 0.5);
     this.dialogPanel.add(this.characterImage);
 
     // Step text
-    this.stepText = this.add.text(110, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '15px',
+    this.stepText = this.add.text(120, this.layoutConfig.dialogPanelHeight/2, "", {
+      fontSize: '18px',
       fontFamily: 'Chewy, cursive',
       color: '#2C1810',
-      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
+      wordWrap: { width: dialogWidth - 160, useAdvancedWrap: true },
       align: 'left',
       lineSpacing: 4
     }).setOrigin(0, 0.5);
@@ -571,12 +572,12 @@ export default class NasiLapolaScene extends Phaser.Scene {
     // Progress bar
     const progressBg = this.add.graphics();
     progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
+    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, dialogWidth - 40, 6, 3);
     this.dialogPanel.add(progressBg);
 
     const progressBar = this.add.graphics();
     progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * 0.125, 6, 3);
+    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * 0.125, 6, 3);
     this.dialogPanel.add(progressBar);
   }
 
@@ -654,7 +655,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
   private updateStepDisplay() {
     if (this.currentStep < this.gameSteps.length) {
       const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(`${step.id}. ${step.text}`);
+      this.stepText.setText(step.text);
       this.characterImage.setTexture(step.character.replace('.png', ''));
       
       // Animate text appearance
@@ -674,7 +675,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
       const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
       progressBar.clear();
       progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
+      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * progressPercentage, 6, 3);
     }
   }
 
@@ -690,6 +691,13 @@ export default class NasiLapolaScene extends Phaser.Scene {
   }
 
   private initDragAndDrop() {
+    this.input.on("dragstart", (pointer: any, gameObject: any) => {
+      // Store original scale when drag starts
+      if (!gameObject.getData('originalScale')) {
+        gameObject.setData('originalScale', gameObject.scale);
+      }
+    });
+
     this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
       gameObject.x = dragX;
       gameObject.y = dragY;
@@ -708,15 +716,12 @@ export default class NasiLapolaScene extends Phaser.Scene {
       gameObject.clearTint();
       
       if (!dropped) { // Only reset scale if not dropped on a valid zone
-        const originalScale = gameObject.getData('originalScale') || 
-          (gameObject.name === 'Kacang' ? 0.2 : 
-           gameObject.name === 'Kelapa' ? 0.18 : 
-           gameObject.name === 'Beras' ? 0.2 : 
-           gameObject.name === 'Garam' ? 0.16 : 
-           gameObject.name === 'Sepatula' ? 0.18 : 
-           gameObject.name === 'PanciAir2' ? 0.16 : 
-           gameObject.name === 'PanciSaring' ? 0.16 : 
-           gameObject.name === 'Piring' ? 0.17 : 0.15);
+        // Store original scale if not already stored
+        if (!gameObject.getData('originalScale')) {
+          gameObject.setData('originalScale', gameObject.scale);
+        }
+        
+        const originalScale = gameObject.getData('originalScale');
         gameObject.setScale(originalScale);
         
         // Smooth return with bounce effect
@@ -770,7 +775,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
       // Step 4: Add new pot and rice
       else if ((dropZone === this.komporKiriZone || dropZone === this.komporKananZone) && this.statePanciMasak === "empty" && droppedKey === "PanciAir2" && this.currentStep === 3) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.panciMasak = this.add.image(dropZone.x, dropZone.y, "PanciAir2").setScale(this.layoutConfig.potScale).setInteractive();
+          this.panciMasak = this.add.image(dropZone.x, dropZone.y, "PanciAir2").setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
           this.input.setDraggable(this.panciMasak);
           this.statePanciMasak = "air";
         });
@@ -826,7 +831,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
       else if ((dropZone === this.komporKiriZone || dropZone === this.komporKananZone) && 
                !this.panciKukus && droppedKey === "PanciSaring" && this.currentStep === 6) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.panciKukus = this.add.image(dropZone.x, dropZone.y, "PanciSaring").setScale(this.layoutConfig.potScale).setInteractive();
+          this.panciKukus = this.add.image(dropZone.x, dropZone.y, "PanciSaring").setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
           this.statePanciKukus = "air";
         });
       }

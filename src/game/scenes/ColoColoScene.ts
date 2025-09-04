@@ -51,9 +51,9 @@ export default class ColoColoScene extends Phaser.Scene {
     
     // Dialog panel
     dialogPanelHeight: 120,
-    dialogPanelY: 1000, // Will be calculated
-    dialogPanelLeft: 120,
-    dialogPanelRight: 290,
+    dialogPanelY: 700, // Will be calculated
+    dialogPanelLeft: 50,
+    dialogPanelRight: 20,
 
     // Character
     characterX: 400,
@@ -265,7 +265,7 @@ export default class ColoColoScene extends Phaser.Scene {
     const telenanX = cookingAreaCenterX - 250; // Adjusted X position
     this.gameObjects.telenan = this.add.image(telenanX, cookingAreaCenterY, 'telenan');
     this.gameObjects.telenan.setInteractive({ dropZone: true });
-    this.gameObjects.telenan.setScale(0.8);
+    this.gameObjects.telenan.setScale(0.6);
     this.gameObjects.telenan.setData('type', 'telenan');
     this.gameObjects.telenan.setData('currentState', 'telenan');
     this.gameObjects.telenan.setData('homeX', telenanX);
@@ -274,7 +274,7 @@ export default class ColoColoScene extends Phaser.Scene {
     // Position ulekan to the right of telenan, initially hidden
     const ulekanX = telenanX + 500; // Adjusted X position for more distance
     this.gameObjects.ulekan = this.add.image(ulekanX, cookingAreaCenterY, 'ulekan');
-    this.gameObjects.ulekan.setScale(0.6);
+    this.gameObjects.ulekan.setScale(0.5);
     this.gameObjects.ulekan.setInteractive({ dropZone: true });
     this.gameObjects.ulekan.setVisible(false);
   }
@@ -307,14 +307,14 @@ export default class ColoColoScene extends Phaser.Scene {
     this.ingredientItems = [];
 
     const ingredients = [
-      { key: "cabai", name: "Cabai", scale: 0.4 },
-      { key: "bawang_putih", name: "Bawang Putih", scale: 0.4 },
-      { key: "daun_jeruk", name: "Daun Jeruk", scale: 0.4 },
-      { key: "jeruk_nipis", name: "Jeruk Nipis", scale: 0.4 },
-      { key: "kecap", name: "Kecap", scale: 0.4 },
-      { key: "munthu", name: "Munthu", scale: 0.4 },
-      { key: "Pisau", name: "Pisau", scale: 0.4 },
-      { key: "piring_colo_colo", name: "Piring", scale: 0.4 }
+      { key: "cabai", name: "Cabai", scale: 0.2 },
+      { key: "bawang_putih", name: "Bawang Putih", scale: 0.2 },
+      { key: "daun_jeruk", name: "Daun Jeruk", scale: 0.2 },
+      { key: "jeruk_nipis", name: "Jeruk Nipis", scale: 0.2 },
+      { key: "kecap", name: "Kecap", scale: 0.2 },
+      { key: "munthu", name: "Munthu", scale: 0.2 },
+      { key: "Pisau", name: "Pisau", scale: 0.2 },
+      { key: "piring_colo_colo", name: "Piring", scale: 0.2 }
     ];
 
     // --- Dynamic Centered Grid Layout ---
@@ -412,23 +412,23 @@ export default class ColoColoScene extends Phaser.Scene {
     // Character container
     const characterContainer = this.add.graphics();
     characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
     characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
+    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
     this.dialogPanel.add(characterContainer);
 
     // Character image
-    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.4)
+    this.characterImage = this.add.image(55, this.layoutConfig.dialogPanelHeight/2, "karakter1")
+      .setScale(0.36)
       .setOrigin(0.5, 0.5);
     this.dialogPanel.add(this.characterImage);
 
     // Step text
-    this.stepText = this.add.text(110, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '25px',
+    this.stepText = this.add.text(120, this.layoutConfig.dialogPanelHeight/2, "", {
+      fontSize: '18px',
       fontFamily: 'Chewy, cursive',
       color: '#2C1810',
-      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
+      wordWrap: { width: dialogWidth - 160, useAdvancedWrap: true },
       align: 'left',
       lineSpacing: 4
     }).setOrigin(0, 0.5);
@@ -437,12 +437,12 @@ export default class ColoColoScene extends Phaser.Scene {
     // Progress bar
     const progressBg = this.add.graphics();
     progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
+    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, dialogWidth - 40, 6, 3);
     this.dialogPanel.add(progressBg);
 
     const progressBar = this.add.graphics();
     progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * 0.2, 6, 3);
+    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * 0.2, 6, 3);
     this.dialogPanel.add(progressBar);
   }
 
@@ -539,7 +539,7 @@ export default class ColoColoScene extends Phaser.Scene {
       const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
       progressBar.clear();
       progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
+      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * progressPercentage, 6, 3);
     }
   }
 
@@ -701,7 +701,7 @@ export default class ColoColoScene extends Phaser.Scene {
     // Step 5: Add jeruk nipis
     else if (ingredientType === 'jeruk_nipis' && this.gameState.ulekanState === 'ulekan_daun' && this.currentStep === 4) {
       this.transformUlekan('ulekan_nipis');
-      this.gameObjects.ulekan.setScale(0.6); // Maintain original scale
+      this.gameObjects.ulekan.setScale(0.5); // Maintain consistent scale
       this.hideIngredient('jeruk_nipis');
       ingredientObject.destroy();
       this.nextStep(); // Advance to step 6 (munthu)
@@ -730,6 +730,7 @@ export default class ColoColoScene extends Phaser.Scene {
   private transformTelenan(newState: string) {
     console.log(`Transforming telenan from ${this.gameState.telenanState} to ${newState}`);
     this.gameObjects.telenan.setTexture(newState);
+    this.gameObjects.telenan.setScale(0.6);
     this.gameState.telenanState = newState;
     
     this.gameObjects.telenan.setData('currentState', newState);
@@ -857,6 +858,7 @@ export default class ColoColoScene extends Phaser.Scene {
             this.time.delayedCall(duration, () => {
                 ulekAnimation.destroy();
                 this.transformUlekan('ulekan_munthu');
+                this.gameObjects.ulekan.setScale(0.5); // Maintain consistent scale
                 onComplete();
             });
         }
