@@ -31,6 +31,8 @@ export default class ColoColoScene extends Phaser.Scene {
   private panelTitle!: Phaser.GameObjects.Text;
   private stagingZone!: Phaser.GameObjects.Zone;
   private telenanSelected = false;
+  private hintPopup!: Phaser.GameObjects.Container;
+  private infoContent: string = `Colo-colo adalah sambal khas Maluku yang memiliki cita rasa pedas dan segar. Sambal ini terbuat dari campuran cabai rawit merah, bawang merah, tomat, dan garam yang diulek kasar hingga tercampur rata. Yang membuat colo-colo unik adalah teksturnya yang tidak terlalu halus, sehingga masih terasa potongan-potongan kecil dari bahan-bahannya. Kadang-kadang ditambahkan perasan jeruk nipis atau jeruk lemon untuk memberikan rasa asam segar yang menyeimbangkan rasa pedasnya. Colo-colo biasanya disajikan sebagai pelengkap berbagai makanan khas Maluku seperti ikan bakar, papeda, atau nasi putih. Sambal ini sangat digemari karena kesegaran dan rasa pedasnya yang khas, serta kemudahan dalam pembuatannya yang tidak memerlukan proses memasak.`;
 
   // Layout configuration
   private layoutConfig = {
@@ -145,6 +147,9 @@ export default class ColoColoScene extends Phaser.Scene {
     this.load.image('telenan', '/assets/foods/colo_colo/telenan.png');
     this.load.image('telenan_cabai', '/assets/foods/colo_colo/TelenanCabai.png');
     this.load.image('telenan_cabai_potong', '/assets/foods/colo_colo/TelenanCabaiPotong.png');
+    
+    // Load food image for hint popup
+    this.load.image('colocolo_food', '/assets/makanan/colocolo.png');
     this.load.image('telenan_cabai_bawang_putih', '/assets/foods/colo_colo/TelenanCabaiBawangPutih.png');
     this.load.image('telenan_cabai_bawang_potong', '/assets/foods/colo_colo/TelenanCabaiBawangPotong.png');
     
@@ -155,6 +160,9 @@ export default class ColoColoScene extends Phaser.Scene {
     this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
     this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
     this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
 
     // Characters
     this.load.image("karakter1", "/assets/karakter/karakter1.png");
@@ -196,8 +204,8 @@ export default class ColoColoScene extends Phaser.Scene {
     // Update step display
     this.updateStepDisplay();
 
-    // Add back button
-    this.createBackButton();
+    // Add hint button
+    this.createHintButton();
   }
 
   private calculateLayout() {
@@ -934,90 +942,86 @@ export default class ColoColoScene extends Phaser.Scene {
         });
       }
       
-      this.showCompletionDialog();
+      // Game completed - could add completion logic here if needed
     });
   }
 
-  private showCompletionDialog() {
-    const dialogWidth = 500;
-    const dialogHeight = 200;
+  private createHintPopup() {
+    const popupWidth = 650;
+    const popupHeight = 450;
     const centerX = this.cameras.main.width / 2;
     const centerY = this.cameras.main.height / 2;
 
-    // Background overlay
-    const overlay = this.add.graphics();
-    overlay.fillStyle(0x000000, 0.8);
-    overlay.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
+    this.hintPopup = this.add.container(centerX, centerY);
+    this.hintPopup.setDepth(100);
 
-    // Dialog background
-    const dialogBg = this.add.graphics();
-    dialogBg.fillStyle(0x2A1810, 0.95);
-    dialogBg.fillRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
-    dialogBg.lineStyle(4, 0xFFD700, 1);
-    dialogBg.strokeRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
-    
-    // Completion text
-    const completionTitle = this.add.text(centerX, centerY - 40, "SELAMAT!", {
-      fontSize: '32px',
-      fontFamily: 'Chewy, cursive',
-      color: '#FFD700',
-      align: 'center',
+    // Modern brown gradient background
+    const background = this.add.graphics();
+    background.fillGradientStyle(0x8B4513, 0xA0522D, 0xCD853F, 0xDEB887, 1);
+    background.fillRoundedRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight, 20);
+    this.hintPopup.add(background);
+
+    // Inner content area with cream background
+    const contentBg = this.add.graphics();
+    contentBg.fillStyle(0xFFFDD0, 0.95);
+    contentBg.fillRoundedRect(-popupWidth / 2 + 15, -popupHeight / 2 + 15, popupWidth - 30, popupHeight - 30, 15);
+    this.hintPopup.add(contentBg);
+
+    // Title header
+    const title = this.add.text(0, -popupHeight / 2 + 45, 'Colo-Colo', {
+      fontSize: '28px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#5D4037',
       fontStyle: 'bold'
     }).setOrigin(0.5);
-    
-    const completionText = this.add.text(centerX, centerY, "Sambal Colo-Colo Berhasil Dibuat!", {
-      fontSize: '24px',
-      fontFamily: 'Chewy, cursive',
-      color: '#FFFFFF',
-      align: 'center'
-    }).setOrigin(0.5);
-    
-    const completionSubtext = this.add.text(centerX, centerY + 35, "Resep tradisional telah selesai dengan sempurna!", {
-      fontSize: '16px',
-      fontFamily: 'Chewy, cursive',
-      color: '#CCCCCC',
-      align: 'center'
-    }).setOrigin(0.5);
-    
-    // Animate dialog appearance
-    const dialogElements = [overlay, dialogBg, completionTitle, completionText, completionSubtext];
-    dialogElements.forEach(el => {
-      if (el && typeof el.setAlpha === 'function') {
-        el.setAlpha(0);
-      }
-    });
+    this.hintPopup.add(title);
 
-    this.tweens.add({
-      targets: dialogElements,
-      alpha: 1,
-      duration: 500,
-      ease: 'Power2',
-      stagger: 100
+    // Divider line
+    const divider = this.add.graphics();
+    divider.lineStyle(2, 0x8B4513, 0.8);
+    divider.lineBetween(-popupWidth / 2 + 40, -popupHeight / 2 + 70, popupWidth / 2 - 40, -popupHeight / 2 + 70);
+    this.hintPopup.add(divider);
+
+    // Text content - simplified without masking
+    const textAreaWidth = popupWidth - 80;
+    const textStartX = -popupWidth / 2 + 40;
+    const textStartY = -popupHeight / 2 + 90;
+    
+    // Food information content
+    const colocoloContent = `Colo-colo adalah sambal khas Maluku yang memiliki cita rasa pedas dan segar. Sambal ini terbuat dari campuran cabai rawit merah, bawang merah, tomat, dan garam yang diulek kasar hingga tercampur rata. Yang membuat colo-colo unik adalah teksturnya yang tidak terlalu halus, sehingga masih terasa potongan-potongan kecil dari bahan-bahannya. Kadang-kadang ditambahkan perasan jeruk nipis atau jeruk lemon untuk memberikan rasa asam segar yang menyeimbangkan rasa pedasnya. Colo-colo biasanya disajikan sebagai pelengkap berbagai makanan khas Maluku seperti ikan bakar, papeda, atau nasi putih. Sambal ini sangat digemari karena kesegaran dan rasa pedasnya yang khas, serta kemudahan dalam pembuatannya yang tidak memerlukan proses memasak.`;
+    
+    // Add the main text directly to popup
+    const text = this.add.text(textStartX, textStartY, colocoloContent, {
+      fontSize: '16px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#3E2723',
+      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
+      align: 'left',
+      lineSpacing: 6
+    }).setOrigin(0, 0);
+    
+    this.hintPopup.add(text);
+    this.hintPopup.setVisible(false);
+  }
+
+  private createHintButton() {
+    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 50, 'hint_normal').setInteractive();
+    hintButton.setScale(0.1);
+
+    hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
+    hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
+    hintButton.on('pointerdown', () => {
+      hintButton.setTexture('hint_active');
+      this.showHintPopup();
     });
   }
 
-  private createBackButton() {
-    const backButton = this.add.text(50, 50, '⌂ Home', {
-      font: '24px Chewy',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 15, y: 10 }
-    });
-    
-    backButton.setInteractive();
-    backButton.on('pointerdown', () => {
-      if (typeof window !== 'undefined') {
-        window.location.href = '/menu';
-      }
-    });
-    
-    backButton.on('pointerover', () => {
-      backButton.setStyle({ backgroundColor: '#333333' });
-    });
-    
-    backButton.on('pointerout', () => {
-      backButton.setStyle({ backgroundColor: '#000000' });
-    });
+  private showHintPopup() {
+    if (!this.hintPopup) {
+      this.createHintPopup();
+    }
+    // Toggle popup visibility
+    this.hintPopup.setVisible(!this.hintPopup.visible);
   }
 
   update() {

@@ -80,6 +80,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private isScrollbarDragging: boolean = false;
   private scrollbarDragStartY: number = 0;
   private contentStartY: number = 0;
+  private hintPopup!: Phaser.GameObjects.Container;
+  private infoContent: string = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti ikan cakalang, tongkol, atau ikan kerapu yang dipotong-potong. Bumbu kuah kuning terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum kemudian ditambah air dan santan hingga mendidih. Ikan kemudian dimasukkan dan dimasak hingga matang sambil menyerap cita rasa kuah yang kaya rempah. Hidangan ini biasanya disajikan dengan nasi putih atau papeda, dan memberikan sensasi hangat serta menyegarkan dengan aroma rempah yang khas.`;
 
   // Layout configuration
   private layoutConfig = {
@@ -198,6 +200,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.load.image('asam_jawa', '/assets/foods/ikan_kuahkuning/AsamJawa.png');
     this.load.image('garam', '/assets/foods/ikan_kuahkuning/Garam1.png');
     this.load.image('gula', '/assets/foods/ikan_kuahkuning/Gula1.png');
+    
+    // Load food image for hint popup
+    this.load.image('ikankuahkuning_food', '/assets/makanan/ikankuahkuning.png');
     this.load.image('tomat', '/assets/foods/ikan_kuahkuning/Tomat.png');
     
     // Peralatan
@@ -217,6 +222,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
     this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
     this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
 
     // Characters
     this.load.image("karakter1", "/assets/karakter/karakter1.png");
@@ -280,6 +288,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Update step display
     this.updateStepDisplay();
+    this.createHintButton();
   }
 
   private calculateLayout() {
@@ -1382,5 +1391,83 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       "campuran_bumbu_halus": 0.4
     };
     return scaleMap[itemName] || 0.15;
+  }
+
+  private createHintButton() {
+    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 100, 'hint_normal').setInteractive();
+    hintButton.setScale(0.1);
+
+    hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
+    hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
+    hintButton.on('pointerdown', () => {
+      hintButton.setTexture('hint_active');
+      this.showHintPopup();
+    });
+  }
+
+  private showHintPopup() {
+    if (!this.hintPopup) {
+      this.createHintPopup();
+    }
+    // Toggle popup visibility
+    this.hintPopup.setVisible(!this.hintPopup.visible);
+  }
+
+  private createHintPopup() {
+    const popupWidth = 650;
+    const popupHeight = 450;
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+
+    this.hintPopup = this.add.container(centerX, centerY);
+    this.hintPopup.setDepth(100);
+
+    // Modern brown gradient background
+    const background = this.add.graphics();
+    background.fillGradientStyle(0x8B4513, 0xA0522D, 0xCD853F, 0xDEB887, 1);
+    background.fillRoundedRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight, 20);
+    this.hintPopup.add(background);
+
+    // Inner content area with cream background
+    const contentBg = this.add.graphics();
+    contentBg.fillStyle(0xFFFDD0, 0.95);
+    contentBg.fillRoundedRect(-popupWidth / 2 + 15, -popupHeight / 2 + 15, popupWidth - 30, popupHeight - 30, 15);
+    this.hintPopup.add(contentBg);
+
+    // Title header
+    const title = this.add.text(0, -popupHeight / 2 + 45, 'Ikan Kuah Kuning', {
+      fontSize: '28px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#5D4037',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    this.hintPopup.add(title);
+
+    // Divider line
+    const divider = this.add.graphics();
+    divider.lineStyle(2, 0x8B4513, 0.8);
+    divider.lineBetween(-popupWidth / 2 + 40, -popupHeight / 2 + 70, popupWidth / 2 - 40, -popupHeight / 2 + 70);
+    this.hintPopup.add(divider);
+
+    // Text content - simplified without masking
+    const textAreaWidth = popupWidth - 80;
+    const textStartX = -popupWidth / 2 + 40;
+    const textStartY = -popupHeight / 2 + 90;
+    
+    // Food information content
+    const ikanKuahKuningContent = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti ikan cakalang, tongkol, atau ikan kerapu yang dipotong-potong. Bumbu kuah kuning terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum kemudian ditambah air dan santan hingga mendidih. Ikan kemudian dimasukkan dan dimasak hingga matang sambil menyerap cita rasa kuah yang kaya rempah. Hidangan ini biasanya disajikan dengan nasi putih atau papeda, dan memberikan sensasi hangat serta menyegarkan dengan aroma rempah yang khas.`;
+    
+    // Add the main text directly to popup
+    const text = this.add.text(textStartX, textStartY, ikanKuahKuningContent, {
+      fontSize: '16px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#3E2723',
+      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
+      align: 'left',
+      lineSpacing: 6
+    }).setOrigin(0, 0);
+    
+    this.hintPopup.add(text);
+    this.hintPopup.setVisible(false);
   }
 }

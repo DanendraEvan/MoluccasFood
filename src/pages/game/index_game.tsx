@@ -230,9 +230,6 @@ const InfoIndexPage = () => {
           {/* Title dengan ukuran custom dan padding yang dapat diatur */}
           <div 
             className="mb-16 md:mb-20"
-            style={{
-              marginBottom: '20px', // Ganti nilai ini untuk padding bawah judul (dalam px)
-            }}
           >
             <h2 
               className="font-chewy font-bold leading-tight text-center"
@@ -249,10 +246,10 @@ const InfoIndexPage = () => {
           </div>
 
           {/* Food Buttons Grid dalam formasi 2-3 */}
-          <div className="flex flex-col items-center mb-16" style={{ gap: '80px' }}>
+          <div className="flex flex-col items-center mb-16" style={{ gap: '20px' }}>
             
             {/* Row 1 - Top 2 buttons (Kohu-Kohu dan Nasi Lapola) */}
-            <div className="flex flex-row justify-center items-center" style={{ gap: '60px' }}>
+            <div className="flex flex-row justify-center items-center" style={{ gap: '20px' }}>
               <FoodButton 
                 foodName={foodButtons[0].foodName}
                 route={foodButtons[0].route}
@@ -266,7 +263,7 @@ const InfoIndexPage = () => {
             </div>
 
             {/* Row 2 - Bottom 3 buttons (Colo-Colo, Ikan Kuah Kuning, dan Papeda) */}
-            <div className="flex flex-row justify-center items-center" style={{ gap: '50px' }}>
+            <div className="flex flex-row justify-center items-center" style={{ gap: '20px' }}>
               <FoodButton 
                 foodName={foodButtons[2].foodName}
                 route={foodButtons[2].route}

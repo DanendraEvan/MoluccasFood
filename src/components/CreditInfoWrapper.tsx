@@ -21,6 +21,7 @@ interface UIConfig {
 interface Developer {
   name: string;
   description: string;
+  image: string;
 }
 
 interface CreditInfoWrapperProps {
@@ -35,9 +36,10 @@ interface CreditInfoWrapperProps {
 interface ProfileCardProps {
   name: string;
   description: string;
+  image: string;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ name, description }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({ name, description, image }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const cardStyle: React.CSSProperties = {
@@ -74,27 +76,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ name, description }) => {
     overflow: 'hidden'
   };
 
-  const cloudStyle: React.CSSProperties = {
-    width: '80px',
-    height: '50px',
-    background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
-    borderRadius: '25px',
-    position: 'absolute',
-    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
-  };
-
-  const grassStyle: React.CSSProperties = {
-    position: 'absolute',
-    bottom: '0',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '90px',
-    height: '35px',
-    background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-    borderRadius: '45px 45px 0 0',
-    boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)'
-  };
-
   return (
     <div 
       style={cardStyle}
@@ -103,87 +84,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ name, description }) => {
     >
       {/* Profile Image with Landscape Scene */}
       <div style={imageContainerStyle}>
-        {/* Sky Background */}
-        <div style={{
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          right: '0',
-          bottom: '0',
-          background: 'linear-gradient(180deg, #87ceeb 0%, #e0f6ff 70%)',
-          borderRadius: '50%'
-        }}>
-          {/* Cloud 1 */}
-          <div style={{
-            ...cloudStyle,
-            top: '15px',
-            left: '20px',
-            width: '50px',
-            height: '30px',
-            borderRadius: '15px'
-          }}>
-            {/* Cloud bubbles */}
-            <div style={{
-              position: 'absolute',
-              top: '-8px',
-              left: '8px',
-              width: '18px',
-              height: '18px',
-              background: '#ffffff',
-              borderRadius: '50%'
-            }}></div>
-            <div style={{
-              position: 'absolute',
-              top: '-6px',
-              right: '10px',
-              width: '14px',
-              height: '14px',
-              background: '#ffffff',
-              borderRadius: '50%'
-            }}></div>
-          </div>
-          
-          {/* Cloud 2 */}
-          <div style={{
-            ...cloudStyle,
-            top: '25px',
-            right: '15px',
-            width: '40px',
-            height: '25px',
-            borderRadius: '12px'
-          }}>
-            <div style={{
-              position: 'absolute',
-              top: '-6px',
-              left: '6px',
-              width: '15px',
-              height: '15px',
-              background: '#ffffff',
-              borderRadius: '50%'
-            }}></div>
-            <div style={{
-              position: 'absolute',
-              top: '-4px',
-              right: '8px',
-              width: '12px',
-              height: '12px',
-              background: '#ffffff',
-              borderRadius: '50%'
-            }}></div>
-          </div>
-
-          {/* Grass/Hills */}
-          <div style={grassStyle}></div>
-          
-          {/* Additional hill */}
-          <div style={{
-            ...grassStyle,
-            width: '60px',
-            height: '25px',
-            left: '20%',
-            background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-          }}></div>
-        </div>
+        <img src={image} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
 
       {/* Name */}
@@ -283,6 +184,7 @@ const CreditInfoWrapper: React.FC<CreditInfoWrapperProps> = ({
             key={index}
             name={dev.name}
             description={dev.description}
+            image={dev.image}
           />
         ))}
       </div>

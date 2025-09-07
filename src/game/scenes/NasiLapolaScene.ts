@@ -60,6 +60,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
+  private hintPopup!: Phaser.GameObjects.Container;
+  private infoContent: string = `Nasi Lapola adalah hidangan nasi khas Maluku yang memiliki keunikan tersendiri dalam penyajian dan rasanya. Lapola sendiri berasal dari bahasa lokal yang berarti "dicampur" atau "diaduk". Nasi lapola dibuat dari beras yang dimasak dengan santan kelapa dan rempah-rempah seperti pala, cengkeh, dan daun pandan yang memberikan aroma harum dan rasa yang khas. Yang membuat nasi lapola istimewa adalah cara penyajiannya yang dicampur dengan berbagai lauk pauk seperti ayam suwir, ikan asin, sayuran, dan kerupuk, sehingga menjadi satu hidangan yang lengkap dan mengenyangkan. Biasanya nasi ini disajikan dalam porsi besar dan dimakan bersama-sama sebagai simbol kebersamaan dalam masyarakat Maluku. Cita rasanya yang gurih dari santan dan harum dari rempah-rempah membuat nasi lapola menjadi makanan yang sangat digemari, terutama saat acara-acara adat atau perayaan keluarga.`;
 
 
   // Layout configuration - dapat diatur secara manual
@@ -160,6 +162,9 @@ export default class NasiLapolaScene extends Phaser.Scene {
   preload() {
     this.load.image("background", "/assets/backgrounds/kitchen.png");
     this.load.image("Kompor", "/assets/foods/kohu_kohu/Kompor.png");
+    
+    // Load food image for hint popup
+    this.load.image('nasilapola_food', '/assets/makanan/nasilapola.png');
 
     // Alat & Bahan
     this.load.image("PanciAir", "/assets/foods/nasi_lapola/PanciAir.png");
@@ -194,6 +199,9 @@ export default class NasiLapolaScene extends Phaser.Scene {
     this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
     this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
     this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
 
     // Characters
     this.load.image("karakter1", "/assets/karakter/karakter1.png");
@@ -228,6 +236,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
     // Update step display
     this.updateStepDisplay();
+    this.createHintButton();
   }
 
   private calculateLayout() {
@@ -1122,4 +1131,83 @@ export default class NasiLapolaScene extends Phaser.Scene {
     });
   }
 
+  private createHintButton() {
+    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 100, 'hint_normal').setInteractive();
+    hintButton.setScale(0.1);
+
+    hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
+    hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
+    hintButton.on('pointerdown', () => {
+      hintButton.setTexture('hint_active');
+      this.showHintPopup();
+    });
+  }
+
+  private showHintPopup() {
+    if (!this.hintPopup) {
+      this.createHintPopup();
+    }
+    // Toggle popup visibility
+    this.hintPopup.setVisible(!this.hintPopup.visible);
+  }
+
+  private createHintPopup() {
+    const popupWidth = 650;
+    const popupHeight = 450;
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+
+    this.hintPopup = this.add.container(centerX, centerY);
+    this.hintPopup.setDepth(100);
+
+    // Modern brown gradient background
+    const background = this.add.graphics();
+    background.fillGradientStyle(0x8B4513, 0xA0522D, 0xCD853F, 0xDEB887, 1);
+    background.fillRoundedRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight, 20);
+    this.hintPopup.add(background);
+
+    // Inner content area with cream background
+    const contentBg = this.add.graphics();
+    contentBg.fillStyle(0xFFFDD0, 0.95);
+    contentBg.fillRoundedRect(-popupWidth / 2 + 15, -popupHeight / 2 + 15, popupWidth - 30, popupHeight - 30, 15);
+    this.hintPopup.add(contentBg);
+
+    // Title header
+    const title = this.add.text(0, -popupHeight / 2 + 45, 'Nasi Lapola', {
+      fontSize: '28px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#5D4037',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    this.hintPopup.add(title);
+
+    // Divider line
+    const divider = this.add.graphics();
+    divider.lineStyle(2, 0x8B4513, 0.8);
+    divider.lineBetween(-popupWidth / 2 + 40, -popupHeight / 2 + 70, popupWidth / 2 - 40, -popupHeight / 2 + 70);
+    this.hintPopup.add(divider);
+    contentBg.fillRoundedRect(-popupWidth / 2 + 20, -popupHeight / 2 + 85, popupWidth - 40, popupHeight - 120, 20);
+    this.hintPopup.add(contentBg);
+
+    // Text content - simplified without masking
+    const textAreaWidth = popupWidth - 80;
+    const textStartX = -popupWidth / 2 + 40;
+    const textStartY = -popupHeight / 2 + 90;
+    
+    // Food information content
+    const nasiLapolaContent = `Nasi Lapola adalah hidangan nasi khas Maluku yang memiliki keunikan tersendiri dalam penyajian dan rasanya. Lapola sendiri berasal dari bahasa lokal yang berarti "dicampur" atau "diaduk". Nasi lapola dibuat dari beras yang dimasak dengan santan kelapa dan rempah-rempah seperti pala, cengkeh, dan daun pandan yang memberikan aroma harum dan rasa yang khas. Yang membuat nasi lapola istimewa adalah cara penyajiannya yang dicampur dengan berbagai lauk pauk seperti ayam suwir, ikan asin, sayuran, dan kerupuk, sehingga menjadi satu hidangan yang lengkap dan mengenyangkan. Biasanya nasi ini disajikan dalam porsi besar dan dimakan bersama-sama sebagai simbol kebersamaan dalam masyarakat Maluku. Cita rasanya yang gurih dari santan dan harum dari rempah-rempah membuat nasi lapola menjadi makanan yang sangat digemari, terutama saat acara-acara adat atau perayaan keluarga.`;
+    
+    // Add the main text directly to popup
+    const text = this.add.text(textStartX, textStartY, nasiLapolaContent, {
+      fontSize: '16px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#3E2723',
+      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
+      align: 'left',
+      lineSpacing: 6
+    }).setOrigin(0, 0);
+    
+    this.hintPopup.add(text);
+    this.hintPopup.setVisible(false);
+  }
 }

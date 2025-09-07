@@ -9,7 +9,7 @@ type ButtonState = 'normal' | 'hover' | 'active';
 
 const UI_CONFIG = {
   homeButton: {
-    size: 120, // Ukuran home button dalam pixel - diperbesar dari 100
+    size: 100, // Ukuran home button dalam pixel - diperbesar dari 100
     position: { top: 22, left: 2 }
   },
   titleBox: {
@@ -46,15 +46,18 @@ const CreditPage: React.FC = () => {
   const developers = [
     {
       name: "Carlo Bohan Matakena",
-      description: "murid SMA Laboratorium Universitas Patimura. Carlo saat ini sedang menempuh pendidikan di kelas XII."
+      description: "murid SMA Laboratorium Universitas Patimura. Carlo saat ini sedang menempuh pendidikan di kelas XII.",
+      image: "/assets/credit/carlo.jpeg"
     },
     {
       name: "Jidel Yunantin Mauwa",
-      description: "murid SMA Laboratorium Universitas Patimura. Jidel saat ini sedang menempuh pendidikan di kelas XII."
+      description: "murid SMA Laboratorium Universitas Patimura. Jidel saat ini sedang menempuh pendidikan di kelas XII.",
+      image: "/assets/credit/jifdei.jpeg"
     },
     {
       name: "Ivandra Immanuela Latumahulita",
-      description: "M.Pd merupakan guru SMA Laboratorium Universitas Patimura. Pak Ivan merupakan guru pembimbing kami."
+      description: "M.Pd merupakan guru SMA Laboratorium Universitas Patimura. Pak Ivan merupakan guru pembimbing kami.",
+      image: "/assets/credit/ivandra.jpeg"
     }
   ];
 
@@ -96,8 +99,8 @@ const CreditPage: React.FC = () => {
           <Image
             src={getHomeButtonImage()}
             alt="Home Button"
-            width={6}
-            height={6}
+            width={100}
+            height={100}
             style={{ 
               objectFit: 'contain'
             }}

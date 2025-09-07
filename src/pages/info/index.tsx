@@ -51,7 +51,7 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route }) => {
   };
 
   return (
-    <div className="p-4 bg-transparent">
+    <div className="bg-transparent" style={{ padding: '20px', margin: '15px' }}>
       <button
         className="transition-transform duration-200 hover:scale-105 focus:outline-none bg-transparent border-none p-0 m-0 block"
         onMouseEnter={() => setIsHovered(true)}
@@ -168,13 +168,14 @@ const InfoIndexPage = () => {
           </div>
 
           {/* Food Buttons */}
-          <div className="flex flex-col items-center gap-8 md:gap-10 mb-16">
-            <div className="flex flex-row gap-5 md:gap-11 justify-center items-center">
+          {/* Food Buttons */}
+          <div className="flex flex-col items-center mb-16" style={{ gap: '20px' }}>
+            <div className="flex flex-row justify-center items-center" style={{ gap: '20px' }}>
               <FoodButton foodName="kohukohu" route="/info/3" />
               <FoodButton foodName="nasilapola" route="/info/5" />
             </div>
 
-            <div className="flex flex-row gap-8 md:gap-12 justify-center items-center">
+            <div className="flex flex-row justify-center items-center" style={{ gap: '20px' }}>
               <FoodButton foodName="colocolo" route="/info/2" />
               <FoodButton foodName="ikankuahkuning" route="/info/4" />
               <FoodButton foodName="papeda" route="/info/1" />

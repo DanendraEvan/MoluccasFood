@@ -30,6 +30,8 @@ export default class PapedaScene extends Phaser.Scene {
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
+  private hintPopup!: Phaser.GameObjects.Container;
+  private infoContent: string = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
 
   // Layout configuration
   private layoutConfig = {
@@ -117,8 +119,14 @@ export default class PapedaScene extends Phaser.Scene {
     // Background and UI
     this.load.image("background", "/assets/backgrounds/kitchen.png");
     this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
+    
+    // Load food image for hint popup
+    this.load.image('papeda_food', '/assets/makanan/papeda.png');
     this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
     this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
 
     // Characters
     this.load.image("karakter1", "/assets/karakter/karakter1.png");
@@ -185,6 +193,7 @@ export default class PapedaScene extends Phaser.Scene {
 
     // Update step display
     this.updateStepDisplay();
+    this.createHintButton();
   }
 
   private calculateLayout() {
@@ -943,5 +952,83 @@ export default class PapedaScene extends Phaser.Scene {
 
   update() {
     // Update method can be used for any per-frame logic if needed
+  }
+
+  private createHintButton() {
+    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 100, 'hint_normal').setInteractive();
+    hintButton.setScale(0.1);
+
+    hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
+    hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
+    hintButton.on('pointerdown', () => {
+      hintButton.setTexture('hint_active');
+      this.showHintPopup();
+    });
+  }
+
+  private showHintPopup() {
+    if (!this.hintPopup) {
+      this.createHintPopup();
+    }
+    // Toggle popup visibility
+    this.hintPopup.setVisible(!this.hintPopup.visible);
+  }
+
+  private createHintPopup() {
+    const popupWidth = 650;
+    const popupHeight = 450;
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+
+    this.hintPopup = this.add.container(centerX, centerY);
+    this.hintPopup.setDepth(100);
+
+    // Modern brown gradient background
+    const background = this.add.graphics();
+    background.fillGradientStyle(0x8B4513, 0xA0522D, 0xCD853F, 0xDEB887, 1);
+    background.fillRoundedRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight, 20);
+    this.hintPopup.add(background);
+
+    // Inner content area with cream background
+    const contentBg = this.add.graphics();
+    contentBg.fillStyle(0xFFFDD0, 0.95);
+    contentBg.fillRoundedRect(-popupWidth / 2 + 15, -popupHeight / 2 + 15, popupWidth - 30, popupHeight - 30, 15);
+    this.hintPopup.add(contentBg);
+
+    // Title header
+    const title = this.add.text(0, -popupHeight / 2 + 45, 'Papeda', {
+      fontSize: '28px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#5D4037',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    this.hintPopup.add(title);
+
+    // Divider line
+    const divider = this.add.graphics();
+    divider.lineStyle(2, 0x8B4513, 0.8);
+    divider.lineBetween(-popupWidth / 2 + 40, -popupHeight / 2 + 70, popupWidth / 2 - 40, -popupHeight / 2 + 70);
+    this.hintPopup.add(divider);
+
+    // Text content - simplified without masking
+    const textAreaWidth = popupWidth - 80;
+    const textStartX = -popupWidth / 2 + 40;
+    const textStartY = -popupHeight / 2 + 90;
+    
+    // Food information content
+    const papedaContent = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
+    
+    // Add the main text directly to popup
+    const text = this.add.text(textStartX, textStartY, papedaContent, {
+      fontSize: '16px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#3E2723',
+      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
+      align: 'left',
+      lineSpacing: 6
+    }).setOrigin(0, 0);
+    
+    this.hintPopup.add(text);
+    this.hintPopup.setVisible(false);
   }
 }
