@@ -137,7 +137,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
     },
     {
       id: 6,
-      text: "Saat nasi setengah matang tambahkan Garam, Kukusan kelapa dan kacang rebus, kemudian aduk hingga rata.",
+      text: "Saat nasi setengah matang tambahkan Kukusan kelapa, Garam, dan kacang rebus, kemudian aduk hingga rata.",
       character: "karakter6.png",
       isCompleted: false
     },

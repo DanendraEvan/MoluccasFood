@@ -113,7 +113,7 @@ export default class KohuKohuScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Oke, pertama-tama coba kamu siapkan wajan teflon di depanmu. Sudah? Bagus. Nah, sekarang ambil parutan kelapa kita. Masukkan semuanya ke dalam wajan itu.",
+      text: "Oke, pertama-tama coba kamu siapkan wajan teflon di depanmu. Sudah? Bagus. Nah, sekarang ambil parutan kelapa kita. Masukkan semuanya ke dalam teflon itu.",
       character: "karakter1.png",
       isCompleted: false
     },
@@ -125,7 +125,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     },
     {
       id: 3,
-      text: "Sip! Sekarang, kita ganti wajan, ya. Ambil wajan yang baru untuk bahan-bahan selanjutnya. Sekarang, masukkan bahan pertama kita, yaitu kemangi. Setelah kemangi, giliran selada yang masuk wajan. Lalu, tambahkan sawi ke dalam wajan. Jangan lupa, masukkan juga tauge yang renyah!",
+      text: "Sip! Sekarang, kita ganti wajan, ya. Ambil wajan yang baru untuk bahan-bahan selanjutnya. Sekarang, masukkan bahan pertama kita, yaitu kemangi. Setelah kemangi, tambahkan sawi ke dalam wajan. Jangan lupa, masukkan juga tauge yang renyah!",
       character: "karakter3.png",
       isCompleted: false
     },
