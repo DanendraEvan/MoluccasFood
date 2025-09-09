@@ -68,6 +68,11 @@ export default class ColoColoScene extends Phaser.Scene {
     stagingAreaHeight: 225
   };
 
+  private ulekanConfig = {
+    x: 0,
+    y: 0
+  };
+
   // Game steps for Colo-Colo
   private gameSteps: GameStep[] = [
     {
@@ -281,7 +286,10 @@ export default class ColoColoScene extends Phaser.Scene {
 
     // Position ulekan to the right of telenan, initially hidden
     const ulekanX = telenanX + 500; // Adjusted X position for more distance
-    this.gameObjects.ulekan = this.add.image(ulekanX, cookingAreaCenterY, 'ulekan');
+    this.ulekanConfig.x = ulekanX - 75;
+    this.ulekanConfig.y = cookingAreaCenterY - 100;
+    this.gameObjects.ulekan = this.add.image(this.ulekanConfig.x, this.ulekanConfig.y, 'ulekan');
+    this.gameObjects.ulekan.setOrigin(0, 0); // Set origin to top-left for positional consistency
     this.gameObjects.ulekan.setScale(0.5);
     this.gameObjects.ulekan.setInteractive({ dropZone: true });
     this.gameObjects.ulekan.setVisible(false);
@@ -1005,7 +1013,7 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private createHintButton() {
-    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 50, 'hint_normal').setInteractive();
+    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 120, 'hint_normal').setInteractive();
     hintButton.setScale(0.1);
 
     hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
