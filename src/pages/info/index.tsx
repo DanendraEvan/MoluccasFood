@@ -1,9 +1,7 @@
 // src/pages/info/index.tsx
-"use client"; // opsional di Pages Router, tapi aman ditaruh
-
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import MusicButton from '../../components/MusicButton';
+import Header from '../../components/Header';
 import Image from 'next/image';
 
 // Background Wrapper Component
@@ -78,52 +76,6 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route }) => {
   );
 };
 
-const HomeButton: React.FC = () => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isActive, setIsActive] = useState(false);
-  const router = useRouter();
-
-  const handleClick = () => {
-    setIsActive(true);
-    setTimeout(() => {
-      router.push('/menu');
-    }, 150);
-  };
-
-  const getImageSrc = () => {
-    if (isActive) return '/assets/ui/buttons/home/home_active.png';
-    if (isHovered) return '/assets/ui/buttons/home/home_hover.png';
-    return '/assets/ui/buttons/home/home_normal.png';
-  };
-
-  return (
-    <button
-      className="transition-transform duration-200 hover:scale-105 focus:outline-none bg-transparent border-none"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsActive(false);
-      }}
-      onMouseDown={() => setIsActive(true)}
-      onMouseUp={() => setIsActive(false)}
-      onClick={handleClick}
-    >
-      <Image
-        src={getImageSrc()}
-        alt="Home Button"
-        width={80}
-        height={80}
-        className="w-auto h-auto max-w-[80px] max-h-[80px] drop-shadow-lg"
-        style={{
-          width: '80px',
-          height: '80px',
-          objectFit: 'contain'
-        }}
-      />
-    </button>
-  );
-};
-
 const InfoIndexPage = () => {
   return (
     <>
@@ -136,22 +88,7 @@ const InfoIndexPage = () => {
       `}</style>
       
       <InfoBackgroundWrapper>
-        {/* Home & Music Buttons side by side */}
-        <div 
-          className="absolute top-4 left-4 z-30 flex items-center space-x-2"
-          style={{
-            top: '22px',
-            left: '44px',
-          }}
-        >
-          <HomeButton />
-          <MusicButton 
-            position="relative"
-            top={0}
-            left={0}
-            size={80}
-          />
-        </div>
+        <Header />
         
         {/* Title */}
         <div className="flex flex-col items-center justify-center min-h-screen px-6 py-16">
@@ -167,7 +104,6 @@ const InfoIndexPage = () => {
             </h2>
           </div>
 
-          {/* Food Buttons */}
           {/* Food Buttons */}
           <div className="flex flex-col items-center mb-16" style={{ gap: '20px' }}>
             <div className="flex flex-row justify-center items-center" style={{ gap: '20px' }}>

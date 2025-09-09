@@ -757,20 +757,15 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.executeSuccessfulDrop(gameObject, () => {});
         }
         
-        // Setelah kedua bahan dimasukkan, update texture wajan tanpa menggeser posisi
+        // Setelah kedua bahan dimasukkan, update texture wajan dan pastikan posisi konsisten
         if (this.hasCabe && this.hasBawangMerah) {
           console.log("Both cabe and bawang merah added, updating texture"); // Debug log
-          // Simpan posisi wajan saat ini
-          const currentX = this.Wajan.x;
-          const currentY = this.Wajan.y;
-          const currentScale = this.Wajan.scale;
           
           this.setVesselTexture(this.Wajan, "tambahanCabeBawangMerah");
           this.wajanState = "cabeBawangMerah";
           
-          // Kembalikan posisi dan scale wajan
-          this.Wajan.setPosition(currentX, currentY);
-          this.Wajan.setScale(currentScale);
+          // Pastikan wajan tetap di tengah zone setelah ganti texture
+          this.Wajan.setPosition(this.wajanZone.x, this.wajanZone.y);
         }
       }
       // Step 4: Add daging after cabe and bawang merah

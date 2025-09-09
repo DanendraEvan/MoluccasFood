@@ -1,7 +1,8 @@
+
 // src/pages/game/index_game.tsx - Fixed Navigation
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import MusicButton from '../../components/MusicButton';
+import Header from '../../components/Header';
 import Image from 'next/image';
 
 // Background Wrapper Component
@@ -97,63 +98,7 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route, displayName })
   );
 };
 
-const HomeButton: React.FC = () => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isActive, setIsActive] = useState(false);
-  const router = useRouter();
-
-  const handleClick = async () => {
-    try {
-      setIsActive(true);
-      console.log('Navigating to: /menu'); // Debug log
-      
-      setTimeout(async () => {
-        await router.push('/menu');
-      }, 150);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      setIsActive(false);
-    }
-  };
-
-  const getImageSrc = () => {
-    if (isActive) return '/assets/ui/buttons/home/home_active.png';
-    if (isHovered) return '/assets/ui/buttons/home/home_hover.png';
-    return '/assets/ui/buttons/home/home_normal.png';
-  };
-
-  return (
-    <button
-      className="transition-transform duration-200 hover:scale-105 focus:outline-none bg-transparent border-none"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsActive(false);
-      }}
-      onMouseDown={() => setIsActive(true)}
-      onMouseUp={() => setIsActive(false)}
-      onClick={handleClick}
-      style={{ 
-        background: 'transparent',
-        backgroundColor: 'transparent'
-      }}
-    >
-      <Image
-        src={getImageSrc()}
-        alt="Home Button"
-        width={100}
-        height={100}
-        className="w-auto h-auto max-w-[100px] max-h-[100px] md:max-w-[100px] md:max-h-[100px] drop-shadow-lg"
-        style={{ 
-          background: 'transparent',
-          backgroundColor: 'transparent'
-        }}
-      />
-    </button>
-  );
-};
-
-const InfoIndexPage = () => {
+const GameIndexPage = () => {
   const router = useRouter();
 
   // Food button data for easier management
@@ -204,25 +149,7 @@ const InfoIndexPage = () => {
       `}</style>
       
       <InfoBackgroundWrapper>
-        {/* Button Container - Home and Music buttons close together */}
-        <div 
-          className="absolute z-30 flex items-center"
-          style={{
-            top: '22px',
-            left: '20px',
-            gap: '0px'
-          }}
-        >
-          {/* Home Button with negative margin to pull music button closer */}
-          <div style={{ marginRight: '-10px', zIndex: 31 }}>
-            <HomeButton />
-          </div>
-
-          {/* Music Button */}
-          <div style={{ zIndex: 30 }}>
-            <MusicButton />
-          </div>
-        </div>
+        <Header />
         
         {/* Main Content Container */}
         <div className="flex flex-col items-center justify-center min-h-screen px-6 py-16">
@@ -287,4 +214,4 @@ const InfoIndexPage = () => {
   );
 };
 
-export default InfoIndexPage;
+export default GameIndexPage;

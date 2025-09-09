@@ -2,13 +2,14 @@
 import { useRouter } from "next/router";
 import MenuBackgroundWrapper from "../components/MenuBackgroundWrapper";
 import GameButton from "../components/GameButton";
+import Header from "../components/Header";
 
 const LandingPage = () => {
   const router = useRouter();
 
   return (
     <MenuBackgroundWrapper>
-      {/* MenuBackgroundWrapper sudah include MusicButton otomatis */}
+      <Header showHomeButton={false} />
       <div className="flex flex-col items-center justify-center h-full gap-40">
         {/* Judul */}
         <div className="text-center">

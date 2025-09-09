@@ -1,6 +1,7 @@
 // src/pages/menu.tsx - Updated dengan sistem musik baru
 import { useRouter } from "next/router";
 import GameButton from "../components/GameButton";
+import Header from "../components/Header";
 import MenuBackgroundWrapper from "../components/MenuBackgroundWrapper";
 
 const MenuPage: React.FC = () => {
@@ -14,6 +15,7 @@ const MenuPage: React.FC = () => {
 
   return (
     <MenuBackgroundWrapper>
+      <Header showHomeButton={false} />
       {/* MenuBackgroundWrapper sudah include MusicButton otomatis */}
       <div className="flex flex-col items-center justify-center h-full gap-48">
         {/* Judul */}
