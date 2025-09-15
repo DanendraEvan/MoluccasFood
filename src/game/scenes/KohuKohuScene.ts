@@ -2,7 +2,7 @@
 import * as Phaser from "phaser";
 
 // State untuk wajan dan teflon
-type BowlState =
+type BowlState = 
   | "empty"
   | "teflonKelapa"
   | "sangrai"
@@ -13,17 +13,24 @@ type BowlState =
   | "piring_with_kelapa"
   | "finished";
 
-type WajanState =
+type WajanState = 
   | "empty"
   | "kemangi"
-  | "kol"
-  | "bawangPutih"
+  | "sawi"
+  | "tauge"
   | "cabeBawangMerah"
   | "daging"
   | "minyak"
   | "sepatulaDanSayur"
   | "ready_to_plate"
   | "kohukohu";
+
+type BaskomState = 
+  | "empty"
+  | "kelapa"
+  | "parut1"
+  | "parut2"
+  | "baskomkelapa";
 
 interface GameStep {
   id: number;
@@ -38,17 +45,28 @@ export default class KohuKohuScene extends Phaser.Scene {
   private Wajan!: Phaser.GameObjects.Image;
   private KomporWajan!: Phaser.GameObjects.Image;
   private KomporTeflon!: Phaser.GameObjects.Image;
+  private baskom!: Phaser.GameObjects.Image;
+
 
   // Drop zones
   private wajanZone!: Phaser.GameObjects.Zone;
   private teflonZone!: Phaser.GameObjects.Zone;
   private platingZone!: Phaser.GameObjects.Zone;
   private plateZone: Phaser.GameObjects.Zone | null = null;
+  private baskomZone!: Phaser.GameObjects.Zone;
 
   // State untuk setiap cooking vessel
   private bowlState: BowlState = "empty";
   private wajanState: WajanState = "empty";
+  private baskomState: BaskomState = "empty";
   private stirringTimer: Phaser.Time.TimerEvent | null = null;
+
+  // Swipe mechanic state
+  private isMengaduk = false;
+  private swipeCount = 0;
+  private lastSwipeDirection: 'left' | 'right' | null = null;
+  private pointerStartX = 0;
+  private swipeHintText: Phaser.GameObjects.Text | null = null;
 
   // Tracking variables
   private hasCabe = false;
@@ -113,54 +131,78 @@ export default class KohuKohuScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Oke, pertama-tama coba kamu siapkan wajan teflon di depanmu. Sudah? Bagus. Nah, sekarang ambil parutan kelapa kita. Masukkan semuanya ke dalam wajan itu.",
+      text: "Halo! Mari kita buat Kohu-Kohu. Pertama, masukkan kelapa ke dalam baskom.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Setelah itu, kita akan sangrai kelapa ini sampai warnanya berubah jadi cokelat dan aromanya harum semerbak. Aduk terus, ya! Jangan sampai gosong.",
+      text: "Bagus! Sekarang, drag baskom berisi kelapa untuk memindahkannya ke teflon.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Sip! Sekarang, kita ganti wajan, ya. Ambil wajan yang baru untuk bahan-bahan selanjutnya. Sekarang, masukkan bahan pertama kita, yaitu kemangi. Setelah kemangi, giliran selada yang masuk wajan. Lalu, tambahkan sawi ke dalam wajan. Jangan lupa, masukkan juga tauge yang renyah!",
+      text: "Saatnya menyangrai kelapa. Gunakan spatula untuk mengaduk.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
+      text: "Sip! Sekarang, kita siapkan sayurannya. Masukkan kemangi ke dalam wajan.",
+      character: "karakter3.png",
+      isCompleted: false
+    },
+    {
+      id: 5,
+      text: "Lanjutkan dengan memasukkan selada.",
+      character: "karakter3.png",
+      isCompleted: false
+    },
+    {
+      id: 6,
+      text: "Sekarang masukkan sawi.",
+      character: "karakter3.png",
+      isCompleted: false
+    },
+    {
+      id: 7,
+      text: "Terakhir, masukkan tauge.",
+      character: "karakter3.png",
+      isCompleted: false
+    },
+    {
+      id: 8,
       text: "Supaya ada sensasi pedasnya, coba masukkan potongan cabe dan irisan bawang merah. Setelah itu, ambil suwiran daging ikan cakalang kita dan masukkan ke wajan. Ini yang bikin rasanya makin gurih.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
-      id: 5,
+      id: 9,
       text: "Terakhir, tuangkan sedikit minyak ikan untuk sentuhan akhir yang sempurna.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
-      id: 6,
+      id: 10,
       text: "Bagus! Sekarang ambil piring dari panel bahan dan letakkan di area plating di sebelah kiri.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
-      id: 7,
+      id: 11,
       text: "Letakkan kelapa sangrai dari teflon ke atas piring.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
-      id: 8,
+      id: 12,
       text: "Hampir selesai! Ambil sayuran dari wajan menggunakan spatula dan taruh di atas piring.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
-      id: 9,
+      id: 13,
       text: "Wah, kamu luar biasa! Kohu Kohu kita sudah siap disajikan!",
       character: "karakter6.png",
       isCompleted: false
@@ -179,33 +221,38 @@ export default class KohuKohuScene extends Phaser.Scene {
     this.load.image('kohukohu_food', '/assets/makanan/kohukohu.png');
 
     // Tools
-    this.load.image("Teflon", "/assets/foods/kohu_kohu/Teflon.png");
+    this.load.image("Teflon", "/assets/foods/kohu_kohu/teflonkosong.png");
     this.load.image("Wajan", "/assets/foods/kohu_kohu/wajan.png");
     this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.png");
     this.load.image("Piring", "/assets/foods/kohu_kohu/Piring Kohu.png");
+    this.load.image("Baskom", "/assets/foods/kohu_kohu/Baskom.png");
+    this.load.image("Parut1", "/assets/foods/kohu_kohu/Parut1.png");
+    this.load.image("Parut2", "/assets/foods/kohu_kohu/Parut2.png");
 
     // Ingredients
     this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
-    this.load.image("Kol", "/assets/foods/kohu_kohu/kol.png");
+    this.load.image("Sawi", "/assets/foods/kohu_kohu/Sawi.png");
+    this.load.image("Tauge", "/assets/foods/kohu_kohu/Tauge.png");
+    this.load.image("Selada", "/assets/foods/kohu_kohu/Selada.png");
     this.load.image("Kemangi", "/assets/foods/kohu_kohu/Kemangi.png");
-    this.load.image("BawangPutih", "/assets/foods/kohu_kohu/bawangPutih.png");
     this.load.image("Cabe", "/assets/foods/kohu_kohu/Cabe.png");
     this.load.image("BawangMerah", "/assets/foods/kohu_kohu/Bawang Merah.png");
     this.load.image("Daging", "/assets/foods/kohu_kohu/Daging.png");
     this.load.image("MinyakIkan", "/assets/foods/kohu_kohu/MinyakIkan.png");
 
     // Steps / hasil
-    this.load.image("TeflonKelapa", "/assets/foods/kohu_kohu/TeflonKelapa.png");
+    this.load.image("Baskomkelapa", "/assets/foods/kohu_kohu/Baskomkelapa.png");
+    this.load.image("TeflonKelapa", "/assets/foods/kohu_kohu/teflonkelapa.png");
     this.load.image("Sangrai", "/assets/foods/kohu_kohu/sangrai.png");
-    this.load.image("TambahanSepatula", "/assets/foods/kohu_kohu/TambahanSepatula.png");
-    this.load.image("AdukKohu1", "/assets/foods/kohu_kohu/adukKohu1.png");
-    this.load.image("AdukKohu2", "/assets/foods/kohu_kohu/AdukKohu2.png");
+    this.load.image("Aduk1", "/assets/foods/kohu_kohu/Aduk1.png");
+    this.load.image("Aduk2", "/assets/foods/kohu_kohu/Aduk2.png");
     this.load.image("PiringKelapa", "/assets/foods/kohu_kohu/PiringKelapa.png");
     this.load.image("SepatuladanSayur", "/assets/foods/kohu_kohu/SepatuladanSayur.png");
     this.load.image("KohuKohu", "/assets/foods/kohu_kohu/KohuKohu.png");
     this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.png");
-    this.load.image("tambahanKol", "/assets/foods/kohu_kohu/tambahanKol.png");
-    this.load.image("tambahanBawangPutih", "/assets/foods/kohu_kohu/tambahanBawangPutih.png");
+    this.load.image("tambahanSawi", "/assets/foods/kohu_kohu/tambahanSawi.png");
+    this.load.image("tambahanTauge", "/assets/foods/kohu_kohu/tambahanTauge.png");
+    this.load.image("tambahanSelada", "/assets/foods/kohu_kohu/tambahanSelada.png");
     this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.png");
     this.load.image("tambahanDaging", "/assets/foods/kohu_kohu/TambahanDaging.png");
     this.load.image("tambahanMinyak", "/assets/foods/kohu_kohu/tambahanMinyak.png");
@@ -316,24 +363,28 @@ export default class KohuKohuScene extends Phaser.Scene {
     const komporY = this.layoutConfig.cookingAreaBottom - 100;
     
     // --- Kompor kiri untuk WAJAN - Fixed position ---
-    this.KomporWajan = this.add.image(650, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
-    this.wajanZone = this.add.zone(650, 540, 120, 120).setRectangleDropZone(120, 120);
+    this.KomporWajan = this.add.image(640, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
+    this.wajanZone = this.add.zone(640, 530, 120, 120).setRectangleDropZone(120, 120);
     this.wajanZone.name = "wajanZone";
     this.Wajan = this.add.image(this.wajanZone.x, this.wajanZone.y, "Wajan").setScale(this.layoutConfig.vesselScale);
     this.Wajan.setData('initialScale', this.layoutConfig.vesselScale);
     this.Wajan.setData('targetWidth', this.Wajan.displayWidth);
 
     // --- Kompor kanan untuk TEFLON - Fixed position ---
-    this.KomporTeflon = this.add.image(1150, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
-    this.teflonZone = this.add.zone(1150, 540, 120, 120).setRectangleDropZone(120, 120);
+    this.KomporTeflon = this.add.image(1140, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
+    this.teflonZone = this.add.zone(1140, 530, 120, 120).setRectangleDropZone(120, 120);
     this.teflonZone.name = "teflonZone";
     this.Teflon = this.add.image(this.teflonZone.x, this.teflonZone.y, "Teflon").setScale(this.layoutConfig.vesselScale);
-    this.Teflon.setInteractive();
-    this.input.setDraggable(this.Teflon);
-    this.Teflon.name = "Teflon";
     this.Teflon.setData('targetWidth', this.Teflon.displayWidth);
     this.Teflon.setData('initialScale', this.layoutConfig.vesselScale);
     
+    // --- Baskom in the center ---
+    const baskomX = (this.wajanZone.x + this.teflonZone.x) / 2;
+    const baskomY = this.wajanZone.y;
+    this.baskom = this.add.image(baskomX, baskomY, "Baskom").setScale(0.3);
+    this.baskomZone = this.add.zone(baskomX, baskomY, 120, 120).setRectangleDropZone(120, 120);
+    this.baskomZone.name = "baskomZone";
+
     // Plating zone
     this.platingZone = this.add.zone(
       this.layoutConfig.cookingAreaLeft + this.layoutConfig.platingAreaX,
@@ -406,13 +457,14 @@ export default class KohuKohuScene extends Phaser.Scene {
     const ingredients = [
       { key: "Kelapa", name: "Kelapa", scale: 0.2 },
       { key: "Kemangi", name: "Kemangi", scale: 0.18 },
-      { key: "Kol", name: "Sawi", scale: 0.15 },
-      { key: "BawangPutih", name: "Tauge", scale: 0.18 },
+      { key: "Sawi", name: "Sawi", scale: 0.15 },
+      { key: "Tauge", name: "Tauge", scale: 0.18 },
+      { key: "Selada", name: "Selada", scale: 0.15 },
       { key: "Cabe", name: "Cabai", scale: 0.2 },
       { key: "BawangMerah", name: "Bawang Merah", scale: 0.16 },
       { key: "Daging", name: "Daging Cakalang", scale: 0.18 },
       { key: "MinyakIkan", name: "Minyak Ikan", scale: 0.16 },
-      { key: "Sepatula", name: "Spatula", scale: 0.12 }, // Ukuran spatula diperkecil
+      { key: "Sepatula", name: "Spatula", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.17 }
     ];
 
@@ -653,12 +705,10 @@ export default class KohuKohuScene extends Phaser.Scene {
       gameObject.setData('dragStartX', gameObject.x);
       gameObject.setData('dragStartY', gameObject.y);
       
-             // Store original scale with special handling for spatula
-       let originalScale = gameObject.getData('originalScale') || 0.2;
-       if (gameObject.name === 'Sepatula') {
-         originalScale = 0.15; // Consistent spatula size
-         gameObject.setData('originalScale', originalScale);
-       }
+      // Store original scale if not already set
+      if (!gameObject.getData('originalScale')) {
+        gameObject.setData('originalScale', gameObject.scale);
+      }
     });
 
     this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
@@ -697,57 +747,105 @@ export default class KohuKohuScene extends Phaser.Scene {
       // Debug: Log drop attempt
       console.log(`Drop attempt: ${droppedKey} on ${dropZone.name}, Current step: ${this.currentStep}, Wajan state: ${this.wajanState}`);
 
-      // Step 1: Add coconut to teflon
-      if (dropZone === this.teflonZone && this.bowlState === "empty" && droppedKey === "Kelapa" && this.currentStep === 0) {
+      // Step 1: Add kelapa to baskom
+      if (dropZone === this.baskomZone && this.baskomState === "empty" && droppedKey === "Kelapa" && this.currentStep === 0) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Teflon, "TeflonKelapa");
-          this.bowlState = "teflonKelapa";
+          const repeatCount = 6; // Total changes: Parut1, Parut2, ...
+          let currentCount = 0;
           
-          // Auto-cook coconut after 1 second
-          this.time.delayedCall(1000, () => {
-            if (this.bowlState === "teflonKelapa") {
-              this.setVesselTexture(this.Teflon, "Sangrai");
-              this.bowlState = "sangrai";
-              this.nextStep();
-            }
+          const gratingAnimation = this.time.addEvent({
+              delay: 500,
+              callback: () => {
+                  currentCount++;
+                  if (currentCount % 2 !== 0) { // 1, 3, 5
+                      this.baskom.setTexture("Parut1");
+                  } else { // 2, 4, 6
+                      this.baskom.setTexture("Parut2");
+                  }
+      
+                  if (currentCount >= repeatCount) {
+                      gratingAnimation.remove();
+                      // After animation, set the final state
+                      this.time.delayedCall(500, () => {
+                          this.baskom.setTexture("Baskomkelapa");
+                          this.baskomState = "baskomkelapa";
+                          this.baskom.setInteractive();
+                          this.input.setDraggable(this.baskom);
+                          this.baskom.setName("Baskom");
+                          this.nextStep();
+                      });
+                  }
+              },
+              repeat: repeatCount - 1
           });
         });
       }
-      // Step 2: Stir the coconut
-      else if (dropZone === this.teflonZone && this.bowlState === "sangrai" && droppedKey === "Sepatula" && this.currentStep === 1) {
-        // Set ukuran spatula yang konsisten sebelum digunakan
-        this.setSpatulaScale(gameObject);
-        this.executeStirringAnimation(gameObject);
-      }
-      // Step 3: Add kemangi to wajan first - Reset wajan di awal step
-      else if (dropZone === this.wajanZone && droppedKey === "Kemangi" && this.currentStep === 2) {
-        // Reset wajan sepenuhnya di awal step 3
-        if (this.wajanState === "empty") {
-          this.resetWajanCompletely();
-        }
-        
+      // Step 2: Add baskomkelapa to teflon
+      else if (dropZone === this.teflonZone && this.bowlState === "empty" && this.baskomState === "baskomkelapa" && droppedKey === "Baskom" && this.currentStep === 1) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, "Tambahankemangi");
-          this.wajanState = "kemangi";
-        });
-      }
-      // Step 3: Add kol after kemangi
-      else if (dropZone === this.wajanZone && this.wajanState === "kemangi" && droppedKey === "Kol" && this.currentStep === 2) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, "tambahanKol");
-          this.wajanState = "kol";
-        });
-      }
-      // Step 3: Add bawang putih after kol
-      else if (dropZone === this.wajanZone && this.wajanState === "kol" && droppedKey === "BawangPutih" && this.currentStep === 2) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, "tambahanBawangPutih");
-          this.wajanState = "bawangPutih";
+          this.setVesselTexture(this.Teflon, "TeflonKelapa");
+          this.bowlState = "teflonKelapa";
           this.nextStep();
         });
       }
-      // Step 4: Add cabe and bawang merah together
-      else if (dropZone === this.wajanZone && this.currentStep === 3 && (droppedKey === "Cabe" || droppedKey === "BawangMerah")) {
+      // Step 3: Stir the coconut
+      else if (dropZone === this.teflonZone && this.bowlState === "teflonKelapa" && droppedKey === "Sepatula" && this.currentStep === 2) {
+        // Return spatula to panel
+        this.tweens.add({
+            targets: gameObject,
+            x: gameObject.getData('dragStartX'),
+            y: gameObject.getData('dragStartY'),
+            duration: 400,
+            ease: 'Back.easeOut'
+        });
+
+        // Set initial state for stirring
+        this.setVesselTexture(this.Teflon, "Aduk1");
+        this.bowlState = "aduk";
+        this.isMengaduk = true;
+        this.swipeCount = 0;
+        this.lastSwipeDirection = null;
+
+        // Show swipe hint
+        this.showSwipeHint();
+
+        // Activate swipe handler
+        this.handleMengaduk();
+      }
+      // Step 4: Add kemangi to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "empty" && droppedKey === "Kemangi" && this.currentStep === 3) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          this.setVesselTexture(this.Wajan, "Tambahankemangi");
+          this.wajanState = "kemangi";
+          this.nextStep();
+        });
+      }
+      // Step 5: Add selada to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "kemangi" && droppedKey === "Selada" && this.currentStep === 4) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          this.setVesselTexture(this.Wajan, "tambahanSelada");
+          this.wajanState = "selada";
+          this.nextStep();
+        });
+      }
+      // Step 6: Add sawi to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "selada" && droppedKey === "Sawi" && this.currentStep === 5) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          this.setVesselTexture(this.Wajan, "tambahanSawi");
+          this.wajanState = "sawi";
+          this.nextStep();
+        });
+      }
+      // Step 7: Add tauge to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "sawi" && droppedKey === "Tauge" && this.currentStep === 6) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          this.setVesselTexture(this.Wajan, "tambahanTauge");
+          this.wajanState = "tauge";
+          this.nextStep();
+        });
+      }
+      // Step 8: Add cabe and bawang merah together
+      else if (dropZone === this.wajanZone && this.currentStep === 7 && (droppedKey === "Cabe" || droppedKey === "BawangMerah")) {
         console.log(`Step 4: Adding ${droppedKey}`); // Debug log
         if (droppedKey === "Cabe") {
           this.hasCabe = true;
@@ -757,24 +855,19 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.executeSuccessfulDrop(gameObject, () => {});
         }
         
-        // Setelah kedua bahan dimasukkan, update texture wajan tanpa menggeser posisi
+        // Setelah kedua bahan dimasukkan, update texture wajan dan pastikan posisi konsisten
         if (this.hasCabe && this.hasBawangMerah) {
           console.log("Both cabe and bawang merah added, updating texture"); // Debug log
-          // Simpan posisi wajan saat ini
-          const currentX = this.Wajan.x;
-          const currentY = this.Wajan.y;
-          const currentScale = this.Wajan.scale;
           
           this.setVesselTexture(this.Wajan, "tambahanCabeBawangMerah");
           this.wajanState = "cabeBawangMerah";
           
-          // Kembalikan posisi dan scale wajan
-          this.Wajan.setPosition(currentX, currentY);
-          this.Wajan.setScale(currentScale);
+          // Pastikan wajan tetap di tengah zone setelah ganti texture
+          this.Wajan.setPosition(this.wajanZone.x, this.wajanZone.y);
         }
       }
-      // Step 4: Add daging after cabe and bawang merah
-      else if (dropZone === this.wajanZone && this.wajanState === "cabeBawangMerah" && droppedKey === "Daging" && this.currentStep === 3) {
+      // Step 8: Add daging after cabe and bawang merah
+      else if (dropZone === this.wajanZone && this.wajanState === "cabeBawangMerah" && droppedKey === "Daging" && this.currentStep === 7) {
         console.log("Step 4: Adding daging"); // Debug log
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, "tambahanDaging");
@@ -782,8 +875,8 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.nextStep(); // Lanjut ke step 5
         });
       }
-      // Step 5: Add minyak ikan
-      else if (dropZone === this.wajanZone && this.wajanState === "daging" && droppedKey === "MinyakIkan" && this.currentStep === 4) {
+      // Step 9: Add minyak ikan
+      else if (dropZone === this.wajanZone && this.wajanState === "daging" && droppedKey === "MinyakIkan" && this.currentStep === 8) {
         console.log("Step 5: Adding minyak ikan"); // Debug log
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, "tambahanMinyak");
@@ -791,8 +884,8 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.nextStep(); // Advances to step 6 ("...ambil piring...")
         });
       }
-      // Step 6: Place plate on plating area
-      else if (dropZone === this.platingZone && this.bowlState === "sangrai" && droppedKey === "Piring" && this.currentStep === 5) {
+      // Step 10: Place plate on plating area
+      else if (dropZone === this.platingZone && this.bowlState === "sangrai" && droppedKey === "Piring" && this.currentStep === 9) {
         this.executeSuccessfulDrop(gameObject, () => {
           this.finalPlate = this.add.image(this.platingZone.x, this.platingZone.y, 'Piring');
           this.finalPlate.setScale(0.4);
@@ -804,37 +897,49 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.nextStep(); // Advances to step 7 ("Letakkan kelapa sangrai...")
         });
       }
-      // Step 7: Teflon to Plate
-      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_on_plating" && gameObject === this.Teflon && this.currentStep === 6) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.finalPlate!, 'PiringKelapa');
-          this.Teflon.destroy();
-          this.teflonZone.destroy();
-          this.KomporTeflon.destroy();
-          this.bowlState = "piring_with_kelapa";
-          this.nextStep(); // Advances to step 8 ("Ambil sayuran...")
+      // Step 11: Teflon to Plate
+      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_on_plating" && gameObject === this.Teflon && this.currentStep === 10) {
+        this.setVesselTexture(this.finalPlate!, 'PiringKelapa'); // Update plate
+        this.setVesselTexture(this.Teflon, 'Teflon'); // Reset Teflon to empty
+        this.Teflon.disableInteractive(); // Make it static
+
+        // Move Teflon back to its stove
+        this.tweens.add({
+            targets: this.Teflon,
+            x: this.teflonZone.x,
+            y: this.teflonZone.y,
+            duration: 400,
+            ease: 'Back.easeOut'
         });
+
+        this.bowlState = "piring_with_kelapa";
+        this.nextStep();
+        this.showSuccessFeedback();
       }
-      // Step 8, Part 1: Use Spatula on Wajan to prepare it for moving
-      else if (dropZone === this.wajanZone && this.wajanState === "minyak" && droppedKey === "Sepatula" && this.currentStep === 7) {
-        // Set ukuran spatula yang konsisten sebelum digunakan
-        this.setSpatulaScale(gameObject);
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, 'SepatuladanSayur');
-          this.wajanState = "ready_to_plate";
-          this.Wajan.setInteractive();
-          this.input.setDraggable(this.Wajan, true);
-          this.Wajan.name = "WajanWithFood"; // Identify the wajan as ready to be moved
-          // Do not advance step, user needs to drag the wajan
-        });
+      // Step 12, Part 1: Use Spatula on Wajan to create a new draggable object
+      else if (dropZone === this.wajanZone && this.wajanState === "minyak" && droppedKey === "Sepatula" && this.currentStep === 11) {
+        // Destroy the spatula from the panel
+        gameObject.destroy();
+
+        // Create the new draggable "spatula with food"
+        const spatulaWithFood = this.add.image(this.wajanZone.x, this.wajanZone.y - 50, 'SepatuladanSayur').setScale(0.35); // Or appropriate scale
+        spatulaWithFood.setName("SpatulaWithFood");
+        spatulaWithFood.setInteractive();
+        this.input.setDraggable(spatulaWithFood);
+
+        // Set the wajan to empty visually and update state
+        this.setVesselTexture(this.Wajan, 'Wajan'); 
+        this.wajanState = "ready_to_plate";
+        
+        this.showSuccessFeedback();
+        // Do not advance step, user needs to drag the new object
       }
-      // Step 8, Part 2: Drop the Wajan onto the plate
-      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_with_kelapa" && gameObject.name === "WajanWithFood" && this.currentStep === 7) {
-        this.executeSuccessfulDrop(gameObject, () => {
+      // Step 12, Part 2: Drop the SpatulaWithFood onto the plate
+      else if (this.plateZone && dropZone === this.plateZone && this.bowlState === "piring_with_kelapa" && gameObject.name === "SpatulaWithFood" && this.currentStep === 11) {
+        this.executeSuccessfulDrop(gameObject, () => { // This will destroy the SpatulaWithFood
           this.setVesselTexture(this.finalPlate!, 'KohuKohu');
-          // The gameObject is the Wajan itself, so it's destroyed here
-          this.wajanZone.destroy();
-          this.KomporWajan.destroy();
+          // The Wajan is now empty and will not be destroyed
+          this.Wajan.disableInteractive();
           this.bowlState = "finished";
           this.nextStep(); // Advance to final step
           this.showCompletionCelebration();
@@ -845,6 +950,87 @@ export default class KohuKohuScene extends Phaser.Scene {
         this.executeInvalidDrop(gameObject);
       }
     });
+  }
+
+  private handleMengaduk() {
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (this.isMengaduk) {
+        this.pointerStartX = pointer.x;
+      }
+    });
+
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (this.isMengaduk) {
+        const swipeDistance = pointer.x - this.pointerStartX;
+
+        if (swipeDistance < -50 && this.lastSwipeDirection !== 'left') { // Swipe left
+          this.swipeCount++;
+          this.lastSwipeDirection = 'left';
+          this.setVesselTexture(this.Teflon, "Aduk2");
+        } else if (swipeDistance > 50 && this.lastSwipeDirection !== 'right') { // Swipe right
+          this.swipeCount++;
+          this.lastSwipeDirection = 'right';
+          this.setVesselTexture(this.Teflon, "Aduk1");
+        }
+
+        if (this.swipeCount >= 6) {
+          this.isMengaduk = false;
+          this.input.off('pointerdown');
+          this.input.off('pointerup');
+
+          // Hide the hint
+          if (this.swipeHintText) {
+            const arrows = this.swipeHintText.getData('arrows');
+            if (arrows) {
+              arrows.forEach((arrow: Phaser.GameObjects.Text) => arrow.destroy());
+            }
+            this.swipeHintText.destroy();
+            this.swipeHintText = null;
+          }
+          
+          this.setVesselTexture(this.Teflon, "Sangrai");
+          this.bowlState = "sangrai";
+          this.Teflon.setInteractive();
+          this.input.setDraggable(this.Teflon);
+          this.nextStep();
+          this.showSuccessFeedback();
+        }
+      }
+    });
+  }
+
+  private showSwipeHint() {
+    if (this.swipeHintText) {
+      this.swipeHintText.destroy();
+    }
+    this.swipeHintText = this.add.text(
+      this.Teflon.x, 
+      this.Teflon.y - 100, 
+      'Geser ke Kiri & Kanan untuk Mengaduk!', 
+      {
+        fontSize: '24px',
+        fontFamily: 'Chewy, cursive',
+        color: '#ffffff',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: { x: 10, y: 5 },
+        // borderRadius: 8
+      }
+    ).setOrigin(0.5);
+
+    // Add arrows for more clarity
+    const leftArrow = this.add.text(this.swipeHintText.x - 220, this.swipeHintText.y, '⟷', { fontSize: '32px', color: '#ffffff' });
+    const rightArrow = this.add.text(this.swipeHintText.x + 220, this.swipeHintText.y, '⟷', { fontSize: '32px', color: '#ffffff' });
+
+    this.tweens.add({
+        targets: [leftArrow, rightArrow],
+        alpha: 0.5,
+        yoyo: true,
+        repeat: -1,
+        duration: 500
+    });
+
+    // Store arrows to be destroyed later
+    this.swipeHintText.setData('arrows', [leftArrow, rightArrow]);
   }
 
   // Helper methods for better code organization
@@ -896,56 +1082,6 @@ export default class KohuKohuScene extends Phaser.Scene {
       onComplete: () => {
         this.showSuccessFeedback();
       }
-    });
-  }
-
-  private executeStirringAnimation(spatula: Phaser.GameObjects.Image) {
-    this.bowlState = "aduk";
-    
-    // Return spatula with smooth animation
-    this.tweens.add({
-      targets: spatula,
-      x: spatula.getData('dragStartX'),
-      y: spatula.getData('dragStartY'),
-      duration: 300,
-      ease: 'Back.easeOut'
-    });
-    
-    // Enhanced stirring animation
-    const stirTextures = ["TambahanSepatula", "AdukKohu1", "AdukKohu2"];
-    let stirIndex = 0;
-    
-    this.stirringTimer = this.time.addEvent({
-      delay: 350,
-      repeat: 7,
-      callback: () => {
-        this.setVesselTexture(this.Teflon, stirTextures[stirIndex % stirTextures.length]);
-        stirIndex++;
-        
-        // Enhanced stirring effects
-        this.tweens.add({
-          targets: this.Teflon,
-          scaleX: this.layoutConfig.vesselScale * 1.05,
-          scaleY: this.layoutConfig.vesselScale * 0.95,
-          duration: 175,
-          yoyo: true,
-          ease: 'Power2'
-        });
-
-        // Add steam particles
-        this.createSteamEffect(this.Teflon.x, this.Teflon.y - 50);
-      }
-    });
-
-    this.time.delayedCall(2800, () => {
-      if (this.stirringTimer) {
-        this.stirringTimer.destroy();
-        this.stirringTimer = null;
-      }
-      this.setVesselTexture(this.Teflon, "Sangrai");
-      this.bowlState = "sangrai";
-      this.nextStep();
-      this.showSuccessFeedback();
     });
   }
 
@@ -1146,7 +1282,7 @@ export default class KohuKohuScene extends Phaser.Scene {
   }
 
   private createHintButton() {
-    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 100, 'hint_normal').setInteractive();
+    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 120, 'hint_normal').setInteractive();
     hintButton.setScale(0.1);
 
     hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
