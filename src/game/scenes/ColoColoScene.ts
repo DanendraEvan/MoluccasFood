@@ -141,23 +141,62 @@ export default class ColoColoScene extends Phaser.Scene {
     
     // Preload tool images
     this.load.image('ulekan', '/assets/foods/colo_colo/Ulekan.png');
-    this.load.image('ulekan_munthu', '/assets/foods/colo_colo/UlekanMunthu.png');
-    this.load.image('ulekan_munthu2', '/assets/foods/colo_colo/UlekanMunthu2.png');
-    this.load.image('ulekan_nipis', '/assets/foods/colo_colo/UlekanNipis.png');
-    this.load.image('ulekan_daun', '/assets/foods/colo_colo/UlekanDaun.png');
-    this.load.image('ulekan_cabe_bawang', '/assets/foods/colo_colo/UlekanCabeBawang.png');
-    this.load.image('ulekan_kecap', '/assets/foods/colo_colo/UlekanKecap.png');
-    
+
+
+    //step 1
     // Preload cutting board images
     this.load.image('telenan', '/assets/foods/colo_colo/telenan.png');
-    this.load.image('telenan_cabai', '/assets/foods/colo_colo/TelenanCabai.png');
-    this.load.image('telenan_cabai_potong', '/assets/foods/colo_colo/TelenanCabaiPotong.png');
+    this.load.image('telenan_cabai', '/assets/foods/colo_colo/step-1/TelenanCabaiPotong.png');
+    this.load.image('telenan_cabai_potong', '/assets/foods/colo_colo/step-1/TelenanCabaiPotong1.png');
+    this.load.image('telenan_cabai_potong_1', '/assets/foods/colo_colo/step-1/TelenanCabaiPotong2.png');
+    this.load.image('telenan_cabai_potong_2', '/assets/foods/colo_colo/step-1/TelenanCabaiPotong3.png');
+    this.load.image('telenan_cabai_potong_3', '/assets/foods/colo_colo/step-1/TelenanCabaiPotong4.png');
     
+
+    //step 2
     // Load food image for hint popup
     this.load.image('colocolo_food', '/assets/makanan/colocolo.png');
-    this.load.image('telenan_cabai_bawang_putih', '/assets/foods/colo_colo/TelenanCabaiBawangPutih.png');
-    this.load.image('telenan_cabai_bawang_potong', '/assets/foods/colo_colo/TelenanCabaiBawangPotong.png');
+    this.load.image('telenan_cabai_bawang_putih', '/assets/foods/colo_colo/step-2/TelenanBawangPutih.png');
+    this.load.image('telenan_cabai_bawang_putih_1', '/assets/foods/colo_colo/step-2/TelenanBawangPutih1.png');
+    this.load.image('telenan_cabai_bawang_putih_2', '/assets/foods/colo_colo/step-2/TelenanBawangPutih2.png');
+    this.load.image('telenan_cabai_bawang_putih_3', '/assets/foods/colo_colo/step-2/TelenanBawangPutih3.png');
+    this.load.image('telenan_cabai_bawang_putih_4', '/assets/foods/colo_colo/step-2/TelenanBawangPutih4.png');
+    this.load.image('telenan_cabai_bawang_putih_5', '/assets/foods/colo_colo/step-2/TelenanBawangPutih5.png');
+    this.load.image('telenan_cabai_bawang_potong', '/assets/foods/colo_colo/step-2/TelenanBawangPutih6.png');
     
+    //step 3
+    //kecap
+    this.load.image('ulekan_kecap', '/assets/foods/colo_colo/step-3/UlekanKecap.png');
+    this.load.image('ulekan_kecap_1', '/assets/foods/colo_colo/step-3/UlekanKecap1.png');
+    this.load.image('ulekan_kecap_2', '/assets/foods/colo_colo/step-3/UlekanKecap3.png');
+
+    //cabe bawang
+    this.load.image('ulekan_cabe_bawang', '/assets/foods/colo_colo/step-3/UlekanKecap4.png');
+    this.load.image('ulekan_cabe_bawang_1', '/assets/foods/colo_colo/step-3/UlekanKecap5.png');
+    
+    //step 4
+    this.load.image('telenan_nipis', '/assets/foods/colo_colo/step-4/TelenanNipis.png');
+    this.load.image('telenan_nipis_1', '/assets/foods/colo_colo/step-4/TelenanNipis1.png');
+    this.load.image('telenan_nipis_2', '/assets/foods/colo_colo/step-4/TelenanNipis2.png');
+
+
+    this.load.image('ulekan_nipis', '/assets/foods/colo_colo/step-4/UlekanNipis.png');
+    this.load.image('ulekan_nipis_1', '/assets/foods/colo_colo/step-4/UlekanNipis1.png');
+
+    //step 5
+    this.load.image('ulekan_daun', '/assets/foods/colo_colo/step-5/UlekanKecap6.png');
+    this.load.image('ulekan_daun_1', '/assets/foods/colo_colo/step-5/UlekanKecap7.png');
+    this.load.image('ulekan_daun_2', '/assets/foods/colo_colo/step-5/UlekanKecap8.png');
+    this.load.image('ulekan_daun_3', '/assets/foods/colo_colo/step-5/UlekanKecap9.png');
+    this.load.image('ulekan_daun_4', '/assets/foods/colo_colo/step-5/UlekanKecap10.png');
+    this.load.image('ulekan_daun_5', '/assets/foods/colo_colo/step-5/UlekanKecap11.png');
+
+    //step 6
+    this.load.image('ulekan_munthu', '/assets/foods/colo_colo/step-6/Ulekan.png');
+    this.load.image('ulekan_munthu_1', '/assets/foods/colo_colo/step-6/Ulekan1.png');
+    this.load.image('ulekan_munthu_2', '/assets/foods/colo_colo/step-6/Ulekan2.png');
+
+
     // Preload additional assets
     this.load.image('Pisau', '/assets/foods/colo_colo/Pisau.png');
 
@@ -669,6 +708,12 @@ export default class ColoColoScene extends Phaser.Scene {
         } else if (ingredientType === 'Pisau' && this.gameState.telenanState === 'telenan_cabai') {
             this.animatePisauCut(ingredientObject, () => {
                 this.transformTelenan('telenan_cabai_potong');
+                this.resetIngredientPosition(ingredientObject);
+                this.transformTelenan('telenan_cabai_potong_1');
+                this.resetIngredientPosition(ingredientObject);
+                this.transformTelenan('telenan_cabai_potong_2');
+                this.resetIngredientPosition(ingredientObject);
+                this.transformTelenan('telenan_cabai_potong_3');
                 this.resetIngredientPosition(ingredientObject);
                 this.nextStep();
             });
