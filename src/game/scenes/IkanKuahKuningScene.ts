@@ -93,7 +93,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     'garam_added': ['Gula'],
     'gula_added': ['DaunBawang'],
     'daun_bawang_added': ['Asam'],
-    'matang': ['Mangkuk']
+    'matang': ['Mangkuk'],
+    'mangkuk_placed': ['IkanKuahKuningJadi']
   };
 
   // UI Components
@@ -408,6 +409,15 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     const stoveY = gameHeight / 2 + 100;
 
     this.kompor = this.add.image(stoveX, stoveY, "Kompor").setScale(0.5).setInteractive();
+
+    // Add click handler for kompor to create IkanKuahKuningJadi when ready
+    this.kompor.on('pointerdown', () => {
+      console.log('Kompor clicked! Current cooking state:', this.cookingState);
+      if (this.cookingState === 'matang') {
+        console.log('Creating IkanKuahKuningJadi from kompor');
+        this.createDraggedItemFromKompor('IkanKuahKuningJadi');
+      }
+    });
 
     // Create a drop zone for the stove
     this.komporZone = this.add.zone(stoveX, stoveY, this.kompor.width * 0.5, this.kompor.height * 0.5)
@@ -899,12 +909,22 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Drag selesai
     this.input.on("drop", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone | Phaser.GameObjects.Image) => {
+      console.log(`DROP EVENT: ${gameObject.name} dropped on`, dropZone, `cooking state: ${this.cookingState}`);
+
       // Validate drop before processing
       if (!this.isValidDrop(gameObject, dropZone)) {
         // Invalid drop - shake screen and return item to panel
         this.shakeScreen();
         console.log(`Invalid drop: ${gameObject.name} cannot be used at this time`);
-        
+
+        // Check if this item is from kompor - if so, just destroy it instead of returning to panel
+        if (gameObject.getData('fromKompor')) {
+          console.log(`Item ${gameObject.name} is from kompor, destroying instead of returning to panel`);
+          this.cleanupDragEffects(gameObject);
+          gameObject.destroy();
+          return;
+        }
+
         // Don't destroy the item, just return it to panel
         this.cleanupDragEffects(gameObject);
         const originalScale = gameObject.getData('originalScale') || 0.15;
@@ -974,11 +994,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         let targetX, targetY;
         
         if (dropZone === this.komporZone) {
-          targetX = dropZone.x - 20; // Move 20px to the left
+          targetX = dropZone.x - 30; // Move 30px to the left (10px more than before)
           targetY = dropZone.y - 150; // Raise 90px above kompor
         } else if (dropZone instanceof Phaser.GameObjects.Zone && dropZone.name === 'cookingAreaZone') {
           // Position on kompor when dropped in general cooking area
-          targetX = this.kompor.x - 20; // Move 20px to the left
+          targetX = this.kompor.x - 30; // Move 30px to the left (10px more than before)
           targetY = this.kompor.y - 150; // Raise 90px above kompor
         } else {
           this.shakeScreen();
@@ -1085,9 +1105,21 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
         this.mangkuk = this.add.image(targetX, targetY, 'Mangkuk').setScale(0.3);
         this.mangkuk.setInteractive({ dropZone: true });
+        this.mangkuk.setName('MangkukDropZone');
+        this.mangkuk.setDepth(50); // Ensure mangkuk is visible but below dragged items
+
+        console.log('Mangkuk created as dropzone at:', targetX, targetY);
+        console.log('Mangkuk properties:', {
+          interactive: this.mangkuk.input?.enabled,
+          dropZone: this.mangkuk.input?.dropZone,
+          name: this.mangkuk.name,
+          depth: this.mangkuk.depth
+        });
+
         this.cookingState = 'mangkuk_placed';
         gameObject.destroy();
       } else if (this.mangkuk && dropZone === this.mangkuk && this.cookingState === 'mangkuk_placed' && gameObject.name === 'IkanKuahKuningJadi') {
+        console.log('IkanKuahKuningJadi successfully dropped on Mangkuk!');
         this.mangkuk.setTexture('IkanKuahKuning');
         this.cookingState = 'finished';
         gameObject.destroy();
@@ -1530,10 +1562,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       this.campuranBumbuHalus.setAlpha(0.5);
     }
 
-    // Disable drag for wajan if it exists
+    // Disable drag for wajan if it exists but keep it fully visible
     if (this.wajan && this.wajan.scene) {
       this.input.setDraggable(this.wajan, false);
-      this.wajan.setAlpha(0.7); // Slightly less dim for main cooking item
+      // Keep wajan at full opacity (alpha 1) to prevent transparency issues
+      this.wajan.setAlpha(1);
     }
   }
 
@@ -1796,6 +1829,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         );
 
       case 'mangkuk_placed':
+        console.log(`Validating drop for mangkuk_placed: itemName=${itemName}, dropZone:`, dropZone, 'this.mangkuk:', this.mangkuk);
+        console.log(`dropZone === this.mangkuk:`, dropZone === this.mangkuk);
         return itemName === 'IkanKuahKuningJadi' && dropZone === this.mangkuk;
       
       default:
@@ -1808,16 +1843,23 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private returnItemToPanel(gameObject: Phaser.GameObjects.Image): void {
+    // Check if this item is from kompor - if so, just destroy it
+    if (gameObject.getData('fromKompor')) {
+      console.log(`Item ${gameObject.name} is from kompor, destroying instead of returning to panel`);
+      gameObject.destroy();
+      return;
+    }
+
     // Set flag to prevent dragend from interfering
     this.itemBeingReturned = true;
-    
+
     // Trigger screen shake as warning
     this.shakeScreen();
     console.log(`Returning ${gameObject.name} to panel due to invalid drop`);
-    
+
     // Clean up drag effects first
     this.cleanupDragEffects(gameObject);
-    
+
     const originalScale = gameObject.getData('originalScale') || 0.15;
     gameObject.setScale(originalScale);
 
@@ -1880,9 +1922,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       const isOverKompor = Phaser.Geom.Rectangle.Contains(komporBounds, pointer.worldX, pointer.worldY);
       
       if (isOverKompor) {
-        // Highlight kompor when Wajan is dragged over it
-        this.kompor.setTint(0x00FF00); // Green tint
-        gameObject.setTint(0x00FFAA); // Green-yellow tint for item
+        // No visual highlight when dragging over kompor
+        this.kompor.clearTint();
+        gameObject.setTint(0xFFFFAA); // Default yellow tint
       } else {
         this.kompor.clearTint();
         gameObject.setTint(0xFFFFAA); // Default yellow tint
@@ -1895,9 +1937,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       const isOverWajan = Phaser.Geom.Rectangle.Contains(wajanBounds, pointer.worldX, pointer.worldY);
       
       if (isOverWajan) {
-        // Highlight wajan when BumbuHalus is dragged over it
-        this.wajan.setTint(0x00FF00); // Green tint
-        gameObject.setTint(0x00FFAA); // Green-yellow tint for item
+        // No visual highlight when dragging over wajan
+        this.wajan.clearTint();
+        gameObject.setTint(0xFFFFAA); // Default yellow tint
       } else {
         this.wajan.clearTint();
         gameObject.setTint(0xFF6666); // Red tint to indicate invalid drop everywhere else
@@ -1911,8 +1953,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       const isOverCobek = Phaser.Geom.Rectangle.Contains(cobekBounds, pointer.worldX, pointer.worldY);
       
       if (isOverCobek) {
-        this.cobek.setTint(0x00FF00); // Green tint
-        gameObject.setTint(0x00FFAA); // Green-yellow tint for item
+        // No visual highlight when dragging over cobek
+        this.cobek.clearTint();
+        gameObject.setTint(0xFFFFAA); // Default yellow tint
       } else {
         this.cobek.clearTint();
         gameObject.setTint(0xFFFFAA); // Default yellow tint
@@ -1953,10 +1996,10 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       { key: "DaunJeruk", name: "Daun Jeruk", scale: 0.15 },
       { key: "PotonganIkan", name: "Potongan Ikan", scale: 0.15 },
       { key: "Air", name: "Air", scale: 0.15 },
-      { key: "Asam", name: "Asam", scale: 0.15 },
+      { key: "Asam", name: "Asam", scale: 0.2 },
       { key: "Tomat", name: "Tomat", scale: 0.15 },
-      { key: "Gula", name: "Gula", scale: 0.15 },
-      { key: "Garam", name: "Garam", scale: 0.15 },
+      { key: "Gula", name: "Gula", scale: 0.2 },
+      { key: "Garam", name: "Garam", scale: 0.2 },
       { key: "DaunBawang", name: "Daun Bawang", scale: 0.15 },
       { key: "Mangkuk", name: "Mangkuk", scale: 0.15 }
     ];
@@ -2024,6 +2067,48 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     });
 
     console.log(`Recreated ${ingredientConfig.name} in ingredients panel`);
+  }
+
+  private createDraggedItemFromKompor(itemKey: string): void {
+    // Create the item at kompor position, slightly above it for visibility
+    const draggedItem = this.add.image(this.kompor.x, this.kompor.y - 50, itemKey)
+      .setScale(0.3)
+      .setInteractive({ draggable: true })
+      .setName(itemKey)
+      .setData('originalScale', 0.3)
+      .setData('fromKompor', true)
+      .setDepth(100); // Ensure it's above other objects
+
+    // Make it draggable
+    this.input.setDraggable(draggedItem);
+
+    // Visual feedback that it's ready to drag
+    draggedItem.setTint(0xFFFFAA);
+
+    // Add debug events for this specific item
+    draggedItem.on('dragstart', () => {
+      console.log('IkanKuahKuningJadi drag started!');
+    });
+
+    draggedItem.on('drag', (pointer: Phaser.Input.Pointer) => {
+      console.log('IkanKuahKuningJadi being dragged to:', pointer.x, pointer.y);
+    });
+
+    draggedItem.on('dragend', () => {
+      console.log('IkanKuahKuningJadi drag ended!');
+    });
+
+    draggedItem.on('pointerdown', () => {
+      console.log('IkanKuahKuningJadi clicked/touched!');
+    });
+
+    console.log('IkanKuahKuningJadi created and ready to drag from kompor');
+    console.log('Item properties:', {
+      interactive: draggedItem.input?.enabled,
+      draggable: draggedItem.input?.draggable,
+      name: draggedItem.name,
+      depth: draggedItem.depth
+    });
   }
 
   private showSuccessPopup() {
