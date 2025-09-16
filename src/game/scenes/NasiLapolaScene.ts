@@ -28,20 +28,19 @@ interface GameStep {
 
 export default class NasiLapolaScene extends Phaser.Scene {
   // Definisikan semua objek game
-  private panciKiri!: Phaser.GameObjects.Image;
-  private panciKanan!: Phaser.GameObjects.Image;
-  private komporKiri!: Phaser.GameObjects.Image;
-  private komporKanan!: Phaser.GameObjects.Image;
+  private panciKiri!: Phaser.GameObjects.Image; // legacy (unused in new flow)
+  private panciKanan!: Phaser.GameObjects.Image; // legacy (unused in new flow)
+  private kompor!: Phaser.GameObjects.Image;
   private panciMasak: Phaser.GameObjects.Image | null = null;
   private panciKukus: Phaser.GameObjects.Image | null = null;
 
-  private komporKiriZone!: Phaser.GameObjects.Zone;
-  private komporKananZone!: Phaser.GameObjects.Zone;
+  private komporZone!: Phaser.GameObjects.Zone;
   private stagingZone!: Phaser.GameObjects.Zone;
+  private prepRightZone!: Phaser.GameObjects.Zone;
 
   // State untuk setiap panci
-  private statePanciKiri: PotState = "air";
-  private statePanciKanan: PotState = "air";
+  private statePanciKiri: PotState = "air"; // legacy
+  private statePanciKanan: PotState = "air"; // legacy
   private statePanciMasak: PotState = "empty";
   private statePanciKukus: PotState = "empty";
 
@@ -60,9 +59,43 @@ export default class NasiLapolaScene extends Phaser.Scene {
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
+  private ingredientsContentContainer!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
+  private scrollableArea!: Phaser.GameObjects.Zone;
+  private scrollContentHeight: number = 0;
+  private draggedItemOriginalParent: Phaser.GameObjects.Container | null = null;
+  private draggedItemOriginalX: number = 0;
+  private draggedItemOriginalY: number = 0;
+  private ingredientsContentMask: Phaser.Display.Masks.GeometryMask | null = null;
+  private scrollbarThumb!: Phaser.GameObjects.Graphics;
+  private isScrollbarDragging: boolean = false;
+  private scrollbarDragStartY: number = 0;
+  private contentStartY: number = 0;
   private hintPopup!: Phaser.GameObjects.Container;
   private infoContent: string = `Nasi Lapola adalah hidangan nasi khas Maluku yang memiliki keunikan tersendiri dalam penyajian dan rasanya. Lapola sendiri berasal dari bahasa lokal yang berarti "dicampur" atau "diaduk". Nasi lapola dibuat dari beras yang dimasak dengan santan kelapa dan rempah-rempah seperti pala, cengkeh, dan daun pandan yang memberikan aroma harum dan rasa yang khas. Yang membuat nasi lapola istimewa adalah cara penyajiannya yang dicampur dengan berbagai lauk pauk seperti ayam suwir, ikan asin, sayuran, dan kerupuk, sehingga menjadi satu hidangan yang lengkap dan mengenyangkan. Biasanya nasi ini disajikan dalam porsi besar dan dimakan bersama-sama sebagai simbol kebersamaan dalam masyarakat Maluku. Cita rasanya yang gurih dari santan dan harum dari rempah-rempah membuat nasi lapola menjadi makanan yang sangat digemari, terutama saat acara-acara adat atau perayaan keluarga.`;
 
+  // Stove and timing state
+  private isStoveOn: boolean = false;
+  private stoveClickCount: number = 0;
+  private stoveAnimTimer: Phaser.Time.TimerEvent | null = null;
+  private cookCountdownTimer: Phaser.Time.TimerEvent | null = null;
+  private cookCountdownText: Phaser.GameObjects.Text | null = null;
+
+  // Step 3-8 working objects
+  private baskomObj: Phaser.GameObjects.Image | null = null;
+  private saringObj: Phaser.GameObjects.Image | null = null;
+  private kukusKelapaObj: Phaser.GameObjects.Image | null = null;
+  private wajanNasiObj: Phaser.GameObjects.Image | null = null;
+
+  // Order validation system
+  private ingredientOrder: { [step: number]: string[] } = {
+    0: ['Panci', 'water', 'Kacang'],
+    1: ['Garam', 'Gula'],
+    2: ['Baskom', 'Saring', 'KukusKelapa'],
+    3: ['Wajan', 'Minyak', 'BawangMerah', 'BawangPutih'],
+    4: ['Nasi', 'Garam', 'Gula'],
+    5: ['Piring']
+  };
 
   // Layout configuration - dapat diatur secara manual
     private layoutConfig = {
@@ -70,10 +103,10 @@ export default class NasiLapolaScene extends Phaser.Scene {
     headerHeight: 60,
     
     // Ingredients panel
-    ingredientsPanelWidth: 350,
+    ingredientsPanelWidth: 400,
     ingredientsPanelX: 0, // Will be calculated
     ingredientsPanelY: 155,
-    ingredientsPanelHeight: 450, // Tinggi tetap untuk wrap content
+    ingredientsPanelHeight: 550,
     
     // Cooking area
     cookingAreaLeft: 20,
@@ -83,7 +116,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
     
     // Dialog panel
     dialogPanelHeight: 120,
-    dialogPanelY: 900, // Will be calculated
+    dialogPanelY: 850, // Will be calculated
     dialogPanelLeft: 50,
     dialogPanelRight: 20,
 
@@ -107,49 +140,49 @@ export default class NasiLapolaScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
      id:1,
-      text: "Proses pembuatan nasi lapola diawali dengan merebus kacang yang sudah dicuci bersih.",
+      text: "Selamat Datang di Game Traditional of Moluccas Food, sudah siap untuk Memasak Nasi Lapola hari ini!?! Oke Step 1 ambil Panci di Menu dan taruh di atas kompor. Sudah? Ambil air dan masukkan kedalam Panci. Setelah air masukkan kacang ke dalamnya.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Siapkan parutan kelapa dan masukkan ke panci untuk dikukus.",
+      text: "Step ke 2 ayo kita nyalakan Kompornya dengan Klik tuasnya. Tunggu beberapa saat sampai matang. Kacang yang sudah matang dan tempatkan ke Area Persiapan.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Tiriskan kacang dan kukusan kelapa yang sudah direbus dan dikukus.",
+      text: "Lanjut, kita parut kelapa terlebih dahulu. Ambil Baskom dan taruh di sebelah kompor. Ambil Parutan Kelapa dan Kelapa diatas baskom. Sudah? Mari kita parut kelapa dengan menggerakkan kelapa ke atas dan bawah",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Kemudian masukkan beras yang dicuci 3 kali kedalam wajan baru.",
+      text: "Step ke 4 Taruh Panci baru dari Menu dan taruh ke atas Kompor. Kemudian Ambil Parutan Kelapa tadi dan masukkan ke panci, lanjut kita nyalakan Kompornya dengan Klik tuasnya. Tunggu beberapa saat sampai matang. Kukusan kelapa yang sudah matang dan tempatkan ke Area Persiapan.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Aduk nasi dengan spatula agar matang merata.",
+      text: "Baik setelah Merebus kacang dan Mengukus kelapa, mari kita masak berasnya. Ambil Wajan di menu dan Taruh ke Kompor. Ambil Beras dari menu dan masukkan ke dalam Wajan. Lanjut!! Kita aduk terus beras sampai masak setengah matang.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Saat nasi setengah matang tambahkan Kukusan kelapa, Garam, dan kacang rebus, kemudian aduk hingga rata.",
+      text: "Beras yang setengah matang mari kita tambahkan dengan bahan lainnya. Ambil Garam terlebih dahulu di Menu dan Kukusan kelapa yang ada di Area Persiapan. Sudah? Mari kita tambahkan Rebusan Kacang di Area Persiapan dan Masukkan ke dalam Wajan Beras tadi. Aduk hingga merata, kemudian tunggu beberapa saat sampai matang.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Siapkan panci kukus baru, kemudian masukkan nasi yang matang kedalam panci kukus.",
+      text: "Oke lanjut ya? Kita sisihkan wajan nasi yang kita masak ke Area Persiapan di Kiri. Lanjut kita ambil Panci Kukus di Menu dan taruh keatas kompor. Kita ambil lagi Wajan Nasi yang kita sisihkan dan masukkan ke dalam Panci Kukus. Kita tunggu beberapa saat sampai Nasi matang",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 8,
-      text: "Setelah matang, Nasi Lapola siap untuk disajikan ke piring.",
+      text: "Yeayy!!! Kita telah menyelesaikan Masakan Nasi Lapola. Ambil Piring di Menu dan taruh ke Area persiapan. Ambil Kukusan Nasi Lapola yang sudah matang dan sajikan ke Piring di Area Persiapan.",
       character: "karakter2.png",
       isCompleted: false
     }
@@ -161,39 +194,90 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
   preload() {
     this.load.image("background", "/assets/backgrounds/kitchen.png");
-    this.load.image("Kompor", "/assets/foods/kohu_kohu/Kompor.png");
+    // Ensure stove for this scene uses nasi_lapola asset set
+    this.load.image("Kompor", "/assets/foods/nasi_lapola/Kompor.png");
     
     // Load food image for hint popup
     this.load.image('nasilapola_food', '/assets/makanan/nasilapola.png');
 
-    // Alat & Bahan
+    // Alat & Bahan - preload all assets found under /assets/foods/nasi_lapola
     this.load.image("PanciAir", "/assets/foods/nasi_lapola/PanciAir.png");
     this.load.image("PanciAir2", "/assets/foods/nasi_lapola/PanciAir2.png");
     this.load.image("Kacang", "/assets/foods/nasi_lapola/Kacang.png");
-    this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
+    this.load.image("Kelapa", "/assets/foods/nasi_lapola/Kelapa.png");
     this.load.image("Beras", "/assets/foods/nasi_lapola/Beras.png");
     this.load.image("Garam", "/assets/foods/nasi_lapola/Garam.png");
-    this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.png");
+    this.load.image("Sepatula", "/assets/foods/nasi_lapola/sepatula.png");
+    this.load.image("Panci", "/assets/foods/nasi_lapola/Panci.png");
+    this.load.image("Baskom", "/assets/foods/nasi_lapola/Baskom.png");
+    this.load.image("Parut", "/assets/foods/nasi_lapola/Parut.png");
 
-    // Variasi Panci
+    // Variasi & hasil proses
     this.load.image("PanciKacang", "/assets/foods/nasi_lapola/PanciKacang.png");
     this.load.image("PanciSaring", "/assets/foods/nasi_lapola/PanciSaring.png");
     this.load.image("PanciKelapa", "/assets/foods/nasi_lapola/PanciKelapa.png");
     this.load.image("PanciBeras", "/assets/foods/nasi_lapola/PanciBeras.png");
-    this.load.image("PanciKelapaGaram", "/assets/foods/nasi_lapola/PanciKelapaGaram.png");
-    this.load.image("PanciKacang2", "/assets/foods/nasi_lapola/PanciKacang2.png");
     this.load.image("PanciBerasKelapa", "/assets/foods/nasi_lapola/PanciBerasKelapa.png");
     this.load.image("PanciNasiLapola", "/assets/foods/nasi_lapola/PanciNasiLapola.png");
+    this.load.image("NasiAduk", "/assets/foods/nasi_lapola/NasiAduk.png");
+    this.load.image("NasiGaram", "/assets/foods/nasi_lapola/NasiGaram.png");
+    this.load.image("NasiKelapa", "/assets/foods/nasi_lapola/NasiKelapa.png");
+    this.load.image("KukusNasiLapola", "/assets/foods/nasi_lapola/KukusNasiLapola.png");
+    this.load.image("WajanNasiLapola", "/assets/foods/nasi_lapola/WajanNasiLapola.png");
+    this.load.image("KukusNasi", "/assets/foods/nasi_lapola/KukusNasi.png");
+    this.load.image("KukusKelapa", "/assets/foods/nasi_lapola/KukusKelapa.png");
+    this.load.image("BaskomKelapa", "/assets/foods/nasi_lapola/BaskomKelapa.png");
+    this.load.image("Piring", "/assets/foods/nasi_lapola/Piring.png");
+    this.load.image("NasiLapola", "/assets/foods/nasi_lapola/NasiLapola.png");
 
-    // Animasi Aduk
+    // Kompor nyala frames
+    this.load.image("KomporNyala1", "/assets/foods/nasi_lapola/KomporNyala1.png");
+    this.load.image("KomporNyala2", "/assets/foods/nasi_lapola/KomporNyala2.png");
+    this.load.image("KomporNyala3", "/assets/foods/nasi_lapola/KomporNyala3.png");
+    this.load.image("KomporNyala4", "/assets/foods/nasi_lapola/KomporNyala4.png");
+    this.load.image("KomporNyala5", "/assets/foods/nasi_lapola/KomporNyala5.png");
+    this.load.image("KomporNyala6", "/assets/foods/nasi_lapola/KomporNyala6.png");
+
+    // Tuang/memasukkan animasi frames
+    this.load.image("TuangAir1", "/assets/foods/nasi_lapola/TuangAir1.png");
+    this.load.image("TuangAir2", "/assets/foods/nasi_lapola/TuangAir2.png");
+    this.load.image("TuangAir3", "/assets/foods/nasi_lapola/TuangAir3.png");
+    this.load.image("TuangAir4", "/assets/foods/nasi_lapola/TuangAir4.png");
+    this.load.image("MasukkanKacang1", "/assets/foods/nasi_lapola/MasukkanKacang1.png");
+    this.load.image("MasukkanKacang2", "/assets/foods/nasi_lapola/MasukkanKacang2.png");
+    this.load.image("MasukkanKacang3", "/assets/foods/nasi_lapola/MasukkanKacang3.png");
+    this.load.image("MasukkanKacang4", "/assets/foods/nasi_lapola/MasukkanKacang4.png");
+    this.load.image("MasukkanBeras1", "/assets/foods/nasi_lapola/MasukkanBeras1.png");
+    this.load.image("MasukkanBeras2", "/assets/foods/nasi_lapola/MasukkanBeras2.png");
+    this.load.image("MasukkanBeras3", "/assets/foods/nasi_lapola/MasukkanBeras3.png");
+    this.load.image("KelapaMasuk1", "/assets/foods/nasi_lapola/KelapaMasuk1.png");
+    this.load.image("KelapaMasuk2", "/assets/foods/nasi_lapola/KelapaMasuk2.png");
+    this.load.image("KelapaMasuk3", "/assets/foods/nasi_lapola/KelapaMasuk3.png");
+    this.load.image("TuangGaram1", "/assets/foods/nasi_lapola/TuangGaram1.png");
+    this.load.image("TuangGaram2", "/assets/foods/nasi_lapola/TuangGaram2.png");
+    this.load.image("TuangGaram3", "/assets/foods/nasi_lapola/TuangGaram3.png");
+    this.load.image("TuangKelapa1", "/assets/foods/nasi_lapola/TuangKelapa1.png");
+    this.load.image("TuangKelapa2", "/assets/foods/nasi_lapola/TuangKelapa2.png");
+    this.load.image("TuangKelapa3", "/assets/foods/nasi_lapola/TuangKelapa3.png");
+    this.load.image("TuangKacang1", "/assets/foods/nasi_lapola/TuangKacang1.png");
+    this.load.image("TuangKacang2", "/assets/foods/nasi_lapola/TuangKacang2.png");
+    this.load.image("TuangKacang3", "/assets/foods/nasi_lapola/TuangKacang3.png");
+
+    // Aduk frames
     this.load.image("PanciAirSepatula", "/assets/foods/nasi_lapola/PanciAirSepatula.png");
     this.load.image("PanciAirSepatula2", "/assets/foods/nasi_lapola/PanciAirSepatula2.png");
     this.load.image("PanciAirSepatula3", "/assets/foods/nasi_lapola/PanciAirSepatula3.png");
     this.load.image("AdukKacang", "/assets/foods/nasi_lapola/AdukKacang.png");
     this.load.image("AdukKacang2", "/assets/foods/nasi_lapola/AdukKacang2.png");
-    this.load.image("Piring", "/assets/foods/nasi_lapola/Piring.png");
-    this.load.image("KukusNasi", "/assets/foods/nasi_lapola/KukusNasi.png");
-    this.load.image("NasiLapola", "/assets/foods/nasi_lapola/NasiLapola.png");
+
+    // Saring/parut kelapa sequence
+    this.load.image("SaringKelapa", "/assets/foods/nasi_lapola/SaringKelapa.png");
+    this.load.image("SaringKelapa1", "/assets/foods/nasi_lapola/SaringKelapa1.png");
+    this.load.image("SaringKelapa2", "/assets/foods/nasi_lapola/SaringKelapa2.png");
+    this.load.image("SaringKelapa3", "/assets/foods/nasi_lapola/SaringKelapa3.png");
+
+    // Others
+    this.load.image("water", "/assets/foods/nasi_lapola/water.png");
 
     // UI Elements
     this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
@@ -290,7 +374,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
         break;
     }
 
-    this.setStoveCoordinates(leftX, yPosition, rightX, yPosition);
+    const centerXPos = (leftX + rightX) / 2;
+    this.setStoveCoordinates(centerXPos, yPosition);
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
@@ -335,17 +420,12 @@ export default class NasiLapolaScene extends Phaser.Scene {
     this.ingredientsPanel.setPosition(targetX, targetY);
   }
 
-  private setStoveCoordinates(leftX: number, leftY: number, rightX: number, rightY: number) {
-    // Set position for left stove and its zone
-    if (this.komporKiri) {
-      this.komporKiri.setPosition(leftX, leftY);
-      this.komporKiriZone.setPosition(leftX, leftY - 60);
+  private setStoveCoordinates(singleX: number, singleY: number) {
+    if (this.kompor) {
+      this.kompor.setPosition(singleX, singleY);
     }
-
-    // Set position for right stove and its zone
-    if (this.komporKanan) {
-      this.komporKanan.setPosition(rightX, rightY);
-      this.komporKananZone.setPosition(rightX, rightY - 60);
+    if (this.komporZone) {
+      this.komporZone.setPosition(singleX, singleY - 60);
     }
   }
 
@@ -357,22 +437,16 @@ export default class NasiLapolaScene extends Phaser.Scene {
     // Kompor positioning
     const komporY = this.layoutConfig.cookingAreaBottom - 100;
     
-    // Kompor kiri
-    this.komporKiri = this.add.image(0, 0, "Kompor").setScale(this.layoutConfig.stoveScale);
-    
-    this.komporKiriZone = this.add.zone(0, 0, 120, 120).setRectangleDropZone(120, 120);
-    this.komporKiriZone.name = "komporKiri";
-
-    // Kompor kanan
-    this.komporKanan = this.add.image(0, 0, "Kompor").setScale(this.layoutConfig.stoveScale);
-    
-    this.komporKananZone = this.add.zone(0, 0, 120, 120).setRectangleDropZone(120, 120);
-    this.komporKananZone.name = "komporKanan";
+    // Single center stove
+    this.kompor = this.add.image(0, 0, "Kompor").setScale(this.layoutConfig.stoveScale).setInteractive();
+    this.komporZone = this.add.zone(0, 0, 160, 140).setRectangleDropZone(160, 140);
+    this.komporZone.name = "kompor";
 
     // Atur posisi kompor secara manual dengan koordinat (x, y).
     // Anda bisa mengubah angka-angka di bawah ini untuk memindahkan kompor.
     // Format: setStoveCoordinates(kiriX, kiriY, kananX, kananY)
-    this.setStoveCoordinates(650, 600, 1150, 600);
+    // Place single stove slightly higher
+    this.setStoveCoordinates(((this.layoutConfig.cookingAreaLeft + this.layoutConfig.cookingAreaRight) / 2) - 90, this.layoutConfig.cookingAreaBottom - 270);
 
     // Pemanggilan fungsi layout berbasis perataan (non-aktif).
     // this.setupStoveLayout('center', 'bottom', this.layoutConfig.stoveSpacing, 100);
@@ -385,6 +459,15 @@ export default class NasiLapolaScene extends Phaser.Scene {
       this.layoutConfig.stagingAreaHeight
     ).setRectangleDropZone(this.layoutConfig.stagingAreaWidth, this.layoutConfig.stagingAreaHeight);
     this.stagingZone.name = "staging";
+
+    // Prep zone to the right of stove for step 3 setup (baskom/parut/kelapa)
+    this.prepRightZone = this.add.zone(
+      this.komporZone.x + 260,
+      this.komporZone.y,
+      200,
+      160
+    ).setRectangleDropZone(200, 160);
+    this.prepRightZone.name = 'prepRight';
 
     // Visual indicator untuk staging area (gaya baru)
     const stagingGraphics = this.add.graphics();
@@ -418,22 +501,27 @@ export default class NasiLapolaScene extends Phaser.Scene {
       }
     ).setOrigin(0.5, 0.5);
 
-    // Initial pots
-    this.panciKiri = this.add.image(
-      this.komporKiriZone.x, 
-      this.komporKiriZone.y, 
-      "PanciAir"
-    ).setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
-    
-    this.panciKanan = this.add.image(
-      this.komporKananZone.x, 
-      this.komporKananZone.y, 
-      "PanciSaring"
-    ).setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
+    // No initial pots placed in new flow
+    // Stove click logic: toggle after 5 clicks
+    this.kompor.on('pointerdown', () => {
+      this.stoveClickCount++;
+      if (this.stoveClickCount >= 5) {
+        this.toggleStove();
+        this.stoveClickCount = 0;
+      }
+    });
+
+    // Allow dragging cooking pot to staging after it is cooked in step 2
+    this.input.on('dragstart', (_: any, obj: Phaser.GameObjects.Image) => {
+      if (obj === this.panciMasak && this.currentStep === 1 && this.statePanciMasak !== 'kacang_matang') {
+        obj.disableInteractive();
+        this.time.delayedCall(0, () => obj.setInteractive());
+      }
+    });
   }
 
   private createIngredientsPanel() {
-    // Create ingredients panel container (positioned by CSS)
+    // Create ingredients panel container (main container for the whole panel)
     this.ingredientsPanel = this.add.container(
       this.layoutConfig.ingredientsPanelX,
       this.layoutConfig.ingredientsPanelY
@@ -444,39 +532,98 @@ export default class NasiLapolaScene extends Phaser.Scene {
     this.ingredientsPanel.add(this.panelBg);
 
     // Panel title
-    this.panelTitle = this.add.text(0, 0, "", {}); // Initialized with empty values
+    this.panelTitle = this.add.text(0, 0, "", {});
     this.ingredientsPanel.add(this.panelTitle);
 
     // Menu toggle button
-    this.menuToggleButton = this.add.image(0, 0, "menu_normal"); // Initialized with empty values
+    this.menuToggleButton = this.add.image(0, 0, "menu_normal");
     this.ingredientsPanel.add(this.menuToggleButton);
 
+    // Create a scrollable area (zone) for ingredients
+    const scrollableAreaX = 15; // Relative to ingredientsPanel
+    const scrollableAreaY = 100; // Relative to ingredientsPanel, below title
+    const scrollableAreaWidth = this.layoutConfig.ingredientsPanelWidth - 70; // Panel width minus padding
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - scrollableAreaY - 5; // Remaining height
+
+    this.scrollableArea = this.add.zone(
+      scrollableAreaX + scrollableAreaWidth / 2,
+      scrollableAreaY + scrollableAreaHeight / 2,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    ).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(this.scrollableArea);
+
+    // Create a container for the actual ingredient items
+    this.ingredientsContentContainer = this.add.container(scrollableAreaX, scrollableAreaY);
+    this.ingredientsPanel.add(this.ingredientsContentContainer);
+
+    // Set up a clipping mask for the ingredients content
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillRect(0, 0, scrollableAreaWidth, scrollableAreaHeight); // Define mask in local coordinates
+    this.ingredientsContentMask = maskGraphics.createGeometryMask(); // Store the mask object
+    this.ingredientsContentContainer.setMask(this.ingredientsContentMask); // Apply the stored mask
+
+    // Position the maskGraphics to align with the scrollable area in world coordinates
+    maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+    maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+
+    // Create scrollbar background
+    this.scrollbar = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbar);
+    
+    // Create scrollbar thumb (draggable part)
+    this.scrollbarThumb = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbarThumb);
+
     this.createIngredients();
+
+    // Enable mouse wheel scrolling
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[], deltaX: number, deltaY: number, deltaZ: number) => {
+      // Check if the mouse pointer is within the ingredients panel's scrollable area
+      const panelBounds = new Phaser.Geom.Rectangle(
+        this.ingredientsPanel.x + scrollableAreaX,
+        this.ingredientsPanel.y + scrollableAreaY,
+        scrollableAreaWidth,
+        scrollableAreaHeight
+      );
+
+      if (Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        this.handleScroll(deltaY);
+      }
+    });
   }
 
   private createIngredients() {
     // Destroy existing ingredient items to prevent duplicates
     this.ingredientItems.forEach(item => item.destroy());
     this.ingredientItems = [];
+    this.ingredientsContentContainer.removeAll(true); // Clear previous items from the container
 
     const ingredients = [
+      { key: "Panci", name: "Panci", scale: 0.12 },
+      { key: "water", name: "Air", scale: 0.15 },
       { key: "Kacang", name: "Kacang", scale: 0.2 },
-      { key: "Kelapa", name: "Kelapa", scale: 0.2 },
       { key: "Beras", name: "Beras", scale: 0.2 },
       { key: "Garam", name: "Garam", scale: 0.2 },
-      { key: "Sepatula", name: "Spatula", scale: 0.1 },
-      { key: "PanciAir2", name: "Panci", scale: 0.1 },
-      { key: "PanciSaring", name: "Panci Saring", scale: 0.1 },
+      { key: "Kelapa", name: "Kelapa", scale: 0.2 },
+      { key: "Parut", name: "Parutan", scale: 0.15 },
+      { key: "Baskom", name: "Baskom", scale: 0.15 },
+      { key: "PanciSaring", name: "Panci Saring", scale: 0.12 },
+      { key: "PanciSaring", name: "Panci Saring", scale: 0.12 },
+      // Remove spatula from panel per request
+      { key: "PanciAir2", name: "Panci Air", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.15 }
     ];
 
     // Manual grid layout
     const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 4;
-    const startY = 100;
+    const startX = panelWidth / 6;
+    const startY = 100; // Adjusted startY for content container
     const spacingX = panelWidth / 2;
     const spacingY = 90;
     const itemsPerRow = 2;
+
+    let maxContentY = 0;
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
@@ -490,18 +637,17 @@ export default class NasiLapolaScene extends Phaser.Scene {
       itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
       itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-      this.ingredientsPanel.add(itemBg);
+      this.ingredientsContentContainer.add(itemBg); // Add to content container
 
       // Item image
       const item = this.add.image(x, y, ingredient.key)
         .setInteractive()
         .setScale(ingredient.scale)
-        .setName(ingredient.key)
-        .setData('originalScale', ingredient.scale);
+        .setName(ingredient.key);
 
       this.ingredientItems.push(item);
       this.input.setDraggable(item);
-      this.ingredientsPanel.add(item);
+      this.ingredientsContentContainer.add(item); // Add to content container
 
       // Item label
       const label = this.add.text(x, y + 40, ingredient.name, {
@@ -511,7 +657,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
-      this.ingredientsPanel.add(label);
+      this.ingredientsContentContainer.add(label); // Add to content container
 
       // Hover effects
       item.on('pointerover', () => {
@@ -533,7 +679,11 @@ export default class NasiLapolaScene extends Phaser.Scene {
         itemBg.lineStyle(1, 0x8B4513, 0.4);
         itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
       });
+      maxContentY = Math.max(maxContentY, y + 40); // Track the lowest point of content
     });
+
+    this.scrollContentHeight = maxContentY + startY; // Calculate total content height
+    this.updateScrollbar(); // Initial update of scrollbar
   }
 
   private createDialogPanel() {
@@ -635,6 +785,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
     this.menuToggleButton.on('pointerup', () => {
       this.menuToggleButton.setTexture("menu_hover");
     });
+
+    this.updateScrollbar(); // Update scrollbar visuals
   }
 
   private toggleIngredientsPanel() {
@@ -700,178 +852,275 @@ export default class NasiLapolaScene extends Phaser.Scene {
   }
 
   private initDragAndDrop() {
-    this.input.on("dragstart", (pointer: any, gameObject: any) => {
-      // Store original scale when drag starts
-      if (!gameObject.getData('originalScale')) {
-        gameObject.setData('originalScale', gameObject.scale);
+    this.input.on("dragstart", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
+      this.draggedItemOriginalParent = gameObject.parentContainer;
+      this.draggedItemOriginalX = gameObject.x;
+      this.draggedItemOriginalY = gameObject.y;
+    
+      if (gameObject.parentContainer) {
+        const parent = gameObject.parentContainer;
+        
+        parent.remove(gameObject);
+        this.add.existing(gameObject);
+    
+        // Set posisi langsung ke posisi pointer/cursor
+        gameObject.x = pointer.worldX;
+        gameObject.y = pointer.worldY;
       }
+    
+      gameObject.setDepth(1000);
     });
+    
 
-    this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
-      gameObject.x = dragX;
-      gameObject.y = dragY;
+    // Drag update - validate ingredient order immediately
+    this.input.on("drag", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
+      // Check if ingredient is valid for current step
+      if (!this.isValidIngredient(gameObject.name)) {
+        // Invalid ingredient - shake screen and return to original position
+        this.shakeScreen();
+        this.returnItemToOriginalPosition(gameObject);
+        return;
+      }
+
+      // Valid ingredient - continue with normal drag behavior
+      gameObject.x = pointer.worldX;
+      gameObject.y = pointer.worldY;
       
-      // Visual feedback saat drag dengan enhanced effects
-      
+      // Visual feedback saat drag
       gameObject.setTint(0xFFFFAA);
-      
-      // Add glow effect
-      const originalFilter = gameObject.postPipelines;
-      // Add glowing effect or similar visual enhancement here if needed
     });
 
-    this.input.on("dragend", (pointer: any, gameObject: any, dropped: any) => {
-      // Reset visual feedback
+    // Drag selesai
+    this.input.on("dragend", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
+      // Reset efek visual
       gameObject.clearTint();
-      
-      if (!dropped) { // Only reset scale if not dropped on a valid zone
-        // Store original scale if not already stored
-        if (!gameObject.getData('originalScale')) {
-          gameObject.setData('originalScale', gameObject.scale);
-        }
-        
-        const originalScale = gameObject.getData('originalScale');
-        gameObject.setScale(originalScale);
-        
-        // Smooth return with bounce effect
-        this.tweens.add({
-          targets: gameObject,
-          x: gameObject.input.dragStartX,
-          y: gameObject.input.dragStartY,
-          duration: 400,
-          ease: 'Back.easeOut'
-        });
+      gameObject.setDepth(0); // Reset depth
+
+      // Jika dilepas di luar panel scroll (worldX > 300) → biarkan di posisi cursor
+      if (pointer.worldX > 300) {
+        // Item tetap di posisi terakhir cursor (sudah diatur di drag event)
+        console.log(`Item ${gameObject.name} dropped outside scrollbar at ${gameObject.x}, ${gameObject.y}`);
+        return; // Item tetap di posisi cursor
       }
-      // If 'dropped' is true, the scale should be handled by the drop zone's logic,
-      // or it should retain its current scale if no specific scale is set by the drop zone.
+
+      // Kalau dilepas di dalam panel scroll → balikin ke parent / posisi awal
+      if (!dropped) {
+        const originalScale = this.getOriginalScale(gameObject.name);
+        gameObject.setScale(originalScale);
+
+        if (this.draggedItemOriginalParent) {
+          // Convert world position back to local position
+          const localPos = this.draggedItemOriginalParent.getWorldTransformMatrix().applyInverse(gameObject.x, gameObject.y);
+          this.draggedItemOriginalParent.add(gameObject);
+          gameObject.setPosition(this.draggedItemOriginalX, this.draggedItemOriginalY);
+          gameObject.setInteractive();
+        } else {
+          if (gameObject.input && gameObject.input.dragStartX !== undefined && gameObject.input.dragStartY !== undefined) {
+            this.tweens.add({
+              targets: gameObject,
+              x: gameObject.input.dragStartX,
+              y: gameObject.input.dragStartY,
+              duration: 400,
+              ease: 'Back.easeOut'
+            });
+          }
+        }
+      }
+
+      // Re-enable mask hanya jika item dikembalikan ke container
+      if (pointer.worldX <= 300 && this.ingredientsContentContainer && this.ingredientsContentMask) {
+        this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+      }
+
+      // Reset properti yang disimpan
+      this.draggedItemOriginalParent = null;
+      this.draggedItemOriginalX = 0;
+      this.draggedItemOriginalY = 0;
     });
 
     // Enhanced drop handling dengan improved feedback
     this.input.on("drop", (pointer: any, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
       const droppedKey = gameObject.name;
 
-      // Step 1: Add beans to left pot
-      if (dropZone === this.komporKiriZone && this.statePanciKiri === "air" && droppedKey === "Kacang" && this.currentStep === 0) {
+      // STEP 1: Place pot on stove, pour water, then add beans
+      if (dropZone === this.komporZone && this.currentStep === 0 && droppedKey === "Panci" && !this.panciMasak) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.panciKiri.setTexture("PanciKacang");
-          this.statePanciKiri = "kacang_matang";
-          this.input.setDraggable(this.panciKiri);
-          this.nextStep();
-        });
-      }
-      // Step 2: Add coconut to right pot
-      else if (dropZone === this.komporKananZone && this.statePanciKanan === "air" && droppedKey === "Kelapa" && this.currentStep === 1) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.panciKanan.setTexture("PanciKelapa");
-          this.statePanciKanan = "kelapa_matang";
-          this.input.setDraggable(this.panciKanan);
-          this.nextStep();
-        });
-      }
-      // Step 3: Move pots to staging area
-      else if (dropZone === this.stagingZone && this.currentStep === 2) {
-        if (gameObject === this.panciKiri && this.statePanciKiri === "kacang_matang") {
-          this.isPanciKiriStaged = true;
-          this.executeSuccessfulMove(gameObject, dropZone.x, dropZone.y - 30);
-          if (this.isPanciKananStaged) this.nextStep();
-        }
-        else if (gameObject === this.panciKanan && this.statePanciKanan === "kelapa_matang") {
-          this.isPanciKananStaged = true;
-          this.executeSuccessfulMove(gameObject, dropZone.x, dropZone.y + 30);
-          if (this.isPanciKiriStaged) this.nextStep();
-        }
-      }
-      // Step 4: Add new pot and rice
-      else if ((dropZone === this.komporKiriZone || dropZone === this.komporKananZone) && this.statePanciMasak === "empty" && droppedKey === "PanciAir2" && this.currentStep === 3) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.panciMasak = this.add.image(dropZone.x, dropZone.y, "PanciAir2").setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
+          this.panciMasak = this.add.image(dropZone.x - 20, dropZone.y - 65, "Panci").setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
           this.input.setDraggable(this.panciMasak);
+          this.statePanciMasak = "empty";
+        });
+      }
+      else if (this.panciMasak && this.currentStep === 0 && droppedKey === "water" && this.statePanciMasak === "empty" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
+        this.executePourAnimation(gameObject, ["TuangAir1", "TuangAir2", "TuangAir3", "TuangAir4"], 6000, () => {
+          if (this.panciMasak) {
+            this.panciMasak.setTexture("PanciAir");
           this.statePanciMasak = "air";
-        });
+          }
+        }, this.panciMasak);
       }
-      else if (this.panciMasak && this.panciMasak.texture.key === "PanciAir2" && 
-               Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && 
-               this.statePanciMasak === "air" && droppedKey === "Beras" && this.currentStep === 3) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.statePanciMasak = "beras_mentah";
+      else if (this.panciMasak && this.currentStep === 0 && droppedKey === "Kacang" && this.statePanciMasak === "air" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
+        this.executePourAnimation(gameObject, ["MasukkanKacang1", "MasukkanKacang2", "MasukkanKacang3", "MasukkanKacang4"], 6000, () => {
+          if (this.panciMasak) {
+            this.panciMasak.setTexture("PanciKacang");
+            this.statePanciMasak = "kacang_mentah";
           this.nextStep();
-        });
-      }
-      // Step 5: Stir rice with enhanced animation
-      else if (this.panciMasak && this.panciMasak.texture.key === "PanciAir2" && 
-               Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && 
-               this.statePanciMasak === "beras_mentah" && droppedKey === "Sepatula" && this.currentStep === 4) {
-        this.executeStirringAnimation(gameObject);
-      }
-      // Step 6: Add coconut and beans
-      else if (this.panciMasak && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && 
-               this.statePanciMasak === "beras_matang" && gameObject === this.panciKanan && 
-               this.statePanciKanan === "kelapa_matang" && this.currentStep === 5) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          if (this.panciMasak) {
-            this.panciMasak.setTexture("PanciBerasKelapa");
-            this.statePanciMasak = "beras_kelapa";
-            this.panciKanan.destroy();
-            this.isPanciKananStaged = false;
           }
-        });
+        }, this.panciMasak);
       }
-      else if (this.panciMasak && this.panciMasak.texture.key === "PanciBerasKelapa" && 
-               Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && 
-               this.statePanciMasak === "beras_kelapa" && droppedKey === "Garam" && this.currentStep === 5) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.statePanciMasak = "beras_kelapa_garam";
-        });
-      }
-      else if (this.panciMasak && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y) && 
-               this.statePanciMasak === "beras_kelapa_garam" && gameObject === this.panciKiri && 
-               this.statePanciKiri === "kacang_matang" && this.currentStep === 5) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          if (this.panciMasak) {
-            this.panciMasak.setTexture("PanciNasiLapola");
-            this.statePanciMasak = "final";
-            this.panciKiri.destroy();
-            this.isPanciKiriStaged = false;
-            this.nextStep();
-          }
-        });
-      }
-      // Step 7: Steam the rice
-      else if ((dropZone === this.komporKiriZone || dropZone === this.komporKananZone) && 
-               !this.panciKukus && droppedKey === "PanciSaring" && this.currentStep === 6) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.panciKukus = this.add.image(dropZone.x, dropZone.y, "PanciSaring").setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
-          this.statePanciKukus = "air";
-        });
-      }
-      else if (this.panciKukus && this.statePanciKukus === "air" && gameObject === this.panciMasak && 
-               this.statePanciMasak === "final" && Phaser.Geom.Rectangle.Contains(this.panciKukus.getBounds(), pointer.x, pointer.y) && 
-               this.currentStep === 6) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          if (this.panciKukus && this.panciMasak) {
-            this.panciKukus.setTexture("KukusNasi");
-            this.statePanciKukus = "kukus";
-            this.panciMasak.destroy();
+      // STEP 2: Turn on stove (5 clicks), countdown 30s, then allow moving PanciKacang to staging
+      else if (dropZone === this.stagingZone && this.currentStep === 1 && this.panciMasak && this.statePanciMasak === "kacang_matang") {
+        this.executeSuccessfulMove(this.panciMasak, dropZone.x, dropZone.y);
+            // Clear reference so a new pot can be placed on the stove in step 5
             this.panciMasak = null;
             this.nextStep();
           }
+      // STEP 3: Grating workflow
+      else if (this.currentStep === 2 && droppedKey === "Baskom" && !this.baskomObj) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          this.baskomObj = this.add.image(this.prepRightZone.x, this.prepRightZone.y, "Baskom").setScale(0.39).setInteractive();
+          this.baskomObj.setData('type', 'baskom');
         });
       }
-      // Step 8: Serve on plate
-      else if (this.panciKukus && this.statePanciKukus === "kukus" && droppedKey === "Piring" && 
-               Phaser.Geom.Rectangle.Contains(this.panciKukus.getBounds(), pointer.x, pointer.y) && 
-               this.currentStep === 7) {
+      else if (this.currentStep === 2 && droppedKey === "Parut" && this.baskomObj && !this.saringObj && Phaser.Geom.Rectangle.Contains(this.baskomObj.getBounds(), pointer.x, pointer.y)) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          // Remove baskom view and replace with saring
+          const bx = this.baskomObj ? this.baskomObj.x : this.prepRightZone.x;
+          const by = this.baskomObj ? this.baskomObj.y : this.prepRightZone.y;
+          if (this.baskomObj) this.baskomObj.destroy();
+          this.baskomObj = null;
+          this.saringObj = this.add.image(bx, by, "SaringKelapa").setScale(0.39).setInteractive().setName('SaringKelapa');
+          this.saringObj.setData('type', 'saring');
+        });
+      }
+      else if (this.currentStep === 2 && (droppedKey === "Kelapa" || droppedKey === "Parut") && this.saringObj && Phaser.Geom.Rectangle.Contains(this.saringObj.getBounds(), pointer.x, pointer.y)) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          const sx = this.saringObj!.x;
+          const sy = this.saringObj!.y;
+          this.saringObj?.destroy();
+          this.saringObj = this.add.image(sx, sy, "SaringKelapa1").setScale(0.39).setInteractive().setName('SaringKelapa1');
+          this.saringObj.setData('type', 'saring_active');
+          this.initGratingMechanic(this.saringObj);
+        });
+      }
+      // STEP 4: Steam coconut - place PanciSaring on stove then pour BaskomKelapa, then 30s cook and move to staging
+      else if (dropZone === this.komporZone && this.currentStep === 3 && droppedKey === "PanciSaring" && !this.panciKukus) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          this.panciKukus = this.add.image(dropZone.x - 20, dropZone.y - 65, "PanciSaring").setScale(this.layoutConfig.potScale).setInteractive();
+          this.input.setDraggable(this.panciKukus);
+          this.statePanciKukus = "empty";
+        });
+      }
+      else if (this.panciKukus && this.currentStep === 3 && droppedKey === "BaskomKelapa" && Phaser.Geom.Rectangle.Contains(this.panciKukus.getBounds(), pointer.x, pointer.y)) {
+        this.executePourAnimation(gameObject, ["KelapaMasuk1","KelapaMasuk2","KelapaMasuk3"], 6000, () => {
+          if (this.panciKukus) {
+            this.panciKukus.setTexture('KukusKelapa');
+            this.statePanciKukus = 'kelapa_mentah';
+          }
+        }, this.panciKukus);
+      }
+      else if (dropZone === this.stagingZone && this.currentStep === 3 && this.panciKukus && this.statePanciKukus === 'kelapa_matang') {
+        this.executeSuccessfulMove(this.panciKukus, dropZone.x, dropZone.y);
+        this.nextStep();
+      }
+      // STEP 5: Rice - place PanciAir2, pour Beras, then stir 15x to NasiAduk
+      else if (dropZone === this.komporZone && this.currentStep === 4 && droppedKey === "PanciAir2" && !this.panciMasak) {
+        if (!this.isStoveOn) {
+          this.executeInvalidDrop(gameObject);
+        } else {
+        this.executeSuccessfulDrop(gameObject, () => {
+            this.panciMasak = this.add.image(dropZone.x - 20, dropZone.y - 65, 'PanciAir2').setScale(this.layoutConfig.potScale).setInteractive().setData('originalScale', this.layoutConfig.potScale);
+            this.input.setDraggable(this.panciMasak);
+            this.statePanciMasak = 'air';
+          });
+        }
+      }
+      else if (this.panciMasak && this.currentStep === 4 && droppedKey === 'Beras' && this.statePanciMasak === 'air' && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
+        this.executePourAnimation(gameObject, ["MasukkanBeras1","MasukkanBeras2","MasukkanBeras3"], 6000, () => {
+          if (this.panciMasak) {
+            this.panciMasak.setTexture('PanciAirSepatula');
+            this.initStirMechanic(this.panciMasak, ['PanciAirSepatula2','PanciAirSepatula3'], 15, () => {
+              if (this.panciMasak) {
+                this.panciMasak.setTexture('NasiAduk');
+                this.statePanciMasak = 'beras_diaduk';
+          this.nextStep();
+          }
+        });
+      }
+        }, this.panciMasak);
+      }
+      // STEP 6: Add Garam, Kelapa (from staging), Kacang (from staging), stir 15x to WajanNasiLapola then wait 30s
+      else if (this.panciMasak && this.currentStep === 5 && droppedKey === 'Garam' && this.panciMasak.texture.key === 'NasiAduk' && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
+        this.executePourAnimation(gameObject, ["TuangGaram1","TuangGaram2","TuangGaram3"], 6000, () => {
+          if (this.panciMasak) this.panciMasak.setTexture('NasiGaram');
+        }, this.panciMasak);
+      }
+      else if (this.panciMasak && this.currentStep === 5 && gameObject === this.panciKukus && this.panciMasak.texture.key === 'NasiGaram' && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
+        this.executePourAnimation(gameObject, ["TuangKelapa1","TuangKelapa2","TuangKelapa3"], 6000, () => {
+          if (this.panciMasak) this.panciMasak.setTexture('PanciBerasKelapa');
+          if (this.panciKukus) {
+            this.panciKukus.destroy();
+            this.panciKukus = null;
+          }
+        }, this.panciMasak);
+      }
+      else if (this.panciMasak && this.currentStep === 5 && gameObject !== this.panciMasak && this.panciMasak.texture.key === 'PanciBerasKelapa' && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
+        // Assume beans staging object is dragged (the old panciMasak that became kacang staged), use pour frames for kacang
+        this.executePourAnimation(gameObject, ["TuangKacang1","TuangKacang2","TuangKacang3"], 6000, () => {
+          if (this.panciMasak) {
+            this.panciMasak.setTexture('AdukKacang');
+            this.initStirMechanic(this.panciMasak, ['AdukKacang','AdukKacang2'], 15, () => {
+              if (this.panciMasak) {
+                this.panciMasak.setTexture('WajanNasiLapola');
+                // Wait 30s before moving to next step
+                this.startGenericCountdown(30, () => {
+            this.nextStep();
+                });
+          }
+        });
+      }
+        }, this.panciMasak);
+      }
+      // STEP 7: Steam final rice - place PanciSaring, drop WajanNasiLapola, 40s to KukusNasi
+      else if (dropZone === this.komporZone && this.currentStep === 6 && droppedKey === 'PanciSaring' && !this.panciKukus) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          this.panciKukus = this.add.image(dropZone.x - 20, dropZone.y - 65, 'PanciSaring').setScale(this.layoutConfig.potScale).setInteractive();
+          this.input.setDraggable(this.panciKukus);
+          this.statePanciKukus = 'empty';
+        });
+      }
+      else if (dropZone === this.stagingZone && this.currentStep === 6 && this.panciMasak && this.panciMasak.texture.key === 'WajanNasiLapola') {
+        // Allow staging the wajan nasi before steaming
+        this.executeSuccessfulMove(this.panciMasak, dropZone.x, dropZone.y - 10);
+      }
+      else if (this.panciKukus && this.currentStep === 6 && this.panciMasak && this.panciMasak.texture.key === 'WajanNasiLapola' && Phaser.Geom.Rectangle.Contains(this.panciKukus.getBounds(), pointer.x, pointer.y)) {
         this.executeSuccessfulDrop(gameObject, () => {
           if (this.panciKukus) {
-            this.panciKukus.setTexture("NasiLapola");
-            this.statePanciKukus = "plated";
-            this.panciKukus.disableInteractive();
+            this.panciKukus.setTexture('KukusNasiLapola');
+            // 40s countdown
+            this.startGenericCountdown(40, () => {
+              if (this.panciKukus) this.panciKukus.setTexture('KukusNasi');
+            this.nextStep();
+            });
+          }
+        });
+      }
+      // STEP 8: Plate - remove stove, drop Piring to get NasiLapola and complete
+      else if (this.currentStep === 7 && this.panciKukus && this.panciKukus.texture.key === 'KukusNasi') {
+        // Remove stove visual
+        if (this.kompor) this.kompor.setVisible(false);
+        if (droppedKey === 'Piring' && Phaser.Geom.Rectangle.Contains(this.panciKukus.getBounds(), pointer.x, pointer.y)) {
+        this.executeSuccessfulDrop(gameObject, () => {
+          if (this.panciKukus) {
+              this.panciKukus.setTexture('NasiLapola');
+              this.statePanciKukus = 'plated';
             this.nextStep();
             this.showCompletionCelebration();
           }
         });
+        } else {
+          this.executeInvalidDrop(gameObject);
       }
-      // Invalid drop - return to original position
+      }
       else {
         this.executeInvalidDrop(gameObject);
       }
@@ -895,6 +1144,162 @@ export default class NasiLapolaScene extends Phaser.Scene {
     });
   }
 
+  private executePourAnimation(gameObject: Phaser.GameObjects.Image, frames: string[], durationMs: number, onDone: () => void, targetToHide?: Phaser.GameObjects.Image) {
+    // Destroy dragged item immediately so only animation frames are visible
+    gameObject.destroy();
+
+    // Temporary sprite to show pour frames near pot
+    const anchor = targetToHide ?? this.panciMasak;
+    const targetX = anchor ? anchor.x - 20 : this.cameras.main.centerX;
+    const targetY = anchor ? anchor.y - 120 : this.cameras.main.centerY;
+    // Scale pour frames 1.5x
+    const temp = this.add.image(targetX, targetY, frames[0]).setScale(0.375);
+
+    // Hide target pot during pour animation if provided
+    if (targetToHide) targetToHide.setVisible(false);
+
+    let idx = 0;
+    const frameTimer = this.time.addEvent({
+      delay: Math.max(100, Math.floor(durationMs / frames.length)),
+      loop: true,
+      callback: () => {
+        temp.setTexture(frames[idx % frames.length]);
+        idx++;
+      }
+    });
+
+    this.time.delayedCall(durationMs, () => {
+      frameTimer.remove(false);
+      temp.destroy();
+      if (targetToHide) targetToHide.setVisible(true);
+      onDone();
+      this.showSuccessFeedback();
+    });
+  }
+
+  private toggleStove() {
+    if (!this.isStoveOn) {
+      this.isStoveOn = true;
+      // Loop through KomporNyala frames
+      const frames = ["KomporNyala1","KomporNyala2","KomporNyala3","KomporNyala4","KomporNyala5","KomporNyala6"];
+      let i = 0;
+      this.stoveAnimTimer?.destroy();
+      this.stoveAnimTimer = this.time.addEvent({
+        delay: 500,
+        loop: true,
+        callback: () => {
+          if (this.kompor) this.kompor.setTexture(frames[i % frames.length]);
+          i++;
+        }
+      });
+
+      // If step 2 and panci berisi kacang mentah, start 30s countdown
+      if (this.currentStep === 1 && this.panciMasak && this.statePanciMasak === 'kacang_mentah') {
+        this.startCookCountdown(30, () => {
+          if (this.panciMasak) {
+            this.statePanciMasak = 'kacang_matang';
+            // Ensure pot is draggable again after cook
+            this.panciMasak.setInteractive();
+            this.input.setDraggable(this.panciMasak);
+          }
+        });
+      }
+      // If step 4 and kelapa baru masuk panci saring, start 30s countdown for steaming coconut
+      if (this.currentStep === 3 && this.panciKukus && this.statePanciKukus === 'kelapa_mentah') {
+        this.startCookCountdown(30, () => {
+          if (this.panciKukus) {
+            this.statePanciKukus = 'kelapa_matang';
+            this.panciKukus.setInteractive();
+            this.input.setDraggable(this.panciKukus);
+          }
+        });
+      }
+    } else {
+      // Turn off
+      this.isStoveOn = false;
+      this.stoveAnimTimer?.destroy();
+      this.stoveAnimTimer = null;
+      if (this.kompor) this.kompor.setTexture('Kompor');
+    }
+  }
+
+  private startCookCountdown(seconds: number, onDone: () => void) {
+    if (this.cookCountdownTimer) this.cookCountdownTimer.destroy();
+    if (this.cookCountdownText) this.cookCountdownText.destroy();
+
+    const x = this.komporZone.x;
+    const y = this.komporZone.y - 150;
+    this.cookCountdownText = this.add.text(x, y, `${seconds}`, {
+      fontSize: '22px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFD700'
+    }).setOrigin(0.5);
+
+    let remaining = seconds;
+    // Lock dragging for pot during countdown
+    if (this.panciMasak) this.panciMasak.disableInteractive();
+
+    this.cookCountdownTimer = this.time.addEvent({
+      delay: 1000,
+      repeat: seconds - 1,
+      callback: () => {
+        remaining--;
+        if (this.cookCountdownText) this.cookCountdownText.setText(`${remaining}`);
+        if (remaining <= 0) {
+          this.cookCountdownTimer?.destroy();
+          this.cookCountdownTimer = null;
+          this.cookCountdownText?.destroy();
+          this.cookCountdownText = null;
+          onDone();
+          if (this.panciMasak) this.panciMasak.setInteractive();
+        }
+      }
+    });
+  }
+
+  private initGratingMechanic(activeSaring: Phaser.GameObjects.Image) {
+    let grateCount = 0;
+    let lastY: number | null = null;
+    const updateFrame = () => {
+      if (!activeSaring) return;
+      // Alternate frames for up/down motion
+      activeSaring.setTexture(grateCount % 2 === 0 ? 'SaringKelapa2' : 'SaringKelapa3');
+    };
+
+    const onPointerDown = (pointer: Phaser.Input.Pointer) => {
+      lastY = pointer.worldY;
+    };
+    const onPointerMove = (pointer: Phaser.Input.Pointer) => {
+      if (lastY === null) return;
+      const dy = pointer.worldY - lastY;
+      if (Math.abs(dy) > 25) {
+        grateCount++;
+        updateFrame();
+        lastY = pointer.worldY;
+        if (grateCount >= 15) {
+          this.input.off('pointerdown', onPointerDown);
+          this.input.off('pointermove', onPointerMove);
+          this.input.off('pointerup', onPointerUp);
+          // Replace with final baskom kelapa result
+          const x = activeSaring.x;
+          const y = activeSaring.y;
+          activeSaring.destroy();
+          this.baskomObj?.destroy();
+          this.baskomObj = this.add.image(x, y, 'BaskomKelapa').setScale(0.28).setInteractive();
+          this.baskomObj.setName('BaskomKelapa');
+          this.input.setDraggable(this.baskomObj);
+          this.nextStep();
+        }
+      }
+    };
+    const onPointerUp = () => {
+      lastY = null;
+    };
+
+    this.input.on('pointerdown', onPointerDown);
+    this.input.on('pointermove', onPointerMove);
+    this.input.on('pointerup', onPointerUp);
+  }
   private executeSuccessfulMove(gameObject: Phaser.GameObjects.Image, targetX: number, targetY: number) {
     this.tweens.add({
       targets: gameObject,
@@ -957,6 +1362,70 @@ export default class NasiLapolaScene extends Phaser.Scene {
         this.statePanciMasak = "beras_matang";
         this.nextStep();
         this.showSuccessFeedback();
+      }
+    });
+  }
+
+  // Generic stir mechanic: alternate textures many times then invoke callback
+  private initStirMechanic(target: Phaser.GameObjects.Image, frames: string[], times: number, onDone: () => void) {
+    let count = 0;
+    let useAlt = false;
+    const onPointerDown = () => {
+      // Toggle frame on each click-drag motion
+      useAlt = !useAlt;
+      target.setTexture(frames[useAlt ? 1 : 0]);
+      count++;
+      if (count >= times) {
+        this.input.off('pointerdown', onPointerDown);
+        onDone();
+      }
+    };
+    // Lock pot position while stirring
+    const fixedX = target.x;
+    const fixedY = target.y;
+    target.disableInteractive();
+    this.input.on('pointerdown', onPointerDown);
+    // Keep the pot fixed in place each frame
+    const lockTimer = this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => {
+        target.setPosition(fixedX, fixedY);
+      }
+    });
+    const finish = () => {
+      lockTimer.destroy();
+      target.setInteractive();
+    };
+    // Wrap onDone to restore interactivity
+    const originalOnDone = onDone;
+    onDone = () => {
+      finish();
+      originalOnDone();
+    };
+  }
+
+  private startGenericCountdown(seconds: number, onDone: () => void) {
+    let text: Phaser.GameObjects.Text | null = null;
+    let remaining = seconds;
+    const x = this.komporZone.x;
+    const y = this.komporZone.y - 120;
+    text = this.add.text(x, y, `${remaining}`, {
+      fontSize: '22px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFD700'
+    }).setOrigin(0.5);
+    const t = this.time.addEvent({
+      delay: 1000,
+      repeat: seconds - 1,
+      callback: () => {
+        remaining--;
+        if (text) text.setText(`${remaining}`);
+        if (remaining <= 0) {
+          t.destroy();
+          if (text) text.destroy();
+          onDone();
+        }
       }
     });
   }
@@ -1131,6 +1600,33 @@ export default class NasiLapolaScene extends Phaser.Scene {
     });
   }
 
+  private isValidIngredient(ingredientName: string): boolean {
+    const allowedIngredients = this.ingredientOrder[this.currentStep];
+    return allowedIngredients ? allowedIngredients.includes(ingredientName) : false;
+  }
+
+  private shakeScreen() {
+    this.cameras.main.shake(300, 0.01);
+  }
+
+  private returnItemToOriginalPosition(gameObject: Phaser.GameObjects.Image) {
+    const originalScale = this.getOriginalScale(gameObject.name);
+    gameObject.setScale(originalScale);
+    gameObject.clearTint();
+    gameObject.setDepth(0);
+
+    if (this.draggedItemOriginalParent) {
+      this.draggedItemOriginalParent.add(gameObject);
+      gameObject.setPosition(this.draggedItemOriginalX, this.draggedItemOriginalY);
+      gameObject.setInteractive();
+    }
+
+    // Reset stored properties
+    this.draggedItemOriginalParent = null;
+    this.draggedItemOriginalX = 0;
+    this.draggedItemOriginalY = 0;
+  }
+
   private createHintButton() {
     const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 120, 'hint_normal').setInteractive();
     hintButton.setScale(0.1);
@@ -1209,5 +1705,110 @@ export default class NasiLapolaScene extends Phaser.Scene {
     
     this.hintPopup.add(text);
     this.hintPopup.setVisible(false);
+  }
+
+  private handleScroll(deltaY: number) {
+    const scrollSpeed = 10; // Adjust as needed
+    let newY = this.ingredientsContentContainer.y - deltaY * scrollSpeed;
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 15; // Same as in createIngredientsPanel
+    const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+    // Clamp the newY value to prevent scrolling beyond content boundaries
+    newY = Math.max(-maxScroll, newY);
+    newY = Math.min(0, newY); // Cannot scroll above the top
+
+    this.ingredientsContentContainer.y = newY;
+    this.updateScrollbar();
+  }
+
+  private updateScrollbar() {
+    this.scrollbar.clear();
+    this.scrollbarThumb.clear();
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 100 - 15; // Same as in createIngredientsPanel
+    const scrollbarWidth = 12;
+    const scrollbarX = this.layoutConfig.ingredientsPanelWidth - scrollbarWidth - 8; // Position to the right of the panel
+    const scrollbarYOffset = 100; // Start below the title
+
+    if (this.scrollContentHeight > scrollableAreaHeight) {
+      // Draw scrollbar track (background)
+      this.scrollbar.fillStyle(0x4A3428, 0.6);
+      this.scrollbar.fillRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+      this.scrollbar.lineStyle(1, 0x8B4513, 0.8);
+      this.scrollbar.strokeRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+
+      // Calculate scrollbar thumb height based on content and visible area
+      const thumbHeight = Math.max(20, (scrollableAreaHeight / this.scrollContentHeight) * scrollableAreaHeight);
+
+      // Calculate scrollbar thumb position based on content container's scroll
+      const maxScroll = this.scrollContentHeight - scrollableAreaHeight;
+      const scrollPercentage = maxScroll > 0 ? Math.abs(this.ingredientsContentContainer.y) / maxScroll : 0;
+      const thumbY = scrollbarYOffset + (scrollableAreaHeight - thumbHeight) * scrollPercentage;
+
+      // Draw scrollbar thumb (draggable part)
+      this.scrollbarThumb.fillStyle(0x8B4513, 0.9);
+      this.scrollbarThumb.fillRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+      this.scrollbarThumb.lineStyle(1, 0xFFD700, 0.6);
+      this.scrollbarThumb.strokeRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+
+      // Make scrollbar thumb interactive for dragging
+      this.scrollbarThumb.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(scrollbarX, thumbY, scrollbarWidth, thumbHeight),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains
+      });
+      this.input.setDraggable(this.scrollbarThumb);
+
+      // Handle scrollbar thumb dragging
+      this.scrollbarThumb.off('dragstart');
+      this.scrollbarThumb.off('drag');
+      this.scrollbarThumb.off('dragend');
+      
+      this.scrollbarThumb.on('dragstart', () => {
+        this.isScrollbarDragging = true;
+        this.scrollbarDragStartY = thumbY;
+        this.contentStartY = this.ingredientsContentContainer.y;
+      });
+
+      this.scrollbarThumb.on('drag', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+        if (this.isScrollbarDragging) {
+          const deltaY = dragY - this.scrollbarDragStartY;
+          const scrollRatio = deltaY / (scrollableAreaHeight - thumbHeight);
+          const newContentY = this.contentStartY - (scrollRatio * maxScroll);
+          
+          // Clamp content position
+          this.ingredientsContentContainer.y = Phaser.Math.Clamp(newContentY, -maxScroll, 0);
+          this.updateScrollbar();
+        }
+      });
+
+      this.scrollbarThumb.on('dragend', () => {
+        this.isScrollbarDragging = false;
+      });
+      
+    } else {
+      // If content is not scrollable, hide scrollbar
+      this.scrollbar.setVisible(false);
+      this.scrollbarThumb.setVisible(false);
+      this.scrollbar.disableInteractive();
+      this.scrollbarThumb.disableInteractive();
+    }
+  }
+
+  private getOriginalScale(itemName: string): number {
+    const scaleMap: { [key: string]: number } = {
+      "Panci": 0.12,
+      "water": 0.15,
+      "Kacang": 0.2,
+      "Beras": 0.2,
+      "Garam": 0.2,
+      "Kelapa": 0.2,
+      "Parut": 0.15,
+      "Baskom": 0.15,
+      "PanciSaring": 0.12,
+      "PanciAir2": 0.12,
+      "Piring": 0.15
+    };
+    return scaleMap[itemName] || 0.15;
   }
 }

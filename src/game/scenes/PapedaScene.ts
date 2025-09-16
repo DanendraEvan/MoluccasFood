@@ -18,6 +18,7 @@ export default class PapedaScene extends Phaser.Scene {
   private bowlState: BowlState;
   private stirringTimer: Phaser.Time.TimerEvent | null = null;
   private finalPlate: Phaser.GameObjects.Image | null = null;
+  private mangkuk: Phaser.GameObjects.Image | null = null;
   
   // Dialog 4-6 specific objects
   private stirCount: number = 0;
@@ -461,7 +462,6 @@ export default class PapedaScene extends Phaser.Scene {
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
-      label.setName(ingredient.key + '_label');
       this.ingredientsPanel.add(label);
 
       // Hover effects
@@ -1161,23 +1161,23 @@ export default class PapedaScene extends Phaser.Scene {
           return;
         }
         
-        // Then, allow Hasil-Jadi to be dropped on SebelumPapeda
-        if (droppedItemKey === 'Hasil-Jadi' && this.finalKerasItem) {
-          // Check if dropped directly on SebelumPapeda
-          const distance = Phaser.Math.Distance.Between(
-            gameObject.x, gameObject.y,
-            this.finalKerasItem.x, this.finalKerasItem.y
-          );
-          
-          if (distance < 150) {
+        // Then, allow SebelumPapeda to be dragged from staging area and dropped on Hasil-Jadi in cooking area
+        if (droppedItemKey === 'SebelumPapeda' && this.kerasItem && this.kerasItem.texture.key === 'Hasil-Jadi') {
+          // Check if dropped in cooking area (dropZone) OR directly on Hasil-Jadi
+          if (dropZone === this.dropZone) {
             this.executeSuccessfulDrop(gameObject, () => {
               this.completeFinalAssembly();
             });
             return;
           }
           
-          // Also allow drop in staging area if SebelumPapeda is already there
-          if (dropZone === this.flourDropZone && this.finalKerasItem.texture.key === 'SebelumPapeda') {
+          // Also check distance for direct drop on Hasil-Jadi
+          const distance = Phaser.Math.Distance.Between(
+            gameObject.x, gameObject.y,
+            this.kerasItem.x, this.kerasItem.y
+          );
+          
+          if (distance < 150) {
             this.executeSuccessfulDrop(gameObject, () => {
               this.completeFinalAssembly();
             });
@@ -2348,31 +2348,41 @@ export default class PapedaScene extends Phaser.Scene {
     this.finalKerasItem = this.add.image(this.stagingArea.x, this.stagingArea.y, 'SebelumPapeda')
       .setScale(0.2)
       .setDepth(10)
-      .setName('SebelumPapeda');
+      .setName('SebelumPapeda')
+      .setInteractive({ draggable: true });
+    
+    // Make it draggable so user can drag it to Hasil-Jadi
+    this.input.setDraggable(this.finalKerasItem);
     
     this.showPlacementSuccess(this.finalKerasItem.x, this.finalKerasItem.y, "Ikan Kuah Kuning Ditempatkan!");
   }
 
   private completeFinalAssembly() {
+    // Remove the dragged SebelumPapeda from staging area
     if (this.finalKerasItem) {
-      // Change SebelumPapeda to Papeda
-      this.finalKerasItem.setTexture('Papeda');
+      this.finalKerasItem.destroy();
+      this.finalKerasItem = null;
+    }
+    
+    // Change Hasil-Jadi to Papeda in the cooking area
+    if (this.kerasItem) {
+      this.kerasItem.setTexture('Papeda');
       
       // Add visual effect for the transformation
       this.tweens.add({
-        targets: this.finalKerasItem,
-        scaleX: 0.25,
-        scaleY: 0.25,
+        targets: this.kerasItem,
+        scaleX: this.layoutConfig.bowlScale * 1.2,
+        scaleY: this.layoutConfig.bowlScale * 1.2,
         duration: 300,
         ease: 'Back.easeOut',
         yoyo: true,
         onComplete: () => {
-          this.finalKerasItem!.setScale(0.2);
+          this.kerasItem!.setScale(this.layoutConfig.bowlScale);
         }
       });
+      
+      this.showPlacementSuccess(this.kerasItem.x, this.kerasItem.y, "Papeda Selesai!");
     }
-    
-    this.showPlacementSuccess(this.stagingArea.x, this.stagingArea.y, "Papeda Selesai!");
     
     // Complete the game and show celebration
     this.nextStep();
@@ -2434,7 +2444,6 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Create item background first (same as in createIngredients)
     const itemBg = this.add.graphics();
-    itemBg.setName('Spoon_bg');
     itemBg.fillStyle(0x000000, 0.25);
     itemBg.fillRoundedRect(spoonX - 55, spoonY - 37.5, 110, 75, 12);
     itemBg.lineStyle(1, 0x8B4513, 0.4);
