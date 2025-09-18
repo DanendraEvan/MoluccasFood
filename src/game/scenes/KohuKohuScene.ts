@@ -138,7 +138,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     },
     {
       id: 2,
-      text: "Bagus! Kelapanya sudah diparut. Sekarang, seret baskom berisi kelapa parut dan letakkan di atas teflon di sebelah kanan.",
+      text: "Bagus! Kelapanya sudah diparut. Sekarang, klik di sekitar kanan Baskom dan seret Baskom berisi kelapa parut dan letakkan di atas teflon di sebelah kanan.",
       character: "karakter2.png",
       isCompleted: false
     },
@@ -1347,19 +1347,6 @@ export default class KohuKohuScene extends Phaser.Scene {
     const kohuKohuContent = `Kohu-kohu adalah salah satu makanan khas Maluku yang sangat populer dan mudah ditemukan di berbagai daerah. Makanan ini merupakan sejenis salad segar yang terbuat dari campuran sayuran mentah seperti kacang panjang, tauge, kangkung, dan kemangi yang dipotong-potong kecil. Yang membuat kohu-kohu istimewa adalah bumbunya yang kaya rempah, terdiri dari kelapa parut, cabai rawit, bawang merah, bawang putih, garam, dan kadang ditambah ikan teri atau udang kering. Semua bahan dicampur dan diremas-remas hingga bumbu meresap sempurna. Kohu-kohu biasanya disajikan sebagai lalapan pendamping nasi atau makanan pokok lainnya, dan memberikan rasa segar yang menyegarkan dengan sensasi pedas dari cabai rawit.`;
     
     // Add the main text directly to popup
-    const text = this.add.text(textStartX, textStartY, kohuKohuContent, {
-      fontSize: '16px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#3E2723',
-      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 6
-    }).setOrigin(0, 0);
-    
-    this.hintPopup.add(text);
-    this.hintPopup.setVisible(false);
-  }
-}ain text directly to popup
     const text = this.add.text(textStartX, textStartY, kohuKohuContent, {
       fontSize: '16px',
       fontFamily: 'Arial, sans-serif',

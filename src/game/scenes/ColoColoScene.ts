@@ -32,7 +32,7 @@ export default class ColoColoScene extends Phaser.Scene {
   private stagingZone!: Phaser.GameObjects.Zone;
   private telenanSelected = false;
   private hintPopup!: Phaser.GameObjects.Container;
-  private infoContent: string = `Colo-colo adalah sambal khas Maluku yang memiliki cita rasa pedas dan segar. Sambal ini terbuat dari campuran cabai rawit merah, bawang merah, tomat, dan garam yang diulek kasar hingga tercampur rata. Yang membuat colo-colo unik adalah teksturnya yang tidak terlalu halus, sehingga masih terasa potongan-potongan kecil dari bahan-bahannya. Kadang-kadang ditambahkan perasan jeruk nipis atau jeruk lemon untuk memberikan rasa asam segar yang menyeimbangkan rasa pedasnya. Colo-colo biasanya disajikan sebagai pelengkap berbagai makanan khas Maluku seperti ikan bakar, papeda, atau nasi putih. Sambal ini sangat digemari karena kesegaran dan rasa pedasnya yang khas, serta kemudahan dalam pembuatannya yang tidak memerlukan proses memasak.`;
+  private infoContent: string = `Colo-colo adalah sambal khas dari Maluku yang rasanya pedas dan segar. Sambal ini dibuat dari cabai, bawang, dan tomat yang diulek kasar. Biasanya, ditambahkan perasan jeruk nipis agar lebih segar. Colo-colo sangat enak dimakan dengan ikan bakar atau papeda!`;
 
   // Layout configuration
   private layoutConfig = {
@@ -77,43 +77,43 @@ export default class ColoColoScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Selamat datang kembali, Koki! Mari kita buat Sambal Colo-colo. Pertama, siapkan talenan dan potong cabai rawit.",
+      text: "Selamat datang kembali! Ayo buat Sambal Colo-colo. Pertama, ambil Cabai dari panel kanan dan letakkan di atas talenan untuk dipotong.",
       character: "karakter1",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Bagus! Sekarang, potong bawang putih di atas talenan.",
+      text: "Bagus! Sekarang, ambil Bawang Putih dan letakkan juga di atas talenan untuk dipotong.",
       character: "karakter2",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Selanjutnya, tuangkan kecap ke dalam mangkok. Setelah itu, klik talenan lalu klik mangkok untuk memindahkan bahan-bahan yang sudah dipotong.",
+      text: "Selanjutnya, tuangkan Kecap ke dalam mangkok. Setelah itu, klik talenan lalu klik mangkok untuk memindahkan bahan yang sudah dipotong.",
       character: "karakter3",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Tambahkan daun jeruk untuk aroma yang lebih segar.",
+      text: "Biar lebih wangi, tambahkan Daun Jeruk ke dalam mangkok.",
       character: "karakter4",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Peras jeruk nipis ke dalam mangkok untuk sentuhan rasa asam.",
+      text: "Sekarang, peras Jeruk Nipis ke dalam mangkok agar rasanya lebih segar.",
       character: "karakter5",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Ambil munthu dan ulek semua bahan di dalam mangkok hingga tercampur rata.",
+      text: "Ambil Munthu (ulekan kecil) dan ulek semua bahan di dalam mangkok sampai tercampur rata.",
       character: "karakter1",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Luar biasa! Sambal colo-colo kecapmu sudah jadi. Saatnya disajikan!",
+      text: "Luar biasa! Sambal Colo-colo buatanmu sudah jadi. Waktunya disajikan!",
       character: "karakter2",
       isCompleted: false
     }

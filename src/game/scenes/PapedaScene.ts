@@ -65,7 +65,7 @@ export default class PapedaScene extends Phaser.Scene {
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
   private hintPopup!: Phaser.GameObjects.Container;
-  private infoContent: string = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
+  private infoContent: string = `Papeda adalah makanan khas Maluku yang terbuat dari sagu. Bentuknya seperti lem dan rasanya tawar. Karena itu, Papeda paling enak dimakan dengan Ikan Kuah Kuning yang gurih dan segar. Cara makannya unik, loh!`;
 
   // Layout configuration
   private layoutConfig = {
@@ -108,73 +108,73 @@ export default class PapedaScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Selamat Datang di Game Traditional of Moluccas Food, sudah siap untuk Memasak Papeda hari ini!?! Oke Step 1 ambil Mangkuk di Menu dan taruh di Meja. Sudah? Ambil Tepung Sagu di Menu dan Tarik ke Area Staging di kanan.",
+      text: "Ayo buat Papeda! Pertama, ambil Mangkuk dari menu dan taruh di atas meja. Lalu, ambil Tepung Sagu dan taruh di Area Persiapan.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Step ke 2 ayo kita potong bungkus tepungnya. Klik terus pada Area Potong di kiri atas sampai tepung terbuka. Sudah? Selanjutnya ambil Tepung Sagu dan taruh pada Mangkuk di Meja.",
+      text: "Sekarang, kita buka bungkus tepungnya. Klik beberapa kali pada Tepung Sagu di Area Persiapan sampai terbuka. Kalau sudah, seret tepung yang sudah terbuka itu ke dalam mangkuk.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Tepung sudah masuk? kita siap untuk Step ke 3 yaitu tuangkan 200 ml air ke mangkuk berisi Tepung.",
+      text: "Tepung sudah di dalam mangkuk. Sekarang, tuangkan Air 200ml ke dalam mangkuk.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Air sudah masuk? ambil sendok di menu dan taruh diatas mangkuk, mari kita aduk adonan papedanya. Aduk dengan slide kanan dan kiri menggunakan kursor anda hingga adonan tercampur rata",
+      text: "Ambil Sendok dari menu, lalu taruh di atas mangkuk untuk mengaduk. Geser ke kanan dan kiri berulang kali sampai adonannya rata ya!",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Siap ke Langkah Selanjutnya!?! Oke kali ini kita akan menyaring adonan yang sudah diaduk. Ambil Mangkuk lagi di Menu dan taruh di sebelah mangkuk adonan sebelumnya. Sudah? ambil Saringan kemudian taruh ke atas mangkuk kosong, selanjutnya tarik adonan sebelumnya diatas saringan.",
+      text: "Pintar! Sekarang kita saring adonannya. Ambil Mangkuk baru dari menu dan taruh di sebelah adonanmu. Lalu, ambil Saringan dan taruh di atas mangkuk yang baru. Terakhir, tuang adonanmu ke atas saringan.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Sudah menyaring kita tunggu selama beberapa saat sampai adonan sagu mengering dan menyisakan air di pinggir. Sudah? Selanjutnya kita akan buang air sisa tadi, yaitu taruh adonan ke Area Persiapan di sebelah kiri halaman dan tunggu beberapa detik sampai air menghilang.",
+      text: "Kita tunggu sebentar sampai adonannya mengendap. Kalau sudah, airnya harus dibuang. Pindahkan mangkuk adonan ke Area Persiapan dan tunggu sebentar sampai airnya hilang.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Oke lanjut ya? Kita ambil 100 ml air dan masukkan ke adonan. Setelah air di Tuang kita aduk lagi adonan dengan sendok hingga adonan tercampur rata",
+      text: "Oke, adonan keringnya sudah jadi! Sekarang, tuangkan Air 100ml ke dalam adonan. Setelah itu, aduk lagi pakai Sendok sampai rata.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 8,
-      text: "Sebagai tambahan rasa mari kita ambil Jeruk Nipis di Menu dan peras diatas Adonan Tepung. Klik beberapa kali pada jeruk hingga semua perasannya masuk ke adonan.",
+      text: "Biar lebih segar, ayo kita beri perasan Jeruk Nipis. Ambil Jeruk Nipis dari menu, lalu klik beberapa kali di atas adonan sampai airnya keluar semua.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 9,
-      text: "Perasan Jeruk sudah masuk, lanjut kita aduk lagi hingga rata.",
+      text: "Sudah wangi jeruk! Sekarang, aduk lagi adonannya sampai rata ya.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 10,
-      text: "Siapkan Air Panas sebanyak 1.4 liter di Menu dan Tuangkan ke dalam adonan.",
+      text: "Hampir jadi! Sekarang, tuangkan Air Panas ke dalam adonan.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 11,
-      text: "Aduk Lagi adonan hingga rata dan adonan berubah jadi mengental, ini sedikit memakan waktu sampai adonan jadi.",
+      text: "Ini bagian yang paling seru! Aduk terus adonannya sampai mengental dan berubah jadi Papeda. Butuh sedikit waktu, jadi sabar ya!",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 12,
-      text: "Yeayy!!! Adonan Papeda telah jadi, Kita ambil Makanan Ikan Kuah Kuning yang ada di menu dan taruh di Area Persiapan di kiri Area Memasak. Selanjutnya kita ambil adonan papeda tadi dan Campurkan ke Ikan Kuah Kuning yang ditaruh di Area Persiapan",
+      text: "Yeay! Papeda sudah jadi! Ambil Ikan Kuah Kuning dari menu dan taruh di Area Persiapan. Terakhir, campurkan Papeda buatanmu dengan Ikan Kuah Kuning. Selamat menikmati!",
       character: "karakter6.png",
       isCompleted: false
     }

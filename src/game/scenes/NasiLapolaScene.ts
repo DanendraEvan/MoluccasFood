@@ -140,49 +140,49 @@ export default class NasiLapolaScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
      id:1,
-      text: "Selamat Datang di Game Traditional of Moluccas Food, sudah siap untuk Memasak Nasi Lapola hari ini!?! Oke Step 1 ambil Panci di Menu dan taruh di atas kompor. Sudah? Ambil air dan masukkan kedalam Panci. Setelah air masukkan kacang ke dalamnya.",
+      text: "Ayo masak Nasi Lapola! Pertama, ambil Panci dari menu, lalu taruh di atas kompor. Setelah itu, tuangkan Air ke dalam panci, dan masukkan Kacang.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Step ke 2 ayo kita nyalakan Kompornya dengan Klik tuasnya. Tunggu beberapa saat sampai matang. Kacang yang sudah matang dan tempatkan ke Area Persiapan.",
+      text: "Sekarang, klik tuas kompor beberapa kali untuk menyalakannya. Tunggu sebentar sampai kacangnya matang ya. Kalau sudah, pindahkan panci berisi kacang ke Area Persiapan.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Lanjut, kita parut kelapa terlebih dahulu. Ambil Baskom dan taruh di sebelah kompor. Ambil Parutan Kelapa dan Kelapa diatas baskom. Sudah? Mari kita parut kelapa dengan menggerakkan kelapa ke atas dan bawah",
+      text: "Lanjut, kita siapkan kelapanya. Ambil Baskom dan taruh di sebelah kompor. Lalu, ambil Parutan dan Kelapa, kemudian taruh di atas baskom. Gerakkan kelapa ke atas dan ke bawah untuk memarut!",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Step ke 4 Taruh Panci baru dari Menu dan taruh ke atas Kompor. Kemudian Ambil Parutan Kelapa tadi dan masukkan ke panci, lanjut kita nyalakan Kompornya dengan Klik tuasnya. Tunggu beberapa saat sampai matang. Kukusan kelapa yang sudah matang dan tempatkan ke Area Persiapan.",
+      text: "Hebat! Sekarang ambil Panci baru dari menu dan taruh di atas kompor. Masukkan kelapa parut tadi ke dalam panci, lalu nyalakan kompor. Tunggu sampai matang, lalu pindahkan ke Area Persiapan.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Baik setelah Merebus kacang dan Mengukus kelapa, mari kita masak berasnya. Ambil Wajan di menu dan Taruh ke Kompor. Ambil Beras dari menu dan masukkan ke dalam Wajan. Lanjut!! Kita aduk terus beras sampai masak setengah matang.",
+      text: "Setelah merebus kacang dan mengukus kelapa, ayo kita masak berasnya! Ambil Wajan dari menu dan taruh di atas kompor. Masukkan Beras ke dalam wajan, lalu aduk terus sampai setengah matang.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Beras yang setengah matang mari kita tambahkan dengan bahan lainnya. Ambil Garam terlebih dahulu di Menu dan Kukusan kelapa yang ada di Area Persiapan. Sudah? Mari kita tambahkan Rebusan Kacang di Area Persiapan dan Masukkan ke dalam Wajan Beras tadi. Aduk hingga merata, kemudian tunggu beberapa saat sampai matang.",
+      text: "Berasnya sudah setengah matang! Sekarang, ayo campur semua bahan. Masukkan Garam, Kukusan Kelapa, dan Rebusan Kacang dari Area Persiapan ke dalam wajan. Aduk lagi sampai rata dan tunggu sampai matang.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Oke lanjut ya? Kita sisihkan wajan nasi yang kita masak ke Area Persiapan di Kiri. Lanjut kita ambil Panci Kukus di Menu dan taruh keatas kompor. Kita ambil lagi Wajan Nasi yang kita sisihkan dan masukkan ke dalam Panci Kukus. Kita tunggu beberapa saat sampai Nasi matang",
+      text: "Oke, nasinya sudah enak! Pindahkan wajan berisi nasi ke Area Persiapan. Sekarang, ambil Panci Kukus dan taruh di atas kompor. Masukkan nasi dari wajan ke dalam Panci Kukus dan tunggu sampai benar-benar matang.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 8,
-      text: "Yeayy!!! Kita telah menyelesaikan Masakan Nasi Lapola. Ambil Piring di Menu dan taruh ke Area persiapan. Ambil Kukusan Nasi Lapola yang sudah matang dan sajikan ke Piring di Area Persiapan.",
+      text: "Yeay, Nasi Lapola sudah matang! Ambil Piring dan taruh di Area Persiapan. Terakhir, angkat nasi dari Panci Kukus dan sajikan di atas piring. Selamat menikmati!",
       character: "karakter2.png",
       isCompleted: false
     }
@@ -491,7 +491,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
     const stagingLabel = this.add.text(
       this.stagingZone.x,
       this.stagingZone.y,
-      "Area Staging",
+      "Area Persiapan",
       {
         fontSize: '14px',
         fontFamily: 'Chewy, cursive',

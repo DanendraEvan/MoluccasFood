@@ -123,7 +123,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private scrollbarDragStartY: number = 0;
   private contentStartY: number = 0;
   private hintPopup!: Phaser.GameObjects.Container;
-  private infoContent: string = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti ikan cakalang, tongkol, atau ikan kerapu yang dipotong-potong. Bumbu kuah kuning terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum kemudian ditambah air dan santan hingga mendidih. Ikan kemudian dimasukkan dan dimasak hingga matang sambil menyerap cita rasa kuah yang kaya rempah. Hidangan ini biasanya disajikan dengan nasi putih atau papeda, dan memberikan sensasi hangat serta menyegarkan dengan aroma rempah yang khas.`;
+  private infoContent: string = `Ikan Kuah Kuning adalah masakan ikan dengan kuah kuning dari Maluku. Rasanya gurih dan segar karena kaya akan bumbu seperti kunyit, jahe, dan serai. Kuahnya yang berwarna kuning cerah sangat khas. Enak disajikan dengan nasi hangat atau papeda!`;
 
   // Layout configuration
   private layoutConfig = {
@@ -166,43 +166,43 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Selamat Datang di Game Traditional of Moluccas Food, sudah siap untuk Memasak Ikan Kuah Kuning hari ini!?! Okee!! Pertama ambil Cobek dari Menu dan taruh ke sebelah kanan Kompor. Lanjut kita masukkan Bawang Merah, Cabai Keriting, Kunyit dan, Bawang Putih.",
+      text: "Selamat datang! Ayo masak Ikan Kuah Kuning. Pertama, ambil Cobek dari menu dan taruh di sebelah kanan kompor. Lanjut, masukkan Bawang Merah, Cabai Keriting, Kunyit, dan Bawang Putih.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Bumbu sudah masuk mari kita haluskan bumbunya!! Ambil Ulekan di Menu dan taruh ke dalam Cobek. Sudah? Ayo kita haluskan bumbunya dengan menggerakkan Ulekan ke kanan dan kiri sampai jadi.",
+      text: "Bumbu sudah masuk, sekarang kita haluskan! Ambil Ulekan dari menu dan taruh di dalam cobek. Ayo gerakkan ulekan ke kanan dan kiri sampai bumbunya halus.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Step ke 3 ayo kita ambil wajan di Menu dan taruh ke atas Kompor. Sudah? Masukkan Bumbu Halus ke Wajan dan Aduk sampai harum.",
+      text: "Selanjutnya, ambil Wajan dari menu dan taruh di atas kompor. Kalau sudah, masukkan Bumbu Halus ke wajan dan aduk sampai harum.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Oke sudah Diaduk?!? Ayo Kita masukkan Daun Salam, Sereh, dan Lengkuas ke dalam Wajan. Ayo Kita aduk lagi Bumbunya.",
+      text: "Oke, sudah wangi! Sekarang masukkan Daun Salam, Sereh, dan Lengkuas ke dalam wajan. Jangan lupa diaduk lagi ya!",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Lanjut lagi. Ayo kita masukkan Irisan jahe, Daun Jeruk, Potongan Ikan, dan Air kedalam bumbu yang kita masak tadi. Kemudian aduk lagi sampai semua nya bercampur rata dan Air mendidih.",
+      text: "Lanjut! Masukkan Irisan Jahe, Daun Jeruk, Potongan Ikan, dan Air ke dalam wajan. Aduk lagi sampai semuanya tercampur rata dan mendidih.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Setelah mendidih masukkan Tomat, Garam, Gula, Daun Bawang, dan Asam Jawa, Kemudian aduk dan tunggu Ikan Kuah Kuning sampai Matang.",
+      text: "Setelah mendidih, masukkan Tomat, Garam, Gula, Daun Bawang, dan Asam. Aduk sebentar, lalu tunggu sampai ikannya matang.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Yeayy!!! Kita telah menyelesaikan Masakan Ikan Kuah Kuning. Ambil Mangkuk di Menu dan taruh di Meja. Ambil Masakan Ikan Kuah Kuning yang sudah matang dari Wajan dan sajikan ke Mangkuk yang ada di Meja.",
+      text: "Yeay! Ikan Kuah Kuning sudah matang! Ambil Mangkuk dari menu dan taruh di meja. Terakhir, angkat masakan dari wajan dan sajikan ke dalam mangkuk.",
       character: "karakter1.png",
       isCompleted: false
     }
