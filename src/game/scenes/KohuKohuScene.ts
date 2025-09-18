@@ -16,6 +16,7 @@ type BowlState =
 type WajanState = 
   | "empty"
   | "kemangi"
+  | "kacangpanjang"
   | "sawi"
   | "tauge"
   | "cabeBawangMerah"
@@ -86,7 +87,7 @@ export default class KohuKohuScene extends Phaser.Scene {
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
   private hintPopup!: Phaser.GameObjects.Container;
-  private infoContent: string = `Kohu-kohu adalah salah satu makanan khas Maluku yang sangat populer dan mudah ditemukan di berbagai daerah. Makanan ini merupakan sejenis salad segar yang terbuat dari campuran sayuran mentah seperti kacang panjang, tauge, kangkung, dan kemangi yang dipotong-potong kecil. Yang membuat kohu-kohu istimewa adalah bumbunya yang kaya rempah, terdiri dari kelapa parut, cabai rawit, bawang merah, bawang putih, garam, dan kadang ditambah ikan teri atau udang kering. Semua bahan dicampur dan diremas-remas hingga bumbu meresap sempurna. Kohu-kohu biasanya disajikan sebagai lalapan pendamping nasi atau makanan pokok lainnya, dan memberikan rasa segar yang menyegarkan dengan sensasi pedas dari cabai rawit.`;
+  private infoContent: string = `Kohu-kohu adalah salad segar dari Maluku! Makanan ini dibuat dari sayuran mentah seperti kacang panjang, tauge, dan kemangi. Bumbunya spesial, yaitu kelapa parut yang disangrai dan dicampur dengan bumbu lain seperti cabai dan bawang. Rasanya segar, gurih, dan sedikit pedas. Enak sekali dimakan bersama nasi!`;
 
   // Layout configuration
   private layoutConfig = {
@@ -131,79 +132,79 @@ export default class KohuKohuScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Halo! Mari kita buat Kohu-Kohu. Pertama, masukkan kelapa ke dalam baskom.",
+      text: "Halo! Mari kita buat Kohu-Kohu. Pertama, ambil Kelapa dari panel bahan di sebelah kanan, lalu seret dan letakkan di atas baskom di tengah.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Bagus! Sekarang, drag baskom berisi kelapa untuk memindahkannya ke teflon.",
+      text: "Bagus! Kelapanya sudah diparut. Sekarang, seret baskom berisi kelapa parut dan letakkan di atas teflon di sebelah kanan.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Saatnya menyangrai kelapa. Gunakan spatula untuk mengaduk.",
+      text: "Saatnya menyangrai kelapa. Ambil Spatula dari panel kanan, lalu seret ke atas teflon untuk mulai mengaduk. Geser ke kiri dan kanan berulang kali ya!",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Sip! Sekarang, kita siapkan sayurannya. Masukkan kemangi ke dalam wajan.",
+      text: "Sip, kelapa sangrai sudah jadi! Sekarang, kita siapkan sayurannya. Ambil Kemangi dari panel kanan dan masukkan ke dalam wajan di sebelah kiri.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Lanjutkan dengan memasukkan selada.",
+      text: "Lanjutkan dengan mengambil Kacang Panjang dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Sekarang masukkan sawi.",
+      text: "Sekarang, ambil Sawi dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Terakhir, masukkan tauge.",
+      text: "Terakhir, ambil Tauge dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 8,
-      text: "Supaya ada sensasi pedasnya, coba masukkan potongan cabe dan irisan bawang merah. Setelah itu, ambil suwiran daging ikan cakalang kita dan masukkan ke wajan. Ini yang bikin rasanya makin gurih.",
+      text: "Biar makin lezat, ayo tambahkan bumbu! Ambil Cabai dan Bawang Merah, lalu masukkan ke wajan. Setelah itu, ambil Ikan Cakalang dan masukkan juga ke wajan ya.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 9,
-      text: "Terakhir, tuangkan sedikit minyak ikan untuk sentuhan akhir yang sempurna.",
+      text: "Hampir selesai! Ambil Minyak Ikan dari panel kanan dan tuangkan ke dalam wajan untuk rasa yang lebih mantap.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 10,
-      text: "Bagus! Sekarang ambil piring dari panel bahan dan letakkan di area plating di sebelah kiri.",
+      text: "Bagus! Semua bahan sudah tercampur. Sekarang ambil Piring dari panel bahan dan letakkan di Area Penyajian di sebelah kiri.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 11,
-      text: "Letakkan kelapa sangrai dari teflon ke atas piring.",
+      text: "Pertama, seret Teflon yang berisi kelapa sangrai dan letakkan di atas piring.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 12,
-      text: "Hampir selesai! Ambil sayuran dari wajan menggunakan spatula dan taruh di atas piring.",
+      text: "Luar biasa! Sekarang, ambil Spatula dan seret ke wajan untuk mengangkat sayuran. Lalu, bawa sayuran itu ke atas piring.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 13,
-      text: "Wah, kamu luar biasa! Kohu Kohu kita sudah siap disajikan!",
+      text: "Wah, kamu hebat! Kohu-Kohu buatanmu sudah jadi dan siap disajikan! Selamat menikmati!",
       character: "karakter6.png",
       isCompleted: false
     }
@@ -233,7 +234,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
     this.load.image("Sawi", "/assets/foods/kohu_kohu/Sawi.png");
     this.load.image("Tauge", "/assets/foods/kohu_kohu/Tauge.png");
-    this.load.image("Selada", "/assets/foods/kohu_kohu/Selada.png");
+    this.load.image("KacangPanjang", "/assets/foods/kohu_kohu/KacangPanjang.png");
     this.load.image("Kemangi", "/assets/foods/kohu_kohu/Kemangi.png");
     this.load.image("Cabe", "/assets/foods/kohu_kohu/Cabe.png");
     this.load.image("BawangMerah", "/assets/foods/kohu_kohu/Bawang Merah.png");
@@ -252,7 +253,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.png");
     this.load.image("tambahanSawi", "/assets/foods/kohu_kohu/tambahanSawi.png");
     this.load.image("tambahanTauge", "/assets/foods/kohu_kohu/tambahanTauge.png");
-    this.load.image("tambahanSelada", "/assets/foods/kohu_kohu/tambahanSelada.png");
+    this.load.image("tambahanKacangPanjang", "/assets/foods/kohu_kohu/tambahanKacangPanjang.png");
     this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.png");
     this.load.image("tambahanDaging", "/assets/foods/kohu_kohu/TambahanDaging.png");
     this.load.image("tambahanMinyak", "/assets/foods/kohu_kohu/tambahanMinyak.png");
@@ -416,7 +417,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     const platingLabel = this.add.text(
       this.platingZone.x,
       this.platingZone.y,
-      "Area Plating",
+      "Area Penyajian",
       {
         fontSize: '24px',
         fontFamily: 'Chewy, cursive',
@@ -459,10 +460,10 @@ export default class KohuKohuScene extends Phaser.Scene {
       { key: "Kemangi", name: "Kemangi", scale: 0.18 },
       { key: "Sawi", name: "Sawi", scale: 0.15 },
       { key: "Tauge", name: "Tauge", scale: 0.18 },
-      { key: "Selada", name: "Selada", scale: 0.15 },
+      { key: "KacangPanjang", name: "Kacang Panjang", scale: 0.15 },
       { key: "Cabe", name: "Cabai", scale: 0.2 },
       { key: "BawangMerah", name: "Bawang Merah", scale: 0.16 },
-      { key: "Daging", name: "Daging Cakalang", scale: 0.18 },
+      { key: "Daging", name: "Ikan Cakalang", scale: 0.18 },
       { key: "MinyakIkan", name: "Minyak Ikan", scale: 0.16 },
       { key: "Sepatula", name: "Spatula", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.17 }
@@ -820,16 +821,16 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.nextStep();
         });
       }
-      // Step 5: Add selada to wajan
-      else if (dropZone === this.wajanZone && this.wajanState === "kemangi" && droppedKey === "Selada" && this.currentStep === 4) {
+      // Step 5: Add kacang panjang to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "kemangi" && droppedKey === "KacangPanjang" && this.currentStep === 4) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, "tambahanSelada");
-          this.wajanState = "selada";
+          this.setVesselTexture(this.Wajan, "tambahanKacangPanjang");
+          this.wajanState = "kacangpanjang";
           this.nextStep();
         });
       }
       // Step 6: Add sawi to wajan
-      else if (dropZone === this.wajanZone && this.wajanState === "selada" && droppedKey === "Sawi" && this.currentStep === 5) {
+      else if (dropZone === this.wajanZone && this.wajanState === "kacangpanjang" && droppedKey === "Sawi" && this.currentStep === 5) {
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, "tambahanSawi");
           this.wajanState = "sawi";
@@ -1346,6 +1347,19 @@ export default class KohuKohuScene extends Phaser.Scene {
     const kohuKohuContent = `Kohu-kohu adalah salah satu makanan khas Maluku yang sangat populer dan mudah ditemukan di berbagai daerah. Makanan ini merupakan sejenis salad segar yang terbuat dari campuran sayuran mentah seperti kacang panjang, tauge, kangkung, dan kemangi yang dipotong-potong kecil. Yang membuat kohu-kohu istimewa adalah bumbunya yang kaya rempah, terdiri dari kelapa parut, cabai rawit, bawang merah, bawang putih, garam, dan kadang ditambah ikan teri atau udang kering. Semua bahan dicampur dan diremas-remas hingga bumbu meresap sempurna. Kohu-kohu biasanya disajikan sebagai lalapan pendamping nasi atau makanan pokok lainnya, dan memberikan rasa segar yang menyegarkan dengan sensasi pedas dari cabai rawit.`;
     
     // Add the main text directly to popup
+    const text = this.add.text(textStartX, textStartY, kohuKohuContent, {
+      fontSize: '16px',
+      fontFamily: 'Arial, sans-serif',
+      color: '#3E2723',
+      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
+      align: 'left',
+      lineSpacing: 6
+    }).setOrigin(0, 0);
+    
+    this.hintPopup.add(text);
+    this.hintPopup.setVisible(false);
+  }
+}ain text directly to popup
     const text = this.add.text(textStartX, textStartY, kohuKohuContent, {
       fontSize: '16px',
       fontFamily: 'Arial, sans-serif',

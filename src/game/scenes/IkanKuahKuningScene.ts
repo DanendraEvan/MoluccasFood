@@ -453,46 +453,17 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     const buttonX = this.kompor.x + 120; // Position to the right of stove
     const buttonY = this.kompor.y + 60;  // Position below stove
 
-    this.stoveButton = this.add.rectangle(buttonX, buttonY, buttonWidth, buttonHeight, 0x666666)
-      .setStrokeStyle(2, 0x333333)
+    this.stoveButton = this.add.rectangle(buttonX, buttonY, buttonWidth, buttonHeight, 0x666666, 0)
       .setInteractive();
-
-    // Create button text
-    this.stoveButtonText = this.add.text(buttonX, buttonY, 'ON', {
-      fontSize: '14px',
-      color: '#ffffff',
-      fontFamily: 'Arial'
-    }).setOrigin(0.5);
 
     // Button click handler
     this.stoveButton.on('pointerdown', () => {
-      console.log('=== BUTTON CLICKED ===');
-      console.log('Button clicked! Current stove state:', this.isStoveOn);
       this.toggleStove();
-      this.updateButtonAppearance();
-      console.log('After toggle, new stove state:', this.isStoveOn);
-    });
-
-    // Button hover effects
-    this.stoveButton.on('pointerover', () => {
-      this.stoveButton?.setStrokeStyle(2, 0xffffff);
-    });
-
-    this.stoveButton.on('pointerout', () => {
-      this.stoveButton?.setStrokeStyle(2, 0x333333);
     });
   }
 
   private updateButtonAppearance() {
-    if (this.stoveButton && this.stoveButtonText) {
-      if (this.isStoveOn) {
-        this.stoveButton.setFillStyle(0x00aa00); // Green when on
-        this.stoveButtonText.setText('OFF');
-      } else {
-        this.stoveButton.setFillStyle(0x666666); // Gray when off
-        this.stoveButtonText.setText('ON');
-      }
-    }
+    // This function is no longer needed as the button is invisible.
   }
 
   private createIngredientsPanel() {
@@ -995,11 +966,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         
         if (dropZone === this.komporZone) {
           targetX = dropZone.x - 30; // Move 30px to the left (10px more than before)
-          targetY = dropZone.y - 150; // Raise 90px above kompor
+          targetY = dropZone.y - 120; // Positioned above kompor
         } else if (dropZone instanceof Phaser.GameObjects.Zone && dropZone.name === 'cookingAreaZone') {
           // Position on kompor when dropped in general cooking area
           targetX = this.kompor.x - 30; // Move 30px to the left (10px more than before)
-          targetY = this.kompor.y - 150; // Raise 90px above kompor
+          targetY = this.kompor.y - 120; // Positioned above kompor
         } else {
           this.shakeScreen();
           console.log(`Invalid drop: ${gameObject.name} cannot be used at this time`);
@@ -1310,9 +1281,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
               this.swipeCount = 0;
               this.lastSwipeDirection = null;
               
-              // Start with first phase texture and scale up for Mengulek (0.7x larger)
+              // Start with first phase texture
               this.cobek.setTexture('Mengulek1');
-              this.cobek.setScale(0.42 * 2); // 0.42 * 1.7 = 0.714 (0.7x larger)
+              this.cobek.setScale(0.42);
               gameObject.destroy();
               this.handleMengulek();
             }
@@ -2212,12 +2183,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private toggleStove() {
-    console.log('toggleStove called, current state:', this.isStoveOn);
-    console.log('Kompor object exists:', !!this.kompor);
-
     if (!this.isStoveOn) {
       this.isStoveOn = true;
-      console.log('Turning stove ON');
       // Loop through KomporNyala frames
       const frames = ["KomporNyala1","KomporNyala2","KomporNyala3","KomporNyala4","KomporNyala5","KomporNyala6"];
       let i = 0;
@@ -2227,26 +2194,29 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         loop: true,
         callback: () => {
           if (this.kompor) {
-            console.log('Setting texture to:', frames[i % frames.length]);
-            try {
-              this.kompor.setTexture(frames[i % frames.length]);
-            } catch (error) {
-              console.error('Error setting texture:', error);
-            }
-          } else {
-            console.error('Kompor object is null/undefined');
+            this.kompor.setTexture(frames[i % frames.length]);
           }
           i++;
         }
       });
     } else {
-      // Turn off
-      console.log('Turning stove OFF');
-      this.isStoveOn = false;
-      this.stoveAnimTimer?.destroy();
-      this.stoveAnimTimer = null;
-      if (this.kompor) {
-        this.kompor.setTexture('Kompor');
+      const preWajanStates = [
+        'start',
+        'cobek_placed',
+        'ulekan_step_1',
+        'ulekan_step_2',
+        'ulekan_step_3',
+        'ulekan_step_4',
+        'bumbu_halus_done'
+      ];
+      // Allow turning off before wajan is used or after cooking is finished
+      if (preWajanStates.includes(this.cookingState) || this.cookingState === 'matang' || this.cookingState === 'finished' || this.cookingState === 'mangkuk_placed') {
+        this.isStoveOn = false;
+        this.stoveAnimTimer?.destroy();
+        this.stoveAnimTimer = null;
+        if (this.kompor) {
+          this.kompor.setTexture('Kompor');
+        }
       }
     }
   }
