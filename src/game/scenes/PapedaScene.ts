@@ -1780,12 +1780,9 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private createHintButton() {
-    // Position hint button further below the ingredients panel
-    const hintButtonX = this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2;
-    const hintButtonY = this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 60;
-    
-    const hintButton = this.add.image(hintButtonX, hintButtonY, 'hint_normal').setInteractive();
-    hintButton.setScale(0.08); // Slightly smaller for better appearance
+    const { width, height } = this.cameras.main;
+    const hintButton = this.add.image(width - 100, height - 120, 'hint_normal').setInteractive();
+    hintButton.setScale(0.1);
 
     hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
     hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));

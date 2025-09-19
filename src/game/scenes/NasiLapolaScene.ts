@@ -1628,7 +1628,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
   }
 
   private createHintButton() {
-    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 120, 'hint_normal').setInteractive();
+    const { width, height } = this.cameras.main;
+    const hintButton = this.add.image(width - 100, height - 120, 'hint_normal').setInteractive();
     hintButton.setScale(0.1);
 
     hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));

@@ -108,7 +108,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     
     // Dialog panel
     dialogPanelHeight: 120,
-    dialogPanelY: 900, // Will be calculated
+    dialogPanelY: 850, // Will be calculated
     dialogPanelLeft: 50,
     dialogPanelRight: 20,
 
