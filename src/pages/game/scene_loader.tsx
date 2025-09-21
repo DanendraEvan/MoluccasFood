@@ -1,8 +1,8 @@
 // pages/game.tsx - Improved with CSS-based Layout Control
 import dynamic from "next/dynamic";
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import KitchenBackgroundWrapper from '@/components/KitchenBackgroundWrapper';
+import KitchenBackgroundWrapper, { DialogStep, useDialogSystem } from '@/components/KitchenBackgroundWrapper';
 
 // Scene configurations
 interface GameScene {
@@ -56,6 +56,74 @@ const GamePage: React.FC = () => {
   const [phaserLoaded, setPhaserLoaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Import dialog steps
+  const { getDialogStepsForScene } = require('@/components/DialogSteps');
+
+  const dialogSteps = getDialogStepsForScene(scene as string || '');
+  const dialogSystem = useDialogSystem(dialogSteps);
+
+  // Create a bridge function to communicate with Phaser scenes
+  const createDialogBridge = useCallback((game: any) => {
+    console.log('=== DIALOG BRIDGE SETUP ===');
+
+    if (!game || !game.scene) {
+      console.log('❌ Dialog bridge: No game or scene manager found');
+      return null;
+    }
+
+    console.log('✅ Game found, looking for scenes...');
+    console.log('📋 Available scenes:', game.scene.scenes.map((s: any) => `${s.scene.key} (active: ${s.scene.isActive()})`));
+
+    // Get the active scene - try multiple approaches
+    let activeScene = game.scene.scenes.find((s: any) => s.scene.isActive());
+
+    if (!activeScene && game.scene.scenes.length > 0) {
+      // If no active scene found, try the first scene
+      activeScene = game.scene.scenes[0];
+      console.log('⚠️ No active scene found, using first scene:', activeScene.scene.key);
+    }
+
+    if (!activeScene) {
+      console.log('❌ Dialog bridge: No scene found at all');
+      return null;
+    }
+
+    console.log('🎯 Target scene:', activeScene.scene.key);
+
+    // Create communication bridge with enhanced debugging
+    const bridge = {
+      nextStep: () => {
+        console.log('🔄 Dialog bridge: nextStep called - current:', dialogSystem.currentStep);
+        dialogSystem.nextStep();
+        console.log('✅ Dialog bridge: nextStep complete - new:', dialogSystem.currentStep);
+      },
+      setStep: (stepIndex: number) => {
+        console.log(`🎯 Dialog bridge: setStep called from ${dialogSystem.currentStep} to ${stepIndex}`);
+        dialogSystem.setCurrentStep(stepIndex);
+        console.log(`✅ Dialog bridge: setStep complete - current: ${dialogSystem.currentStep}`);
+      },
+      getCurrentStep: () => {
+        const current = dialogSystem.currentStep;
+        console.log(`📍 Dialog bridge: getCurrentStep called - returning ${current}`);
+        return current;
+      }
+    };
+
+    // Attach bridge to scene
+    activeScene.dialogBridge = bridge;
+    console.log('🔗 Dialog bridge: Successfully attached to scene:', activeScene.scene.key);
+    console.log('📊 Initial dialog step:', dialogSystem.currentStep);
+    console.log('📝 Total dialog steps:', dialogSystem.dialogSteps.length);
+
+    // Test the bridge immediately
+    console.log('🧪 Testing bridge connection...');
+    const testStep = bridge.getCurrentStep();
+    console.log('🧪 Bridge test result:', testStep);
+
+    console.log('=== BRIDGE SETUP COMPLETE ===');
+    return bridge;
+  }, [dialogSystem]);
 
   // Initialize scene configuration
   useEffect(() => {
@@ -240,13 +308,23 @@ const GamePage: React.FC = () => {
 
         // Create new game
         phaserGameRef.current = new Phaser.Game(config);
-        
+
         // Add event listeners for game events
         if (phaserGameRef.current) {
           phaserGameRef.current.events.on('ready', () => {
             console.log('Phaser game ready');
+            // Setup dialog bridge after game is ready
+            const setupBridge = () => {
+              console.log('Setting up dialog bridge...');
+              const bridge = createDialogBridge(phaserGameRef.current);
+              if (!bridge) {
+                console.log('Bridge setup failed, retrying in 1 second...');
+                setTimeout(setupBridge, 1000);
+              }
+            };
+            setTimeout(setupBridge, 2000);
           });
-          
+
           phaserGameRef.current.events.on('step', () => {
             // Game step event
           });
@@ -556,6 +634,13 @@ const GamePage: React.FC = () => {
         onStartGame={handleStartGame}
         showStartButton={gameStatus === 'ready'}
         gameStatus={gameStatus}
+        // Dialog system props
+        dialogSteps={dialogSystem.dialogSteps}
+        currentDialogStep={dialogSystem.currentStep}
+        onDialogStepChange={dialogSystem.setCurrentStep}
+        onDialogToggle={dialogSystem.setIsDialogOpen}
+        showDialog={gameStatus === 'playing' && isGameActive}
+        sceneName={scene as string}
       >
         <div className="game-wrapper">
           {/* Demo Mode Screen */}

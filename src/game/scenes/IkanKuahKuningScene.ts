@@ -43,6 +43,10 @@ interface GameStep {
 }
 
 export default class IkanKuahKuningScene extends Phaser.Scene {
+  // Dialog bridge for React integration
+  public dialogBridge: any = null;
+  private useReactDialog: boolean = true; // Flag to use React dialog instead of Phaser dialog (ALWAYS true now)
+
   // Game objects
   private kompor!: Phaser.GameObjects.Image;
   private komporZone!: Phaser.GameObjects.Zone;
@@ -100,10 +104,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
   // UI Components
   private ingredientsPanel!: Phaser.GameObjects.Container;
-  private dialogPanel!: Phaser.GameObjects.Container;
+  // NOTE: dialogPanel removed - using React dialog system only
   private menuToggleButton!: Phaser.GameObjects.Image;
-  private characterImage!: Phaser.GameObjects.Image;
-  private stepText!: Phaser.GameObjects.Text;
+  // NOTE: characterImage and stepText removed - using React dialog system only
   private isIngredientsPanelOpen = true;
   private currentStep = 0;
   private ingredientItems: Phaser.GameObjects.Image[] = [];
@@ -141,13 +144,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     cookingAreaLeft: 20,
     cookingAreaTop: 70,
     cookingAreaRight: 1480, // Expanded cooking area
-    cookingAreaBottom: 180,
-    
-    // Dialog panel
-    dialogPanelHeight: 90,
-    dialogPanelY: 900, // Will be calculated
-    dialogPanelLeft: 50,
-    dialogPanelRight: 20,
+    cookingAreaBottom: 180, // Account for dialog panel
+
+    // NOTE: Dialog panel config removed - using React dialog system
 
     // Character
     characterX: 1000,
@@ -327,7 +326,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Create UI components
     this.createIngredientsPanel();
-    this.createDialogPanel();
+    // NOTE: Phaser dialog removed completely - using React dialog system only
 
     // Initial update of panel visuals
     this.updateIngredientsPanelVisuals();
@@ -335,13 +334,14 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Setup ingredient panel layout
     this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
 
-
     // Initialize drag and drop
     this.initDragAndDrop();
 
-    // Update step display
-    this.updateStepDisplay();
+    // NOTE: updateStepDisplay removed - using React dialog system only
     this.createHintButton();
+
+    // Setup dialog bridge integration
+    this.setupDialogBridge();
   }
 
   private calculateLayout() {
@@ -356,7 +356,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
-    this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
+    // NOTE: Dialog panel height removed - using React dialog system only
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
@@ -668,60 +668,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.updateScrollbar(); // Initial update of scrollbar
   }
 
-  private createDialogPanel() {
-    // Create dialog panel container
-    this.dialogPanel = this.add.container(
-      this.layoutConfig.dialogPanelLeft,
-      this.layoutConfig.dialogPanelY
-    );
-
-    // const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-    const dialogWidth = this.layoutConfig.cookingAreaRight - 200;
-
-    // Panel background
-    const dialogBg = this.add.graphics();
-    dialogBg.fillStyle(0xFFFFF0, 0.95);
-    dialogBg.fillRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    dialogBg.lineStyle(2, 0x8B4513, 0.6);
-    dialogBg.strokeRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    this.dialogPanel.add(dialogBg);
-
-    // Character container
-    const characterContainer = this.add.graphics();
-    characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    this.dialogPanel.add(characterContainer);
-
-    // Character image
-    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.4)
-      .setOrigin(0.5, 0.5);
-    this.dialogPanel.add(this.characterImage);
-
-    // Step text
-    this.stepText = this.add.text(200, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '15px',
-      fontFamily: 'Chewy, cursive',
-      color: '#2C1810',
-      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 4
-    }).setOrigin(0, 0.5);
-    this.dialogPanel.add(this.stepText);
-
-    // Progress bar
-    const progressBg = this.add.graphics();
-    progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
-    this.dialogPanel.add(progressBg);
-
-    const progressBar = this.add.graphics();
-    progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * (1/7), 6, 3);
-    this.dialogPanel.add(progressBar);
-  }
+  // NOTE: createDialogPanel removed - using React dialog system only
 
   private updateIngredientsPanelVisuals() {
     // Clear and redraw panel background
@@ -796,39 +743,34 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     });
   }
 
-  private updateStepDisplay() {
-    if (this.currentStep < this.gameSteps.length) {
-      const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(`${step.id}. ${step.text}`);
-      this.characterImage.setTexture(step.character.replace('.png', ''));
-      
-      // Animate text appearance
-      this.stepText.setAlpha(0);
-      this.tweens.add({
-        targets: this.stepText,
-        alpha: 1,
-        duration: 500,
-        ease: 'Power2'
-      });
-
-      // Update progress bar
-      const progressPercentage = (this.currentStep + 1) / this.gameSteps.length;
-      const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-      
-      // Find and update progress bar
-      const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
-      progressBar.clear();
-      progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
-    }
-  }
+  // NOTE: updateStepDisplay removed - using React dialog system only
 
   private nextStep() {
     if (this.currentStep < this.gameSteps.length - 1) {
       this.gameSteps[this.currentStep].isCompleted = true;
       this.currentStep++;
-      this.updateStepDisplay();
-      
+
+      // NOTE: updateStepDisplay removed - using React dialog system only
+
+      // Update React dialog system if bridge is available
+      if (this.dialogBridge) {
+        console.log(`🚀 IkanKuahKuning: Game advancing to step ${this.currentStep + 1}`);
+        console.log(`🎯 IkanKuahKuning: Updating dialog to step index ${this.currentStep}`);
+
+        try {
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ IkanKuahKuning: Dialog update successful');
+
+          // Verify the update
+          const verifyStep = this.dialogBridge.getCurrentStep();
+          console.log(`🔍 IkanKuahKuning: Verification - dialog is now at step ${verifyStep}`);
+        } catch (error) {
+          console.error('❌ IkanKuahKuning: Dialog update failed:', error);
+        }
+      } else {
+        console.warn('⚠️ IkanKuahKuning: Dialog bridge not available for step update');
+      }
+
       // Success feedback
       this.cameras.main.flash(200, 144, 238, 144, false);
     } else {
@@ -1080,11 +1022,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         this.time.delayedCall(4000, () => {
           frameTimer.destroy();
           tuangAnim.destroy();
-          this.wajan.setTexture('AdukBumbu1').setVisible(true);
-          this.cookingState = 'mengaduk_bumbu';
-          this.isMengaduk = true;
-          this.swipeCount = 0;
-          this.handleMengaduk();
+          if (this.wajan) {
+            this.wajan.setTexture('AdukBumbu1').setVisible(true);
+            this.cookingState = 'mengaduk_bumbu';
+            this.isMengaduk = true;
+            this.swipeCount = 0;
+            this.handleMengaduk();
+          }
         });
         return;
       }
@@ -1167,7 +1111,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
               this.wajan.setTexture('TambahGaram');
               this.cookingState = 'garam_added';
               gameObject.destroy();
-              this.time.delayedCall(2000, () => this.wajan.setTexture('TambahTomat'));
+              this.time.delayedCall(2000, () => { if (this.wajan) this.wajan.setTexture('TambahTomat'); });
             }
             break;
           case 'garam_added':
@@ -1175,7 +1119,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
               this.wajan.setTexture('TambahGula');
               this.cookingState = 'gula_added';
               gameObject.destroy();
-              this.time.delayedCall(2000, () => this.wajan.setTexture('TambahTomat'));
+              this.time.delayedCall(2000, () => { if (this.wajan) this.wajan.setTexture('TambahTomat'); });
             }
             break;
           case 'gula_added':
@@ -1191,11 +1135,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
               this.cookingState = 'asam_added';
               gameObject.destroy();
               this.time.delayedCall(2000, () => {
-                this.wajan.setTexture('AdukFinishing1');
-                this.cookingState = 'mengaduk_finishing';
-                this.isMengaduk = true;
-                this.swipeCount = 0;
-                this.handleMengaduk();
+                if (this.wajan) {
+                  this.wajan.setTexture('AdukFinishing1');
+                  this.cookingState = 'mengaduk_finishing';
+                  this.isMengaduk = true;
+                  this.swipeCount = 0;
+                  this.handleMengaduk();
+                }
               });
             }
             break;
@@ -1223,11 +1169,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
               gameObject.destroy();
               // Short delay before starting stirring
               this.time.delayedCall(1000, () => {
-                this.wajan.setTexture('AdukBumbuStep4-1');
-                this.cookingState = 'mengaduk_aromatics';
-                this.isMengaduk = true;
-                this.swipeCount = 0;
-                this.handleMengaduk();
+                if (this.wajan) {
+                  this.wajan.setTexture('AdukBumbuStep4-1');
+                  this.cookingState = 'mengaduk_aromatics';
+                  this.isMengaduk = true;
+                  this.swipeCount = 0;
+                  this.handleMengaduk();
+                }
               });
             }
             break;
@@ -1258,11 +1206,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
               this.cookingState = 'air_added';
               gameObject.destroy();
               this.time.delayedCall(3000, () => {
-                this.wajan.setTexture('AdukAir2');
-                this.cookingState = 'mengaduk_air';
-                this.isMengaduk = true;
-                this.swipeCount = 0;
-                this.handleMengaduk();
+                if (this.wajan) {
+                  this.wajan.setTexture('AdukAir2');
+                  this.cookingState = 'mengaduk_air';
+                  this.isMengaduk = true;
+                  this.swipeCount = 0;
+                  this.handleMengaduk();
+                }
               });
             }
             break;
@@ -1470,18 +1420,18 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           if (swipeDistance > 50 && this.lastSwipeDirection !== 'right') { // Swipe right
             this.swipeCount++;
             this.lastSwipeDirection = 'right';
-            this.wajan.setTexture('AdukBumbu1');
+            if (this.wajan) this.wajan.setTexture('AdukBumbu1');
           } else if (swipeDistance < -50 && this.lastSwipeDirection !== 'left') { // Swipe left
             this.swipeCount++;
             this.lastSwipeDirection = 'left';
-            this.wajan.setTexture('AdukBumbu2');
+            if (this.wajan) this.wajan.setTexture('AdukBumbu2');
           }
 
           if (this.swipeCount >= 15) {
             this.isMengaduk = false;
             this.swipeCount = 0;
             this.lastSwipeDirection = null;
-            this.wajan.setTexture('BumbuHalusWajan');
+            if (this.wajan) this.wajan.setTexture('BumbuHalusWajan');
             this.cookingState = 'bumbu_matang';
             this.nextStep();
           }
@@ -1491,18 +1441,18 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           if (swipeDistance > 50 && this.lastSwipeDirection !== 'right') { // Swipe right
             this.swipeCount++;
             this.lastSwipeDirection = 'right';
-            this.wajan.setTexture('AdukBumbuStep4-1');
+            if (this.wajan) this.wajan.setTexture('AdukBumbuStep4-1');
           } else if (swipeDistance < -50 && this.lastSwipeDirection !== 'left') { // Swipe left
             this.swipeCount++;
             this.lastSwipeDirection = 'left';
-            this.wajan.setTexture('AdukBumbuStep4-2');
+            if (this.wajan) this.wajan.setTexture('AdukBumbuStep4-2');
           }
 
           if (this.swipeCount >= 15) {
             this.isMengaduk = false;
             this.swipeCount = 0;
             this.lastSwipeDirection = null;
-            this.wajan.setTexture('BumbuStep4-2');
+            if (this.wajan) this.wajan.setTexture('BumbuStep4-2');
             this.cookingState = 'aromatics_done';
             this.nextStep();
           }
@@ -1512,18 +1462,18 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           if (swipeDistance > 50 && this.lastSwipeDirection !== 'right') { // Swipe right
             this.swipeCount++;
             this.lastSwipeDirection = 'right';
-            this.wajan.setTexture('AdukAir2');
+            if (this.wajan) this.wajan.setTexture('AdukAir2');
           } else if (swipeDistance < -50 && this.lastSwipeDirection !== 'left') { // Swipe left
             this.swipeCount++;
             this.lastSwipeDirection = 'left';
-            this.wajan.setTexture('AdukAir1');
+            if (this.wajan) this.wajan.setTexture('AdukAir1');
           }
 
           if (this.swipeCount >= 15) {
             this.isMengaduk = false;
             this.swipeCount = 0;
             this.lastSwipeDirection = null;
-            this.wajan.setTexture('TambahAir2');
+            if (this.wajan) this.wajan.setTexture('TambahAir2');
             this.cookingState = 'mendidih';
             this.startCountdown(20);
           }
@@ -1532,18 +1482,18 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           if (swipeDistance > 50 && this.lastSwipeDirection !== 'right') {
             this.swipeCount++;
             this.lastSwipeDirection = 'right';
-            this.wajan.setTexture('AdukFinishing1');
+            if (this.wajan) this.wajan.setTexture('AdukFinishing1');
           } else if (swipeDistance < -50 && this.lastSwipeDirection !== 'left') {
             this.swipeCount++;
             this.lastSwipeDirection = 'left';
-            this.wajan.setTexture('AdukFinishing2');
+            if (this.wajan) this.wajan.setTexture('AdukFinishing2');
           }
 
           if (this.swipeCount >= 15) {
             this.isMengaduk = false;
             this.swipeCount = 0;
             this.lastSwipeDirection = null;
-            this.wajan.setTexture('IkanKuahKuningJadi'); // Set texture to finished dish
+            if (this.wajan) this.wajan.setTexture('IkanKuahKuningJadi'); // Set texture to finished dish
 
             // Start a 30-second countdown before the dish is considered "matang"
             this.startCountdown(30, () => {
@@ -1559,6 +1509,12 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private startCountdown(duration: number, onComplete?: () => void) {
     // Disable all drag and drop during countdown
     this.disableAllDragDrop();
+
+    // If wajan is gone, abort countdown UI setup safely
+    if (!this.wajan) {
+      if (onComplete) onComplete();
+      return;
+    }
 
     this.countdownText = this.add.text(this.wajan.x, this.wajan.y - 150, ``, {
       fontSize: '32px',
@@ -1686,9 +1642,6 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     return allowedIngredients ? allowedIngredients.includes(ingredientName) : false;
   }
 
-  private shakeScreen() {
-    this.cameras.main.shake(300, 0.01);
-  }
 
   private returnItemToOriginalPosition(gameObject: Phaser.GameObjects.Image) {
     // Stop all tweens on the object to prevent conflicts
@@ -1790,11 +1743,6 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.hintPopup.add(text);
     this.hintPopup.setVisible(false);
   }
-
-  private showSuccessPopup() {
-    this.showCompletionCelebration();
-  }
-
   private showCompletionCelebration() {
     this.time.delayedCall(1000, () => {
       // Enhanced celebration effects
@@ -2406,6 +2354,59 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       this.stoveAnimTimer = null;
       if (this.kompor) {
         this.kompor.setTexture('Kompor');
+      }
+    }
+  }
+
+  private setupDialogBridge() {
+    console.log('🔧 IkanKuahKuning: Setting up dialog bridge...');
+
+    // Wait for dialog bridge to be attached by React
+    const checkForBridge = () => {
+      console.log('🔍 IkanKuahKuning: Checking for dialog bridge...');
+      if (this.dialogBridge) {
+        console.log('✅ IkanKuahKuning: Dialog bridge connected!');
+        console.log('🎯 IkanKuahKuning: Current game step:', this.currentStep);
+
+        // Test the bridge
+        try {
+          const currentDialogStep = this.dialogBridge.getCurrentStep();
+          console.log('📊 IkanKuahKuning: Current dialog step:', currentDialogStep);
+
+          // Sync initial step
+          this.syncDialogWithGameStep();
+        } catch (error) {
+          console.error('❌ IkanKuahKuning: Bridge test failed:', error);
+        }
+      } else {
+        console.log('⏳ IkanKuahKuning: Bridge not ready, checking again in 500ms...');
+        // Try again in 500ms
+        this.time.delayedCall(500, checkForBridge);
+      }
+    };
+
+    // Start checking for bridge
+    this.time.delayedCall(100, checkForBridge);
+  }
+
+  private syncDialogWithGameStep() {
+    if (this.dialogBridge) {
+      console.log('🔄 IkanKuahKuning: Syncing dialog with game step...');
+
+      try {
+        // Make sure dialog is at the correct step
+        const currentDialogStep = this.dialogBridge.getCurrentStep();
+        console.log(`📊 IkanKuahKuning: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
+
+        if (this.currentStep !== currentDialogStep) {
+          console.log(`🔄 IkanKuahKuning: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ IkanKuahKuning: Dialog sync complete');
+        } else {
+          console.log('✅ IkanKuahKuning: Dialog already in sync');
+        }
+      } catch (error) {
+        console.error('❌ IkanKuahKuning: Dialog sync failed:', error);
       }
     }
   }

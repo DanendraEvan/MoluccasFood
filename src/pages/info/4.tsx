@@ -6,6 +6,10 @@ import Header from '../../components/Header';
 
 // Configuration object untuk pengaturan ukuran
 const UI_CONFIG = {
+  homeButton: {
+    size: 60,
+    position: { top: 16, left: 16 }
+  },
   titleBox: {
     fontSize: '1.875rem', // text-3xl equivalent (30px)
     padding: { x: 32, y: 16 }, // padding horizontal dan vertical

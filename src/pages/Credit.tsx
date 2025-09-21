@@ -5,6 +5,10 @@ import CreditInfoWrapper from '../components/CreditInfoWrapper';
 import Header from '../components/Header';
 
 const UI_CONFIG = {
+  homeButton: {
+    size: 64,
+    position: { top: 24, left: 24 }
+  },
   titleBox: {
     fontSize: '2.5rem',
     padding: { x: 40, y: 16 },

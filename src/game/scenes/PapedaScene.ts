@@ -11,6 +11,10 @@ interface GameStep {
 }
 
 export default class PapedaScene extends Phaser.Scene {
+  // Dialog bridge for React integration
+  public dialogBridge: any = null;
+  private useReactDialog: boolean = true; // Flag to use React dialog instead of Phaser dialog (ALWAYS true now)
+
   // Original game objects
   private dropZone!: Phaser.GameObjects.Zone;
   private flourDropZone!: Phaser.GameObjects.Zone;
@@ -49,23 +53,21 @@ export default class PapedaScene extends Phaser.Scene {
   private cutClicks: number = 0;
   private isWaterAdded: boolean = false;
   private stagedFlour: Phaser.GameObjects.Image | null = null;
-  private flourDropZone: Phaser.GameObjects.Zone;
   private stagingAreaGraphics: Phaser.GameObjects.Graphics | null = null;
 
   // UI Components (from NasiLapola)
   private ingredientsPanel!: Phaser.GameObjects.Container;
-  private dialogPanel!: Phaser.GameObjects.Container;
+  // NOTE: dialogPanel removed - using React dialog system only
   private stagingArea!: Phaser.GameObjects.Container;
   private menuToggleButton!: Phaser.GameObjects.Image;
-  private characterImage!: Phaser.GameObjects.Image;
-  private stepText!: Phaser.GameObjects.Text;
+  // NOTE: characterImage and stepText removed - using React dialog system only
   private isIngredientsPanelOpen = true;
   private currentStep = 0;
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
   private hintPopup!: Phaser.GameObjects.Container;
-  private infoContent: string = `Papeda adalah makanan khas Maluku yang terbuat dari sagu. Bentuknya seperti lem dan rasanya tawar. Karena itu, Papeda paling enak dimakan dengan Ikan Kuah Kuning yang gurih dan segar. Cara makannya unik, loh!`;
+  private infoContent: string = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
 
   // Layout configuration
   private layoutConfig = {
@@ -82,13 +84,9 @@ export default class PapedaScene extends Phaser.Scene {
     cookingAreaLeft: 20,
     cookingAreaTop: 70,
     cookingAreaRight: 290,
-    cookingAreaBottom: 180,
-    
-    // Dialog panel
-    dialogPanelHeight: 90,
-    dialogPanelY: 900, // Will be calculated
-    dialogPanelLeft: 50,
-    dialogPanelRight: 20,
+    cookingAreaBottom: 180, // Account for dialog panel
+
+    // NOTE: Dialog panel config removed - using React dialog system
 
     // Character
     characterX: 1000,
@@ -108,73 +106,73 @@ export default class PapedaScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Ayo buat Papeda! Pertama, ambil Mangkuk dari menu dan taruh di atas meja. Lalu, ambil Tepung Sagu dan taruh di Area Persiapan.",
+      text: "Selamat Datang di Game Traditional of Moluccas Food, sudah siap untuk Memasak Papeda hari ini!?! Oke Step 1 ambil Mangkuk di Menu dan taruh di Meja. Sudah? Ambil Tepung Sagu di Menu dan Tarik ke Area Staging di kanan.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Sekarang, kita buka bungkus tepungnya. Klik beberapa kali pada Tepung Sagu di Area Persiapan sampai terbuka. Kalau sudah, seret tepung yang sudah terbuka itu ke dalam mangkuk.",
+      text: "Step ke 2 ayo kita potong bungkus tepungnya. Klik terus pada Area tengah tepung sampai terbuka. Sudah? Selanjutnya ambil Tepung Sagu dan taruh pada Mangkuk di Meja.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Tepung sudah di dalam mangkuk. Sekarang, tuangkan Air 200ml ke dalam mangkuk.",
+      text: "Tepung sudah masuk? kita siap untuk Step ke 3 yaitu tuangkan 200 ml air ke mangkuk berisi Tepung.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Ambil Sendok dari menu, lalu taruh di atas mangkuk untuk mengaduk. Geser ke kanan dan kiri berulang kali sampai adonannya rata ya!",
+      text: "Air sudah masuk? ambil sendok di menu dan taruh diatas mangkuk, mari kita aduk adonan papedanya. Aduk dengan slide kanan dan kiri menggunakan kursor anda hingga adonan tercampur rata",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Pintar! Sekarang kita saring adonannya. Ambil Mangkuk baru dari menu dan taruh di sebelah adonanmu. Lalu, ambil Saringan dan taruh di atas mangkuk yang baru. Terakhir, tuang adonanmu ke atas saringan.",
+      text: "Siap ke Langkah Selanjutnya!?! Oke kali ini kita akan menyaring adonan yang sudah diaduk. Ambil Mangkuk lagi di Menu dan taruh di sebelah mangkuk adonan sebelumnya. Sudah? ambil Saringan kemudian taruh ke atas mangkuk kosong, selanjutnya tarik adonan sebelumnya diatas saringan.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Kita tunggu sebentar sampai adonannya mengendap. Kalau sudah, airnya harus dibuang. Pindahkan mangkuk adonan ke Area Persiapan dan tunggu sebentar sampai airnya hilang.",
+      text: "Sudah menyaring kita tunggu selama beberapa saat sampai adonan sagu mengering dan menyisakan air di pinggir. Sudah? Selanjutnya kita akan buang air sisa tadi, yaitu taruh adonan ke Area Persiapan di sebelah kiri halaman dan tunggu beberapa detik sampai air menghilang.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Oke, adonan keringnya sudah jadi! Sekarang, tuangkan Air 100ml ke dalam adonan. Setelah itu, aduk lagi pakai Sendok sampai rata.",
+      text: "Oke lanjut ya? Kita ambil 100 ml air dan masukkan ke adonan. Setelah air di Tuang kita aduk lagi adonan dengan sendok hingga adonan tercampur rata",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 8,
-      text: "Biar lebih segar, ayo kita beri perasan Jeruk Nipis. Ambil Jeruk Nipis dari menu, lalu klik beberapa kali di atas adonan sampai airnya keluar semua.",
+      text: "Sebagai tambahan rasa mari kita ambil Jeruk Nipis di Menu dan peras diatas Adonan Tepung. Klik beberapa kali pada jeruk hingga semua perasannya masuk ke adonan.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 9,
-      text: "Sudah wangi jeruk! Sekarang, aduk lagi adonannya sampai rata ya.",
+      text: "Perasan Jeruk sudah masuk, lanjut kita aduk lagi hingga rata.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 10,
-      text: "Hampir jadi! Sekarang, tuangkan Air Panas ke dalam adonan.",
+      text: "Siapkan Air Panas sebanyak 1.4 liter di Menu dan Tuangkan ke dalam adonan.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 11,
-      text: "Ini bagian yang paling seru! Aduk terus adonannya sampai mengental dan berubah jadi Papeda. Butuh sedikit waktu, jadi sabar ya!",
+      text: "Aduk Lagi adonan hingga rata dan adonan berubah jadi mengental, ini sedikit memakan waktu sampai adonan jadi.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 12,
-      text: "Yeay! Papeda sudah jadi! Ambil Ikan Kuah Kuning dari menu dan taruh di Area Persiapan. Terakhir, campurkan Papeda buatanmu dengan Ikan Kuah Kuning. Selamat menikmati!",
+      text: "Yeayy!!! Adonan Papeda telah jadi, Kita ambil Makanan Ikan Kuah Kuning yang ada di menu dan taruh di Area Persiapan di kiri Area Memasak. Selanjutnya kita ambil adonan papeda tadi dan Campurkan ke Ikan Kuah Kuning yang ditaruh di Area Persiapan",
       character: "karakter6.png",
       isCompleted: false
     }
@@ -279,7 +277,7 @@ export default class PapedaScene extends Phaser.Scene {
     // Create game elements
     this.createCookingArea();
     this.createIngredientsPanel();
-    this.createDialogPanel();
+    // NOTE: Phaser dialog removed completely - using React dialog system only
     this.createStagingArea();
 
     // Update panel visuals
@@ -291,9 +289,11 @@ export default class PapedaScene extends Phaser.Scene {
     // Initialize drag and drop
     this.initDragAndDrop();
 
-    // Update step display
-    this.updateStepDisplay();
+    // NOTE: updateStepDisplay removed - using React dialog system only
     this.createHintButton();
+
+    // Setup dialog bridge integration
+    this.setupDialogBridge();
   }
 
   private calculateLayout() {
@@ -308,7 +308,7 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
-    this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
+    // NOTE: Dialog panel height removed - using React dialog system only
   }
 
   private createCookingArea() {
@@ -487,59 +487,7 @@ export default class PapedaScene extends Phaser.Scene {
     });
   }
 
-  private createDialogPanel() {
-    // Create dialog panel container
-    this.dialogPanel = this.add.container(
-      this.layoutConfig.dialogPanelLeft,
-      this.layoutConfig.dialogPanelY
-    );
-
-    const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-
-    // Panel background
-    const dialogBg = this.add.graphics();
-    dialogBg.fillStyle(0xFFFFF0, 0.95);
-    dialogBg.fillRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    dialogBg.lineStyle(2, 0x8B4513, 0.6);
-    dialogBg.strokeRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    this.dialogPanel.add(dialogBg);
-
-    // Character container
-    const characterContainer = this.add.graphics();
-    characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    this.dialogPanel.add(characterContainer);
-
-    // Character image
-    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.4)
-      .setOrigin(0.5, 0.5);
-    this.dialogPanel.add(this.characterImage);
-
-    // Step text
-    this.stepText = this.add.text(110, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '25px',
-      fontFamily: 'Chewy, cursive',
-      color: '#000000',
-      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 4
-    }).setOrigin(0, 0.5);
-    this.dialogPanel.add(this.stepText);
-
-    // Progress bar
-    const progressBg = this.add.graphics();
-    progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
-    this.dialogPanel.add(progressBg);
-
-    const progressBar = this.add.graphics();
-    progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * (1/6), 6, 3);
-    this.dialogPanel.add(progressBar);
-  }
+  // NOTE: createDialogPanel removed - using React dialog system only
 
   private updateIngredientsPanelVisuals() {
     // Clear and redraw panel background
@@ -657,31 +605,7 @@ export default class PapedaScene extends Phaser.Scene {
     });
   }
 
-  private updateStepDisplay() {
-    if (this.currentStep < this.gameSteps.length) {
-      const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(`${step.id}. ${step.text}`);
-      this.characterImage.setTexture(step.character.replace('.png', ''));
-      
-      // Animate text appearance
-      this.stepText.setAlpha(0);
-      this.tweens.add({
-        targets: this.stepText,
-        alpha: 1,
-        duration: 500,
-        ease: 'Power2'
-      });
-
-      // Update progress bar
-      const progressPercentage = (this.currentStep + 1) / this.gameSteps.length;
-      const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-      
-      const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
-      progressBar.clear();
-      progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
-    }
-  }
+  // NOTE: updateStepDisplay removed - using React dialog system only
 
   private nextStep() {
     if (this.gameSteps[this.currentStep].isCompleted) return;
@@ -691,23 +615,48 @@ export default class PapedaScene extends Phaser.Scene {
 
     if (this.currentStep < this.gameSteps.length - 1) {
       this.currentStep++;
-      this.updateStepDisplay();
+
+      // NOTE: updateStepDisplay removed - using React dialog system only
+
+      // Update React dialog system if bridge is available
+      if (this.dialogBridge) {
+        console.log(`🚀 Papeda: Game advancing to step ${this.currentStep + 1}`);
+        console.log(`🎯 Papeda: Updating dialog to step index ${this.currentStep}`);
+
+        try {
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ Papeda: Dialog update successful');
+
+          // Verify the update
+          const verifyStep = this.dialogBridge.getCurrentStep();
+          console.log(`🔍 Papeda: Verification - dialog is now at step ${verifyStep}`);
+        } catch (error) {
+          console.error('❌ Papeda: Dialog update failed:', error);
+        }
+      } else {
+        console.warn('⚠️ Papeda: Dialog bridge not available for step update');
+      }
     }
 
     if (this.currentStep === 1) {
       // Enable clicking on the staged flour to cut it open
-      this.stagedFlour.setInteractive().on('pointerdown', this.handleFlourClick, this);
+      const sf = this.stagedFlour;
+      if (sf) {
+        sf.setInteractive().on('pointerdown', this.handleFlourClick, this);
+      }
     }
   }
 
   private handleFlourClick() {
       if (this.currentStep !== 1 || this.cutClicks >= 5) return;
+      if (!this.stagedFlour) return;
+      const sf = this.stagedFlour; // local non-null reference
 
       this.cutClicks++;
       
       // Visual feedback for clicking with larger hitbox
       this.tweens.add({
-          targets: this.stagedFlour,
+          targets: sf,
           scaleX: 0.25 * 1.1,
           scaleY: 0.25 * 1.1,
           duration: 80,
@@ -715,7 +664,7 @@ export default class PapedaScene extends Phaser.Scene {
       });
 
       // Show click progress
-      const clickText = this.add.text(this.stagedFlour.x, this.stagedFlour.y - 50, `${this.cutClicks}/5`, {
+      const clickText = this.add.text(sf.x, sf.y - 50, `${this.cutClicks}/5`, {
           fontSize: '20px',
           fontFamily: 'Chewy, cursive',
           color: '#FFD700',
@@ -733,18 +682,16 @@ export default class PapedaScene extends Phaser.Scene {
 
       if (this.cutClicks >= 5) {
           // Change texture to cut flour and expand hitbox
-          this.stagedFlour.setTexture('TepungPotong');
-          this.stagedFlour.setName('TepungPotong');
-          this.stagedFlour.off('pointerdown', this.handleFlourClick, this);
+          sf.setTexture('TepungPotong');
+          sf.setName('TepungPotong');
+          sf.off('pointerdown', this.handleFlourClick, this);
           
           // Make it draggable again with larger interactive area
-          if (this.stagedFlour) {
-            this.stagedFlour.setInteractive(new Phaser.Geom.Rectangle(-60, -60, 120, 120), Phaser.Geom.Rectangle.Contains);
-            this.input.setDraggable(this.stagedFlour);
-          }
+          sf.setInteractive(new Phaser.Geom.Rectangle(-60, -60, 120, 120), Phaser.Geom.Rectangle.Contains);
+          this.input.setDraggable(sf);
           
           // Show success feedback
-          const successText = this.add.text(this.stagedFlour.x, this.stagedFlour.y - 60, "Tepung Terbuka!", {
+          const successText = this.add.text(sf.x, sf.y - 60, "Tepung Terbuka!", {
               fontSize: '18px',
               fontFamily: 'Chewy, cursive',
               color: '#00FF00',
@@ -764,12 +711,14 @@ export default class PapedaScene extends Phaser.Scene {
 
   private handleStirring() {
     if (this.currentStep !== 2 || !this.isWaterAdded) return;
+    if (!this.mangkuk) return;
 
-    this.mangkuk.off('pointerdown', this.handleStirring, this);
+    const bowl = this.mangkuk;
+    bowl.off('pointerdown', this.handleStirring, this);
 
     // Mainkan animasi aduk
-    const stirAnim = this.add.sprite(this.mangkuk.x, this.mangkuk.y, 'PapedaAduk1').setScale(this.mangkuk.scale);
-    this.mangkuk.setVisible(false);
+    const stirAnim = this.add.sprite(bowl.x, bowl.y, 'PapedaAduk1').setScale(bowl.scale);
+    bowl.setVisible(false);
 
     this.anims.create({
         key: 'stir_anim',
@@ -784,7 +733,7 @@ export default class PapedaScene extends Phaser.Scene {
     stirAnim.play('stir_anim');
     stirAnim.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
         stirAnim.destroy();
-        this.mangkuk.setTexture('HasilAduk1').setVisible(true);
+        bowl.setTexture('HasilAduk1').setVisible(true);
         this.nextStep();
     });
   }
@@ -889,8 +838,10 @@ export default class PapedaScene extends Phaser.Scene {
       if (this.currentStep === 1) {
         if (droppedItemKey === 'TepungPotong' && dropZone === this.dropZone) {
           this.executeSuccessfulDrop(gameObject, () => {
-            // Hide bowl during animation
-            this.mangkuk.setVisible(false);
+            // Hide DenganTepung during animation
+            const bowl = this.mangkuk;
+            if (!bowl) return;
+            bowl.setVisible(false);
             
             // Center animation in CookingArea with smaller size
             const centerX = 875; // Center of cooking area
@@ -904,7 +855,7 @@ export default class PapedaScene extends Phaser.Scene {
                     { key: 'TuangTepung2' },
                     { key: 'TuangTepung3' },
                 ],
-                frameRate: 0.43, // 7 seconds total (3 frames / 0.43 = ~7s)
+                frameRate: 0.67, // 6 seconds total (4 frames / 0.67 = ~6s)
             });
             
             pourAnim.play('pour_flour_anim');
@@ -912,8 +863,8 @@ export default class PapedaScene extends Phaser.Scene {
             // Complete after 7 seconds
             this.time.delayedCall(7000, () => {
                 pourAnim.destroy();
-                this.mangkuk.setVisible(true);
-                this.mangkuk.setTexture('DenganTepung');
+                bowl.setVisible(true);
+                bowl.setTexture('DenganTepung');
                 this.nextStep();
             });
           });
@@ -923,61 +874,59 @@ export default class PapedaScene extends Phaser.Scene {
         return;
       }
 
-      // STEP 3: Tuang air 200ml ke mangkuk
+      // STEP 3: Aduk DenganTepung
       if (this.currentStep === 2) {
-        if (droppedItemKey === 'Water' && dropZone === this.dropZone) {
-            this.executeSuccessfulDrop(gameObject, () => {
-                // Hide DenganTepung during animation
-                this.mangkuk.setVisible(false);
-                
-                // Center animation in CookingArea with smaller size
-                const centerX = 875;
-                const centerY = 500;
-                const pourWaterAnim = this.add.sprite(centerX, centerY, 'Air200ml1').setScale(0.2);
-                
-                this.anims.create({
-                    key: 'pour_water_anim',
-                    frames: [
-                        { key: 'Air200ml1' },
-                        { key: 'Air200ml2' },
-                        { key: 'Air200ml3' },
-                    ],
-                    frameRate: 0.43, // 7 seconds total
-                });
-                
-                pourWaterAnim.play('pour_water_anim');
-                
-                // Complete after 7 seconds
-                this.time.delayedCall(7000, () => {
-                    pourWaterAnim.destroy();
-                    this.mangkuk.setVisible(true);
-                    this.mangkuk.setTexture('HasilAduk1');
-                    this.isWaterAdded = true;
-                    this.nextStep();
-                });
+        if (droppedItemKey === 'Spoon' && this.mangkuk && this.mangkuk.texture.key === 'DenganTepung') {
+          this.executeSuccessfulDrop(gameObject, () => {
+            // Hide DenganTepung during animation
+            const bowl2 = this.mangkuk;
+            if (!bowl2) return;
+            bowl2.setVisible(false);
+            
+            // Center animation in CookingArea with smaller size
+            const centerX = 875; // Center of cooking area
+            const centerY = 500;
+            const stirAnim = this.add.sprite(centerX, centerY, 'PapedaAduk1').setScale(0.2);
+            
+            this.anims.create({
+                key: 'stir_anim',
+                frames: [
+                    { key: 'PapedaAduk1' },
+                    { key: 'PapedaAduk2' },
+                ],
+                frameRate: 3,
+                repeat: 2
             });
+            
+            stirAnim.play('stir_anim');
+            
+            // Complete after 7 seconds
+            this.time.delayedCall(7000, () => {
+                stirAnim.destroy();
+                bowl2.setVisible(true);
+                bowl2.setTexture('HasilAduk1');
+                this.nextStep();
+            });
+          });
         } else {
-            this.executeInvalidDrop(gameObject);
+          this.executeInvalidDrop(gameObject);
         }
         return;
       }
 
-      // STEP 4: Dialog 4 - Spoon drop and stirring mechanism
+      // STEP 4: Dialog 4 - Interactive stirring mechanism with swipe detection
       if (this.currentStep === 3) {
-        if (droppedItemKey === 'Spoon' && dropZone === this.dropZone) {
-          // Check if bowl texture is HasilAduk1 (after water was added)
-          if (this.mangkuk.texture.key === 'HasilAduk1') {
-            this.executeSuccessfulDrop(gameObject, () => {
-              // Change bowl texture to show spoon dropped on HasilAduk1
-              this.mangkuk.setTexture('Aduk3');
-              // Make bowl fixed in position - remove from draggable objects
-              this.mangkuk.setData('isFixed', true);
-              // Start interactive stirring mechanism
-              this.startInteractiveStirring();
-            });
-          } else {
-            this.executeInvalidDrop(gameObject);
-          }
+        if (droppedItemKey === 'Spoon' && this.mangkuk && this.mangkuk.texture.key === 'HasilAduk1') {
+          this.executeSuccessfulDrop(gameObject, () => {
+            // Change bowl texture to show spoon dropped on HasilAduk1
+            const bowl3 = this.mangkuk;
+            if (!bowl3) return;
+            bowl3.setTexture('Aduk3');
+            // Make bowl fixed in position - remove from draggable objects
+            bowl3.setData('isFixed', true);
+            // Start interactive stirring mechanism
+            this.startInteractiveStirring();
+          });
         } else {
           this.executeInvalidDrop(gameObject);
         }
@@ -1221,19 +1170,26 @@ export default class PapedaScene extends Phaser.Scene {
     }
     
     let isTexture1 = true;
+    // Use a local, guarded reference to the bowl to satisfy strict null checks
+    const bowl = this.mangkuk;
+    if (!bowl) {
+      // If bowl is missing, finish early to avoid null access
+      callback();
+      return;
+    }
     this.stirringTimer = this.time.addEvent({
       delay: 250,
       callback: () => {
         if (isTexture1) {
-          this.mangkuk.setTexture(texture2);
-          this.mangkuk.setScale(this.layoutConfig.bowlScale);
+          bowl.setTexture(texture2);
+          bowl.setScale(this.layoutConfig.bowlScale);
         } else {
-          this.mangkuk.setTexture(texture1);
-          this.mangkuk.setScale(this.layoutConfig.bowlScale);
+          bowl.setTexture(texture1);
+          bowl.setScale(this.layoutConfig.bowlScale);
         }
         isTexture1 = !isTexture1;
         
-        this.createSteamEffect(this.mangkuk.x, this.mangkuk.y - 50);
+        this.createSteamEffect(bowl.x, bowl.y - 50);
       },
       loop: true
     });
@@ -1243,8 +1199,8 @@ export default class PapedaScene extends Phaser.Scene {
         this.stirringTimer.destroy();
         this.stirringTimer = null;
       }
-      this.mangkuk.setTexture(finalTexture);
-      this.mangkuk.setScale(this.layoutConfig.bowlScale);
+      bowl.setTexture(finalTexture);
+      bowl.setScale(this.layoutConfig.bowlScale);
       callback();
     });
   }
@@ -1440,7 +1396,9 @@ export default class PapedaScene extends Phaser.Scene {
     this.currentStirTexture = 'Aduk3';
     
     // Add swipe instruction text
-    const instructionText = this.add.text(this.mangkuk.x, this.mangkuk.y - 100, 
+    const bowl = this.mangkuk;
+    if (!bowl) return;
+    const instructionText = this.add.text(bowl.x, bowl.y - 100, 
       `Swipe kiri-kanan untuk mengaduk! (${this.stirCount}/${this.maxStirCount})`, {
       fontSize: '20px',
       fontFamily: 'Chewy, cursive',
@@ -1449,13 +1407,13 @@ export default class PapedaScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(100);
     
     // Make bowl interactive for swipe detection
-    this.mangkuk.setInteractive();
-    this.mangkuk.on('pointerdown', this.onSwipeStart, this);
-    this.mangkuk.on('pointermove', this.onSwipeMove, this);
-    this.mangkuk.on('pointerup', this.onSwipeEnd, this);
+    bowl.setInteractive();
+    bowl.on('pointerdown', this.onSwipeStart, this);
+    bowl.on('pointermove', this.onSwipeMove, this);
+    bowl.on('pointerup', this.onSwipeEnd, this);
     
     // Store instruction text for updates
-    this.mangkuk.setData('instructionText', instructionText);
+    bowl.setData('instructionText', instructionText);
   }
   
   private onSwipeStart(pointer: Phaser.Input.Pointer) {
@@ -1471,7 +1429,8 @@ export default class PapedaScene extends Phaser.Scene {
     if (this.isSwipeActive) {
       const deltaX = pointer.x - this.swipeStartX;
       if (Math.abs(deltaX) > 10) {
-        this.mangkuk.setScale(this.layoutConfig.bowlScale * 1.05);
+        const bowl = this.mangkuk;
+        if (bowl) bowl.setScale(this.layoutConfig.bowlScale * 1.05);
       }
     }
   }
@@ -1488,12 +1447,14 @@ export default class PapedaScene extends Phaser.Scene {
     }
     
     this.isSwipeActive = false;
-    this.mangkuk.setScale(this.layoutConfig.bowlScale);
+    if (this.mangkuk) this.mangkuk.setScale(this.layoutConfig.bowlScale);
   }
   
   private handleStirSwipe() {
+    const bowl = this.mangkuk;
+    if (!bowl) return;
     this.stirCount++;
-    const instructionText = this.mangkuk.getData('instructionText') as Phaser.GameObjects.Text;
+    const instructionText = bowl.getData('instructionText') as Phaser.GameObjects.Text;
     
     // Update instruction text
     if (instructionText) {
@@ -1502,19 +1463,19 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Cycle through stirring textures: Aduk3 -> Aduk4 -> Aduk5 -> Aduk4 -> repeat
     if (this.currentStirTexture === 'Aduk3') {
-      this.mangkuk.setTexture('Aduk4');
+      bowl.setTexture('Aduk4');
       this.currentStirTexture = 'Aduk4';
     } else if (this.currentStirTexture === 'Aduk4') {
-      this.mangkuk.setTexture('Aduk5');
+      bowl.setTexture('Aduk5');
       this.currentStirTexture = 'Aduk5';
     } else if (this.currentStirTexture === 'Aduk5') {
-      this.mangkuk.setTexture('Aduk4');
+      bowl.setTexture('Aduk4');
       this.currentStirTexture = 'Aduk4';
     }
     
     // Visual feedback for stirring motion
     this.tweens.add({
-      targets: this.mangkuk,
+      targets: bowl,
       scaleX: this.layoutConfig.bowlScale * 1.08,
       scaleY: this.layoutConfig.bowlScale * 1.08,
       duration: 120,
@@ -1537,26 +1498,28 @@ export default class PapedaScene extends Phaser.Scene {
     }
     
     // Change to final mixed texture - DenganTepung.png
-    this.mangkuk.setTexture('DenganTepung');
-    this.mangkuk.setName('DenganTepung');
+    const bowl = this.mangkuk;
+    if (!bowl) return;
+    bowl.setTexture('DenganTepung');
+    bowl.setName('DenganTepung');
     
     // Keep it fixed in CookingArea but make it draggable for next step
-    this.mangkuk.setData('isFixed', false); // Allow dragging for strainer step
+    bowl.setData('isFixed', false); // Allow dragging for strainer step
     
     // Remove old event listeners first
-    this.mangkuk.off('pointerdown');
-    this.mangkuk.off('pointermove');
-    this.mangkuk.off('pointerup');
+    bowl.off('pointerdown');
+    bowl.off('pointermove');
+    bowl.off('pointerup');
     
     // Make it properly draggable using the input system
-    this.mangkuk.setInteractive({ draggable: true });
-    this.input.setDraggable(this.mangkuk);
+    bowl.setInteractive({ draggable: true });
+    this.input.setDraggable(bowl);
     
     // Return spoon to IngredientPanel
     this.returnSpoonToPanel();
     
     // Show completion feedback
-    this.showPlacementSuccess(this.mangkuk.x, this.mangkuk.y, "15x Adukan Selesai!");
+    this.showPlacementSuccess(bowl.x, bowl.y, "15x Adukan Selesai!");
     
     // Move to Dialog 5
     this.nextStep();
@@ -1780,9 +1743,12 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private createHintButton() {
-    const { width, height } = this.cameras.main;
-    const hintButton = this.add.image(width - 100, height - 120, 'hint_normal').setInteractive();
-    hintButton.setScale(0.1);
+    // Position hint button further below the ingredients panel
+    const hintButtonX = this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2;
+    const hintButtonY = this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 60;
+    
+    const hintButton = this.add.image(hintButtonX, hintButtonY, 'hint_normal').setInteractive();
+    hintButton.setScale(0.08); // Slightly smaller for better appearance
 
     hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
     hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
@@ -2604,6 +2570,59 @@ export default class PapedaScene extends Phaser.Scene {
           particle.destroy();
         }
       });
+    }
+  }
+
+  private setupDialogBridge() {
+    console.log('🔧 Papeda: Setting up dialog bridge...');
+
+    // Wait for dialog bridge to be attached by React
+    const checkForBridge = () => {
+      console.log('🔍 Papeda: Checking for dialog bridge...');
+      if (this.dialogBridge) {
+        console.log('✅ Papeda: Dialog bridge connected!');
+        console.log('🎯 Papeda: Current game step:', this.currentStep);
+
+        // Test the bridge
+        try {
+          const currentDialogStep = this.dialogBridge.getCurrentStep();
+          console.log('📊 Papeda: Current dialog step:', currentDialogStep);
+
+          // Sync initial step
+          this.syncDialogWithGameStep();
+        } catch (error) {
+          console.error('❌ Papeda: Bridge test failed:', error);
+        }
+      } else {
+        console.log('⏳ Papeda: Bridge not ready, checking again in 500ms...');
+        // Try again in 500ms
+        this.time.delayedCall(500, checkForBridge);
+      }
+    };
+
+    // Start checking for bridge
+    this.time.delayedCall(100, checkForBridge);
+  }
+
+  private syncDialogWithGameStep() {
+    if (this.dialogBridge) {
+      console.log('🔄 Papeda: Syncing dialog with game step...');
+
+      try {
+        // Make sure dialog is at the correct step
+        const currentDialogStep = this.dialogBridge.getCurrentStep();
+        console.log(`📊 Papeda: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
+
+        if (this.currentStep !== currentDialogStep) {
+          console.log(`🔄 Papeda: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ Papeda: Dialog sync complete');
+        } else {
+          console.log('✅ Papeda: Dialog already in sync');
+        }
+      } catch (error) {
+        console.error('❌ Papeda: Dialog sync failed:', error);
+      }
     }
   }
 }

@@ -6,9 +6,14 @@ interface GameStep {
   id: number;
   text: string;
   character: string;
+  isCompleted: boolean;
 }
 
 export default class ColoColoScene extends Phaser.Scene {
+  // Dialog bridge for React integration
+  public dialogBridge: any = null;
+  private useReactDialog: boolean = true; // Flag to use React dialog instead of Phaser dialog (ALWAYS true now)
+
   // Game state and objects
   private currentStep = 0;
   private subStepCounter = 0;
@@ -54,10 +59,9 @@ export default class ColoColoScene extends Phaser.Scene {
 
   // UI and layout configuration
   private ingredientsPanel!: Phaser.GameObjects.Container;
-  private dialogPanel!: Phaser.GameObjects.Container;
+  // NOTE: dialogPanel removed - using React dialog system only
   private menuToggleButton!: Phaser.GameObjects.Image;
-  private characterImage!: Phaser.GameObjects.Image;
-  private stepText!: Phaser.GameObjects.Text;
+  // NOTE: characterImage and stepText removed - using React dialog system only
   private isIngredientsPanelOpen = true;
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
@@ -76,13 +80,9 @@ export default class ColoColoScene extends Phaser.Scene {
     cookingAreaLeft: 20,
     cookingAreaTop: 70,
     cookingAreaRight: 290,
-    cookingAreaBottom: 180,
-    
-    // Dialog panel
-    dialogPanelHeight: 120,
-    dialogPanelY: 850, // Will be calculated
-    dialogPanelLeft: 50,
-    dialogPanelRight: 20,
+    cookingAreaBottom: 180, // Account for dialog panel
+
+    // NOTE: Dialog panel config removed - using React dialog system
 
     // Character
     characterX: 1000,
@@ -91,21 +91,21 @@ export default class ColoColoScene extends Phaser.Scene {
 
   // Definitive game flow
   private readonly gameSteps: GameStep[] = [
-    { id: 0, text: "Mari kita mulai! Pertama, letakkan cabai di atas talenan.", character: "karakter1.png" },
-    { id: 1, text: "Ambil pisau lalu gesekkan pada cabai untuk memotongnya.", character: "karakter1.png" },
-    { id: 2, text: "Bagus! Klik talenan berisi cabai, lalu klik mangkok untuk memindahkannya.", character: "karakter2.png" },
-    { id: 3, text: "Sekarang, letakkan bawang putih di talenan yang kosong.", character: "karakter2.png" },
-    { id: 4, text: "Sama seperti cabai, potong bawang putih hingga halus.", character: "karakter2.png" },
-    { id: 5, text: "Kerja bagus! Pindahkan bawang putih ke dalam mangkok.", character: "karakter3.png" },
-    { id: 6, text: "Saatnya menambahkan kecap. Seret dan letakkan kecap ke dalam mangkok.", character: "karakter3.png" },
-    { id: 7, text: "Sekarang, tambahkan daun jeruk untuk memberi aroma segar.", character: "karakter4.png" },
-    { id: 8, text: "Kita perlu talenan lagi. Aku akan siapkan untukmu.", character: "karakter1.png" },
-    { id: 9, text: "Letakkan jeruk nipis di atas talenan yang bersih.", character: "karakter5.png" },
-    { id: 10, text: "Potong jeruk nipis menjadi dua bagian dengan pisau.", character: "karakter5.png" },
-    { id: 11, text: "Pindahkan potongan jeruk nipis ke dalam mangkok.", character: "karakter5.png" },
-    { id: 12, text: "Ambil munthu untuk mengulek semua bahan di dalam mangkok.", character: "karakter1.png" },
-    { id: 13, text: "Hampir selesai! Ambil piring dan sajikan sambalmu.", character: "karakter2.png" },
-    { id: 14, text: "Luar biasa! Sambal Colo-colo khas Maluku buatanmu sudah jadi!", character: "karakter2.png" },
+    { id: 0, text: "Mari kita mulai! Pertama, letakkan cabai di atas talenan.", character: "karakter1.png", isCompleted: false },
+    { id: 1, text: "Ambil pisau lalu gesekkan pada cabai untuk memotongnya.", character: "karakter1.png", isCompleted: false },
+    { id: 2, text: "Bagus! Klik talenan berisi cabai, lalu klik mangkok untuk memindahkannya.", character: "karakter2.png", isCompleted: false },
+    { id: 3, text: "Sekarang, letakkan bawang putih di talenan yang kosong.", character: "karakter2.png", isCompleted: false },
+    { id: 4, text: "Sama seperti cabai, potong bawang putih hingga halus.", character: "karakter2.png", isCompleted: false },
+    { id: 5, text: "Kerja bagus! Pindahkan bawang putih ke dalam mangkok.", character: "karakter3.png", isCompleted: false },
+    { id: 6, text: "Saatnya menambahkan kecap. Seret dan letakkan kecap ke dalam mangkok.", character: "karakter3.png", isCompleted: false },
+    { id: 7, text: "Sekarang, tambahkan daun jeruk untuk memberi aroma segar.", character: "karakter4.png", isCompleted: false },
+    { id: 8, text: "Kita perlu talenan lagi. Aku akan siapkan untukmu.", character: "karakter1.png", isCompleted: false },
+    { id: 9, text: "Letakkan jeruk nipis di atas talenan yang bersih.", character: "karakter5.png", isCompleted: false },
+    { id: 10, text: "Potong jeruk nipis menjadi dua bagian dengan pisau.", character: "karakter5.png", isCompleted: false },
+    { id: 11, text: "Pindahkan potongan jeruk nipis ke dalam mangkok.", character: "karakter5.png", isCompleted: false },
+    { id: 12, text: "Ambil munthu untuk mengulek semua bahan di dalam mangkok.", character: "karakter1.png", isCompleted: false },
+    { id: 13, text: "Hampir selesai! Ambil piring dan sajikan sambalmu.", character: "karakter2.png", isCompleted: false },
+    { id: 14, text: "Luar biasa! Sambal Colo-colo khas Maluku buatanmu sudah jadi!", character: "karakter2.png", isCompleted: false },
   ];
 
   constructor() {
@@ -177,12 +177,15 @@ export default class ColoColoScene extends Phaser.Scene {
     this.calculateLayout();
     this.createCookingArea();
     this.createIngredientsPanel();
-    this.createDialogPanel();
+    // NOTE: Phaser dialog removed completely - using React dialog system only
     this.updateIngredientsPanelVisuals();
     this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
     this.setupInputHandlers();
-    this.updateStepDisplay();
+    // NOTE: updateStepDisplay removed - using React dialog system only
     this.createHintButton();
+
+    // Setup dialog bridge integration
+    this.setupDialogBridge();
   }
 
   private calculateLayout() {
@@ -194,7 +197,8 @@ export default class ColoColoScene extends Phaser.Scene {
     
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
-    this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
+    // NOTE: dialogPanelHeight is removed as the dialog is now handled by React
+    // this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
@@ -258,12 +262,12 @@ export default class ColoColoScene extends Phaser.Scene {
 
       // Special handling for talenan dragging
       if (gameObject.name === 'telenan' && this.telenanDraggable) {
-        this.updateStepText("Posisikan talenan di atas ulekan dan lepaskan!");
+        console.log('ColoColo: Posisikan talenan di atas ulekan dan lepaskan!');
       }
 
       // Special handling for kecap with tilt preview
       if (gameObject.name === 'ingredient_kecap' && this.currentStep === 6) {
-        this.updateStepText("Seret kecap ke atas ulekan untuk menuangkannya!");
+        console.log('ColoColo: Seret kecap ke atas ulekan untuk menuangkannya!');
       }
     });
 
@@ -396,7 +400,7 @@ export default class ColoColoScene extends Phaser.Scene {
       ingredientObject.setTint(0xFFDD44); // Golden tint to show it's ready
 
       this.hideIngredientFromPanel(ingredient);
-      this.updateStepText(`Tap kecap ${this.maxKecapTaps} kali untuk menuangkannya! (${this.kecapTapCount}/${this.maxKecapTaps})`);
+      console.log(`ColoColo: Tap kecap ${this.maxKecapTaps} kali untuk menuangkannya! (${this.kecapTapCount}/${this.maxKecapTaps})`);
       return;
     }
 
@@ -419,7 +423,7 @@ export default class ColoColoScene extends Phaser.Scene {
       this.munthuObject = ingredientObject;
 
       this.hideIngredientFromPanel(ingredient);
-      this.updateStepText(`Tap layar ${this.maxTaps} kali untuk mengulek bumbu! (${this.tapCount}/${this.maxTaps})`);
+      console.log(`ColoColo: Tap layar ${this.maxTaps} kali untuk mengulek bumbu! (${this.tapCount}/${this.maxTaps})`);
       return;
     }
 
@@ -540,7 +544,7 @@ export default class ColoColoScene extends Phaser.Scene {
 
           if (cuttingComplete) {
             this.cuttingCompleted = true; // Mark cutting as completed
-            this.updateStepText("Bagus! Selesai memotong!");
+            console.log('ColoColo: Bagus! Selesai memotong!');
             this.time.delayedCall(1000, () => this.nextStep());
           }
         }
@@ -589,7 +593,7 @@ export default class ColoColoScene extends Phaser.Scene {
     }
 
     // Update progress text
-    this.updateStepText(`Tap layar untuk mengulek! (${this.tapCount}/${this.maxTaps})`);
+    console.log(`ColoColo: Tap layar untuk mengulek! (${this.tapCount}/${this.maxTaps})`);
   }
 
   // Complete tap grinding
@@ -609,7 +613,7 @@ export default class ColoColoScene extends Phaser.Scene {
       });
     }
 
-    this.updateStepText("Sempurna! Bumbu sudah halus!");
+    console.log('ColoColo: Sempurna! Bumbu sudah halus!');
     this.time.delayedCall(1500, () => this.nextStep());
   }
 
@@ -642,11 +646,11 @@ export default class ColoColoScene extends Phaser.Scene {
       if (this.kecapTapCount === 1) {
         // First tap: Show kecap tuang animation
         this.transformUlekan('ulekan_chili_garlic_kecap_0');
-        this.updateStepText(`Bagus! Tap lagi untuk menuangkan lebih banyak! (${this.kecapTapCount}/${this.maxKecapTaps})`);
+        console.log(`ColoColo: Bagus! Tap lagi untuk menuangkan lebih banyak! (${this.kecapTapCount}/${this.maxKecapTaps})`);
       } else if (this.kecapTapCount === 2) {
         // Second tap: More kecap poured
         this.transformUlekan('ulekan_chili_garlic_kecap_1');
-        this.updateStepText(`Sip! Satu kali lagi untuk menyelesaikan! (${this.kecapTapCount}/${this.maxKecapTaps})`);
+        console.log(`ColoColo: Sip! Satu kali lagi untuk menyelesaikan! (${this.kecapTapCount}/${this.maxKecapTaps})`);
       } else if (this.kecapTapCount === 3) {
         // Third tap: Complete kecap pouring
         this.transformUlekan('ulekan_chili_garlic_kecap_2');
@@ -675,7 +679,7 @@ export default class ColoColoScene extends Phaser.Scene {
       });
     }
 
-    this.updateStepText("Sempurna! Kecap berhasil ditambahkan!");
+    console.log('ColoColo: Sempurna! Kecap berhasil ditambahkan!');
     this.time.delayedCall(1000, () => this.nextStep());
   }
 
@@ -693,7 +697,7 @@ export default class ColoColoScene extends Phaser.Scene {
     if (this.nipisTapCount === 1) {
       // First tap: Squeeze lime - show ulekannipis1
       this.transformUlekan('ulekan_lime_1');
-      this.updateStepText(`Bagus! Peras sekali lagi! (${this.nipisTapCount}/${this.maxNipisTaps})`);
+      console.log(`ColoColo: Bagus! Peras sekali lagi! (${this.nipisTapCount}/${this.maxNipisTaps})`);
     } else if (this.nipisTapCount === 2) {
       // Second tap: Complete squeezing - back to state with all ingredients combined
       // After nipis is squeezed, should show ulekan with all ingredients ready for grinding
@@ -714,7 +718,7 @@ export default class ColoColoScene extends Phaser.Scene {
     // Hide telenan since nipis is now squeezed
     this.gameObjects.telenan.setVisible(false).setActive(false);
 
-    this.updateStepText("Sempurna! Jeruk nipis berhasil diperas!");
+    console.log('ColoColo: Sempurna! Jeruk nipis berhasil diperas!');
     this.time.delayedCall(1000, () => this.nextStep());
   }
 
@@ -783,7 +787,7 @@ export default class ColoColoScene extends Phaser.Scene {
       ease: 'Sine.easeInOut'
     });
 
-    this.updateStepText("Seret talenan ke area ulekan untuk menuangkan isinya!");
+    console.log('ColoColo: Seret talenan ke area ulekan untuk menuangkan isinya!');
   }
 
   private handleUlekanClick() {
@@ -816,11 +820,33 @@ export default class ColoColoScene extends Phaser.Scene {
 
   private nextStep() {
     if (this.currentStep >= this.gameSteps.length - 1) return;
-    
+
+    this.gameSteps[this.currentStep].isCompleted = true;
     this.currentStep++;
     this.subStepCounter = 0;
     this.cuttingCompleted = false; // Reset cutting completed flag for new step
-    this.updateStepDisplay();
+
+    // NOTE: updateStepDisplay removed - using React dialog system only
+
+    // Update React dialog system if bridge is available
+    if (this.dialogBridge) {
+      console.log(`🚀 ColoColo: Game advancing to step ${this.currentStep + 1}`);
+      console.log(`🎯 ColoColo: Updating dialog to step index ${this.currentStep}`);
+
+      try {
+        this.dialogBridge.setStep(this.currentStep);
+        console.log('✅ ColoColo: Dialog update successful');
+
+        // Verify the update
+        const verifyStep = this.dialogBridge.getCurrentStep();
+        console.log(`🔍 ColoColo: Verification - dialog is now at step ${verifyStep}`);
+      } catch (error) {
+        console.error('❌ ColoColo: Dialog update failed:', error);
+      }
+    } else {
+      console.warn('⚠️ ColoColo: Dialog bridge not available for step update');
+    }
+
     this.showSuccessFeedback();
 
     if (this.currentStep === 8) { // Special step to bring back telenan
@@ -844,37 +870,9 @@ export default class ColoColoScene extends Phaser.Scene {
     }
   }
 
-  private updateStepDisplay() {
-    if (this.currentStep < this.gameSteps.length) {
-      const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(step.text); // Hilangkan angka, langsung tampilkan dialog
-      this.characterImage.setTexture(step.character.replace('.png', ''));
-      
-      // Animate text appearance
-      this.stepText.setAlpha(0);
-      this.tweens.add({
-        targets: this.stepText,
-        alpha: 1,
-        duration: 500,
-        ease: 'Power2'
-      });
+  // NOTE: updateStepDisplay removed - using React dialog system only
 
-      // Update progress bar
-      const progressPercentage = (this.currentStep + 1) / this.gameSteps.length;
-      const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-      
-      // Find and update progress bar
-      const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
-      progressBar.clear();
-      progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * progressPercentage, 6, 3);
-    }
-  }
-  
-  private updateStepText(newText: string) {
-    this.stepText.setText(newText);
-    this.tweens.add({ targets: this.stepText, alpha: { from: 0, to: 1 }, duration: 400 });
-  }
+  // NOTE: updateStepText removed - using React dialog system only
 
   private transformTelenan(newState: string) { this.gameState.telenanState = newState; this.gameObjects.telenan.setTexture(newState); }
   private transformUlekan(newState: string) { 
@@ -968,7 +966,7 @@ export default class ColoColoScene extends Phaser.Scene {
 
     // More generous distance threshold for easier interaction
     if (distance > 200) {
-      this.updateStepText("Seret talenan lebih dekat ke ulekan!");
+      console.log('ColoColo: Seret talenan lebih dekat ke ulekan!');
       this.resetTelenanPosition();
       return;
     }
@@ -1010,7 +1008,7 @@ export default class ColoColoScene extends Phaser.Scene {
             this.transformUlekan('ulekan_lime_0');
             this.nipisPouringActive = true;
             this.nipisTapCount = 0;
-            this.updateStepText(`Tap layar ${this.maxNipisTaps} kali untuk memeras jeruk nipis! (${this.nipisTapCount}/${this.maxNipisTaps})`);
+            console.log(`ColoColo: Tap layar ${this.maxNipisTaps} kali untuk memeras jeruk nipis! (${this.nipisTapCount}/${this.maxNipisTaps})`);
             // Don't advance step yet, wait for tapping to complete
             return;
           }
@@ -1020,7 +1018,7 @@ export default class ColoColoScene extends Phaser.Scene {
             this.resetTelenanPosition();
           }
 
-          this.updateStepText("Bagus! Bahan berhasil dipindahkan!");
+          console.log('ColoColo: Bagus! Bahan berhasil dipindahkan!');
           this.time.delayedCall(1000, () => this.nextStep());
         } else {
           this.resetTelenanPosition();
@@ -1047,7 +1045,7 @@ export default class ColoColoScene extends Phaser.Scene {
 
       // Show pour-ready indicator
       if (distanceToUlekan < 80) {
-        this.updateStepText("Lepaskan untuk menuangkan kecap!");
+        console.log('ColoColo: Lepaskan untuk menuangkan kecap!');
       }
     } else {
       kecapObject.setRotation(0);
@@ -1065,10 +1063,10 @@ export default class ColoColoScene extends Phaser.Scene {
     // Provide visual feedback based on distance to ulekan
     if (distance < 200) {
       telenanObject.setTint(0x00AA00); // Green when close enough
-      this.updateStepText("Lepaskan untuk menuangkan!");
+      console.log('ColoColo: Lepaskan untuk menuangkan!');
     } else if (distance < 300) {
       telenanObject.setTint(0xFFFF00); // Yellow when getting close
-      this.updateStepText("Seret lebih dekat ke ulekan!");
+      console.log('ColoColo: Seret lebih dekat ke ulekan!');
     } else {
       telenanObject.setTint(0x00ff00); // Light green when far
     }
@@ -1092,7 +1090,7 @@ export default class ColoColoScene extends Phaser.Scene {
             duration: 200,
             ease: 'Power2',
             onComplete: () => {
-              this.updateStepText("Kecap berhasil ditambahkan!");
+              console.log('ColoColo: Kecap berhasil ditambahkan!');
               onComplete();
             }
           });
@@ -1304,59 +1302,7 @@ export default class ColoColoScene extends Phaser.Scene {
     });
   }
 
-  private createDialogPanel() {
-    // Create dialog panel container
-    this.dialogPanel = this.add.container(
-      this.layoutConfig.dialogPanelLeft,
-      this.layoutConfig.dialogPanelY
-    );
-
-    const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-
-    // Panel background
-    const dialogBg = this.add.graphics();
-    dialogBg.fillStyle(0xFFFFF0, 0.95);
-    dialogBg.fillRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    dialogBg.lineStyle(2, 0x8B4513, 0.6);
-    dialogBg.strokeRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    this.dialogPanel.add(dialogBg);
-
-    // Character container
-    const characterContainer = this.add.graphics();
-    characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
-    characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
-    this.dialogPanel.add(characterContainer);
-
-    // Character image
-    this.characterImage = this.add.image(55, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.36)
-      .setOrigin(0.5, 0.5);
-    this.dialogPanel.add(this.characterImage);
-
-    // Step text
-    this.stepText = this.add.text(120, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '25px',
-      fontFamily: 'Chewy, cursive',
-      color: '#2C1810',
-      wordWrap: { width: dialogWidth - 160, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 4
-    }).setOrigin(0, 0.5);
-    this.dialogPanel.add(this.stepText);
-
-    // Progress bar
-    const progressBg = this.add.graphics();
-    progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, dialogWidth - 40, 6, 3);
-    this.dialogPanel.add(progressBg);
-
-    const progressBar = this.add.graphics();
-    progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * (1/this.gameSteps.length), 6, 3);
-    this.dialogPanel.add(progressBar);
-  }
+  // NOTE: createDialogPanel removed - using React dialog system only
 
   // Enhanced serving animation with sambal transfer effect
   private performServingAnimation(piringObject: Phaser.GameObjects.Image) {
@@ -1372,7 +1318,7 @@ export default class ColoColoScene extends Phaser.Scene {
       duration: 500,
       ease: 'Power2',
       onComplete: () => {
-        this.updateStepText("Menuangkan sambal ke piring...");
+        console.log('ColoColo: Menuangkan sambal ke piring...');
 
         // Create sambal transfer effect
         this.createSambalTransferEffect(() => {
@@ -1399,7 +1345,6 @@ export default class ColoColoScene extends Phaser.Scene {
             duration: 800,
             ease: 'Back.easeOut',
             onComplete: () => {
-              this.updateStepText("Sambal Colo-colo siap disajikan! Selamat!");
               this.showSuccessFeedback();
               this.time.delayedCall(2000, () => this.nextStep());
             }
@@ -1623,5 +1568,58 @@ export default class ColoColoScene extends Phaser.Scene {
     
     this.hintPopup.add(text);
     this.hintPopup.setVisible(false);
+  }
+
+  private setupDialogBridge() {
+    console.log('🔧 ColoColo: Setting up dialog bridge...');
+
+    // Wait for dialog bridge to be attached by React
+    const checkForBridge = () => {
+      console.log('🔍 ColoColo: Checking for dialog bridge...');
+      if (this.dialogBridge) {
+        console.log('✅ ColoColo: Dialog bridge connected!');
+        console.log('🎯 ColoColo: Current game step:', this.currentStep);
+
+        // Test the bridge
+        try {
+          const currentDialogStep = this.dialogBridge.getCurrentStep();
+          console.log('📊 ColoColo: Current dialog step:', currentDialogStep);
+
+          // Sync initial step
+          this.syncDialogWithGameStep();
+        } catch (error) {
+          console.error('❌ ColoColo: Bridge test failed:', error);
+        }
+      } else {
+        console.log('⏳ ColoColo: Bridge not ready, checking again in 500ms...');
+        // Try again in 500ms
+        this.time.delayedCall(500, checkForBridge);
+      }
+    };
+
+    // Start checking for bridge
+    this.time.delayedCall(100, checkForBridge);
+  }
+
+  private syncDialogWithGameStep() {
+    if (this.dialogBridge) {
+      console.log('🔄 ColoColo: Syncing dialog with game step...');
+
+      try {
+        // Make sure dialog is at the correct step
+        const currentDialogStep = this.dialogBridge.getCurrentStep();
+        console.log(`📊 ColoColo: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
+
+        if (this.currentStep !== currentDialogStep) {
+          console.log(`🔄 ColoColo: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ ColoColo: Dialog sync complete');
+        } else {
+          console.log('✅ ColoColo: Dialog already in sync');
+        }
+      } catch (error) {
+        console.error('❌ ColoColo: Dialog sync failed:', error);
+      }
+    }
   }
 }
