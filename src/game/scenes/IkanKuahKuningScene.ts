@@ -110,7 +110,19 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
   private campuranBumbuHalus: Phaser.GameObjects.Image | null = null;
-
+  private ingredientsContentContainer!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
+  private scrollableArea!: Phaser.GameObjects.Zone;
+  private scrollContentHeight: number = 0;
+  private draggedItemOriginalParent: Phaser.GameObjects.Container | null = null;
+  private draggedItemOriginalX: number = 0;
+  private draggedItemOriginalY: number = 0;
+  private itemBeingReturned: boolean = false;
+  private ingredientsContentMask: Phaser.Display.Masks.GeometryMask | null = null;
+  private scrollbarThumb!: Phaser.GameObjects.Graphics;
+  private isScrollbarDragging: boolean = false;
+  private scrollbarDragStartY: number = 0;
+  private contentStartY: number = 0;
   private hintPopup!: Phaser.GameObjects.Container;
   private infoContent: string = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti ikan cakalang, tongkol, atau ikan kerapu yang dipotong-potong. Bumbu kuah kuning terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum kemudian ditambah air dan santan hingga mendidih. Ikan kemudian dimasukkan dan dimasak hingga matang sambil menyerap cita rasa kuah yang kaya rempah. Hidangan ini biasanya disajikan dengan nasi putih atau papeda, dan memberikan sensasi hangat serta menyegarkan dengan aroma rempah yang khas.`;
 
@@ -120,9 +132,10 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     headerHeight: 60,
     
     // Ingredients panel
-    ingredientsPanelWidth: 375,
+    ingredientsPanelWidth: 400,
+    ingredientsPanelX: 0, // Will be calculated
     ingredientsPanelY: 155,
-    ingredientsPanelHeight: 600,
+    ingredientsPanelHeight: 550,
     
     // Cooking area
     cookingAreaLeft: 20,
@@ -131,8 +144,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     cookingAreaBottom: 180,
     
     // Dialog panel
-    dialogPanelHeight: 120,
-    dialogPanelY: 850, // Will be calculated
+    dialogPanelHeight: 90,
+    dialogPanelY: 900, // Will be calculated
     dialogPanelLeft: 50,
     dialogPanelRight: 20,
 
@@ -502,13 +515,67 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.menuToggleButton = this.add.image(0, 0, "menu_normal");
     this.ingredientsPanel.add(this.menuToggleButton);
 
+    // Create a scrollable area (zone) for ingredients
+    const scrollableAreaX = 15; // Relative to ingredientsPanel
+    const scrollableAreaY = 100; // Relative to ingredientsPanel, below title
+    const scrollableAreaWidth = this.layoutConfig.ingredientsPanelWidth - 70; // Panel width minus padding
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - scrollableAreaY - 5; // Remaining height
+
+    this.scrollableArea = this.add.zone(
+      scrollableAreaX + scrollableAreaWidth / 2,
+      scrollableAreaY + scrollableAreaHeight / 2,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    ).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(this.scrollableArea);
+
+    // Create a container for the actual ingredient items
+    this.ingredientsContentContainer = this.add.container(scrollableAreaX, scrollableAreaY);
+    this.ingredientsPanel.add(this.ingredientsContentContainer);
+
+    // Set up a clipping mask for the ingredients content
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillRect(0, 0, scrollableAreaWidth, scrollableAreaHeight); // Define mask in local coordinates
+    this.ingredientsContentMask = maskGraphics.createGeometryMask(); // Store the mask object
+    
+    // Position the maskGraphics to align with the scrollable area in world coordinates
+    maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+    maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+    
+    // Apply mask but allow dragging outside of it
+    this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+
+    // Create scrollbar background
+    this.scrollbar = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbar);
+    
+    // Create scrollbar thumb (draggable part)
+    this.scrollbarThumb = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbarThumb);
+
     this.createIngredients();
+
+    // Enable mouse wheel scrolling
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[], deltaX: number, deltaY: number, deltaZ: number) => {
+      // Check if the mouse pointer is within the ingredients panel's scrollable area
+      const panelBounds = new Phaser.Geom.Rectangle(
+        this.ingredientsPanel.x + scrollableAreaX,
+        this.ingredientsPanel.y + scrollableAreaY,
+        scrollableAreaWidth,
+        scrollableAreaHeight
+      );
+
+      if (Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        this.handleScroll(deltaY);
+      }
+    });
   }
 
   private createIngredients() {
     // Destroy existing ingredient items to prevent duplicates
     this.ingredientItems.forEach(item => item.destroy());
     this.ingredientItems = [];
+    this.ingredientsContentContainer.removeAll(true); // Clear previous items from the container
 
     const ingredients = [
       { key: "Cobek", name: "Cobek", scale: 0.15 },
@@ -535,11 +602,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Manual grid layout
     const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 4;
+    const startX = panelWidth / 6;
     const startY = 100; // Adjusted startY for content container
     const spacingX = panelWidth / 2;
     const spacingY = 90;
     const itemsPerRow = 2;
+
+    let maxContentY = 0;
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
@@ -553,7 +622,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
       itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-      this.ingredientsPanel.add(itemBg); // Add to ingredientsPanel directly
+      this.ingredientsContentContainer.add(itemBg); // Add to content container
 
       // Item image
       const item = this.add.image(x, y, ingredient.key)
@@ -565,30 +634,25 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
       this.ingredientItems.push(item);
       this.input.setDraggable(item);
-      this.ingredientsPanel.add(item); // Add to ingredientsPanel directly
+      this.ingredientsContentContainer.add(item); // Add to content container
 
       // Item label
       const label = this.add.text(x, y + 40, ingredient.name, {
-        fontSize: '18px',
+        fontSize: '14px',
         fontFamily: 'Chewy, cursive',
-        color: '#FFFFFF',
+        color: '#FFE4B5',
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
-      this.ingredientsPanel.add(label); // Add to ingredientsPanel directly
+      this.ingredientsContentContainer.add(label); // Add to content container
 
-      // Hover effects
+      // Hover effects completely disabled
       item.on('pointerover', () => {
-        item.setScale(ingredient.scale * 1.15);
-        label.setColor('#FFFFFF');
-        itemBg.clear();
-        itemBg.fillStyle(0xFFD700, 0.15);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-        itemBg.lineStyle(1, 0xFFD700, 0.6);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        // No hover effects during gameplay
       });
 
       item.on('pointerout', () => {
+        // Always reset to normal state
         item.setScale(ingredient.scale);
         label.setColor('#FFE4B5');
         itemBg.clear();
@@ -597,6 +661,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         itemBg.lineStyle(1, 0x8B4513, 0.4);
         itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
       });
+      maxContentY = Math.max(maxContentY, y + 40); // Track the lowest point of content
+    });
+
+    this.scrollContentHeight = maxContentY + startY; // Calculate total content height
+    this.updateScrollbar(); // Initial update of scrollbar
   }
 
   private createDialogPanel() {
@@ -607,7 +676,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     );
 
     // const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-    const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
+    const dialogWidth = this.layoutConfig.cookingAreaRight - 200;
 
     // Panel background
     const dialogBg = this.add.graphics();
@@ -620,23 +689,23 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Character container
     const characterContainer = this.add.graphics();
     characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
+    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
     characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
+    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
     this.dialogPanel.add(characterContainer);
 
     // Character image
-    this.characterImage = this.add.image(55, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.36)
+    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
+      .setScale(0.4)
       .setOrigin(0.5, 0.5);
     this.dialogPanel.add(this.characterImage);
 
     // Step text
-    this.stepText = this.add.text(120, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '25px',
+    this.stepText = this.add.text(200, this.layoutConfig.dialogPanelHeight/2, "", {
+      fontSize: '15px',
       fontFamily: 'Chewy, cursive',
       color: '#2C1810',
-      wordWrap: { width: dialogWidth - 160, useAdvancedWrap: true },
+      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
       align: 'left',
       lineSpacing: 4
     }).setOrigin(0, 0.5);
@@ -645,12 +714,12 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Progress bar
     const progressBg = this.add.graphics();
     progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, dialogWidth - 40, 6, 3);
+    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
     this.dialogPanel.add(progressBg);
 
     const progressBar = this.add.graphics();
     progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * (1/7), 6, 3);
+    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * (1/7), 6, 3);
     this.dialogPanel.add(progressBar);
   }
 
@@ -669,7 +738,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Update panel title position and text
     this.panelTitle.setText("BAHAN & ALAT");
     this.panelTitle.setStyle({
-      fontSize: '24px',
+      fontSize: '14px',
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -699,6 +768,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.menuToggleButton.on('pointerup', () => {
       this.menuToggleButton.setTexture("menu_hover");
     });
+
+    this.updateScrollbar(); // Update scrollbar visuals
   }
 
   private toggleIngredientsPanel() {
@@ -728,7 +799,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private updateStepDisplay() {
     if (this.currentStep < this.gameSteps.length) {
       const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(step.text);
+      this.stepText.setText(`${step.id}. ${step.text}`);
       this.characterImage.setTexture(step.character.replace('.png', ''));
       
       // Animate text appearance
@@ -748,7 +819,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
       progressBar.clear();
       progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * progressPercentage, 6, 3);
+      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
     }
   }
 
@@ -772,9 +843,16 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       this.isDragging = true;
       console.log('Drag started for:', gameObject.name);
       
+      // Store original parent and position BEFORE removing from container
+      this.draggedItemOriginalParent = gameObject.parentContainer;
+      
       if (gameObject.parentContainer) {
         // Calculate world position before removing from container
         const worldPos = gameObject.parentContainer.getWorldTransformMatrix().transformPoint(gameObject.x, gameObject.y);
+        
+        // Store local coordinates relative to parent container
+        this.draggedItemOriginalX = gameObject.x;
+        this.draggedItemOriginalY = gameObject.y;
         
         const parent = gameObject.parentContainer;
         parent.remove(gameObject);
@@ -785,10 +863,12 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         gameObject.setPosition(pointer.worldX, pointer.worldY);
       } else {
         // If no parent container, store world coordinates
+        this.draggedItemOriginalX = gameObject.x;
+        this.draggedItemOriginalY = gameObject.y;
         gameObject.setPosition(pointer.worldX, pointer.worldY);
       }
       
-      console.log(`Drag start: ${gameObject.name}`);
+      console.log(`Drag start: ${gameObject.name}, originalParent:`, this.draggedItemOriginalParent?.name || 'none', `originalPos: ${this.draggedItemOriginalX},${this.draggedItemOriginalY}`);
     
       // Enhanced visual feedback saat drag start
       const originalScale = gameObject.getData('originalScale') || 0.15;
@@ -851,13 +931,428 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         const originalScale = gameObject.getData('originalScale') || 0.15;
         gameObject.setScale(originalScale);
 
-        this.returnItemToPanel(gameObject);
+        if (this.draggedItemOriginalParent) {
+          this.draggedItemOriginalParent.add(gameObject);
+          this.tweens.add({
+            targets: gameObject,
+            x: this.draggedItemOriginalX,
+            y: this.draggedItemOriginalY,
+            duration: 400,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+              gameObject.setInteractive();
+              if (this.ingredientsContentContainer && this.ingredientsContentMask) {
+                this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+              }
+            }
+          });
+        }
         return;
+      }
+      // Step 1: Place Cobek
+      if (this.cookingState === 'start' && gameObject.name === 'Cobek') {
+        let targetX, targetY;
+        
+        if (dropZone instanceof Phaser.GameObjects.Zone && dropZone.name === 'cobekZone') {
+          targetX = dropZone.x;
+          targetY = dropZone.y;
+        } else if (dropZone instanceof Phaser.GameObjects.Zone && dropZone.name === 'cookingAreaZone') {
+          // Position to the right of kompor when dropped in general cooking area (80px distance)
+          targetX = this.kompor.x + (this.kompor.width * 0.5 / 2) + 80;
+          targetY = this.kompor.y;
+        } else {
+          this.returnItemToPanel(gameObject);
+          return;
+        }
+        
+        // Clean up drag effects first
+        this.cleanupDragEffects(gameObject);
+        
+        // Create Cobek with smooth animation
+        this.cobek = this.add.image(targetX, targetY, 'Cobek').setScale(0);
+        this.cobek.setInteractive({ dropZone: true }); // Make the cobek itself a drop zone
+        
+        // Animate Cobek appearance (0.4x larger than original 0.3)
+        this.tweens.add({
+          targets: this.cobek,
+          scaleX: 0.42,
+          scaleY: 0.42,
+          duration: 300,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            // Flash effect untuk sukses
+            this.cameras.main.flash(200, 144, 238, 144, false);
+          }
+        });
+        
+        this.cookingState = 'cobek_placed';
+        gameObject.destroy();
+        return;
+      }
+
+      // Step 3: Place Wajan on Kompor
+      if (this.cookingState === 'bumbu_halus_done' && gameObject.name === 'Wajan') {
+        let targetX, targetY;
+        
+        if (dropZone === this.komporZone) {
+          targetX = dropZone.x - 30; // Move 30px to the left (10px more than before)
+          targetY = dropZone.y - 150; // Raise 90px above kompor
+        } else if (dropZone instanceof Phaser.GameObjects.Zone && dropZone.name === 'cookingAreaZone') {
+          // Position on kompor when dropped in general cooking area
+          targetX = this.kompor.x - 30; // Move 30px to the left (10px more than before)
+          targetY = this.kompor.y - 150; // Raise 90px above kompor
+        } else {
+          this.shakeScreen();
+          console.log(`Invalid drop: ${gameObject.name} cannot be used at this time`);
+          this.cleanupDragEffects(gameObject);
+          const originalScale = gameObject.getData('originalScale') || 0.15;
+          gameObject.setScale(originalScale);
+          if (this.draggedItemOriginalParent) {
+            this.draggedItemOriginalParent.add(gameObject);
+            this.tweens.add({
+              targets: gameObject,
+              x: this.draggedItemOriginalX,
+              y: this.draggedItemOriginalY,
+              duration: 400,
+              ease: 'Back.easeOut',
+              onComplete: () => {
+                gameObject.setInteractive();
+                if (this.ingredientsContentContainer && this.ingredientsContentMask) {
+                  this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+                }
+              }
+            });
+          }
+          return;
+        }
+        
+        // Clean up drag effects first
+        this.cleanupDragEffects(gameObject);
+        
+        // Create Wajan with smooth animation
+        this.wajan = this.add.image(targetX, targetY, 'Wajan').setScale(0);
+        this.wajan.setInteractive({ dropZone: true });
+        
+        // Animate Wajan appearance
+        this.tweens.add({
+          targets: this.wajan,
+          scaleX: 0.8,
+          scaleY: 0.8,
+          duration: 300,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            // Flash effect untuk sukses
+            this.cameras.main.flash(200, 144, 238, 144, false);
+          }
+        });
+        
+        this.cookingState = 'wajan_placed';
+        gameObject.destroy();
+        return;
+      }
+
+      // Step 3.1: Pour BumbuHalus into Wajan
+      if (this.wajan && dropZone === this.wajan && this.cookingState === 'wajan_placed' && gameObject.name === 'BumbuHalus') {
+        // Start pouring animation sequence
+        this.cookingState = 'bumbu_tuang';
+        gameObject.destroy();
+        this.wajan.setVisible(false);
+
+        // Create pouring animation with 2 frames over 4 seconds
+        const tuangAnim = this.add.sprite(this.wajan.x, this.wajan.y, 'TuangBumbu1').setScale(0.8);
+        
+        // Manual frame switching for precise timing
+        let frameIndex = 0;
+        const frames = ['TuangBumbu1', 'TuangBumbu2'];
+        
+        const frameTimer = this.time.addEvent({
+          delay: 2000, // 2 seconds per frame
+          repeat: 1, // Switch once (2 frames total)
+          callback: () => {
+            frameIndex++;
+            if (frameIndex < frames.length) {
+              tuangAnim.setTexture(frames[frameIndex]);
+            }
+          }
+        });
+
+        // After 4 seconds, transition to stirring
+        this.time.delayedCall(4000, () => {
+          frameTimer.destroy();
+          tuangAnim.destroy();
+          this.wajan.setTexture('AdukBumbu1').setVisible(true);
+          this.cookingState = 'mengaduk_bumbu';
+          this.isMengaduk = true;
+          this.swipeCount = 0;
+          this.handleMengaduk();
+        });
+        return;
+      }
+
+      // Step 7: Serve the dish
+      if (this.cookingState === 'matang' && gameObject.name === 'Mangkuk') {
+        let targetX, targetY;
+        if (dropZone instanceof Phaser.GameObjects.Zone && dropZone.name === 'cobekZone') {
+          targetX = dropZone.x;
+          targetY = dropZone.y;
+        } else if (dropZone instanceof Phaser.GameObjects.Zone && dropZone.name === 'cookingAreaZone') {
+          // Position to the right of kompor when dropped in general cooking area (50px distance)
+          targetX = this.kompor.x + (this.kompor.width * 0.5 / 2) + 50;
+          targetY = this.kompor.y;
+        } else {
+          this.returnItemToPanel(gameObject);
+          return;
+        }
+
+        this.mangkuk = this.add.image(targetX, targetY, 'Mangkuk').setScale(0.3);
+        this.mangkuk.setInteractive({ dropZone: true });
+        this.mangkuk.setName('MangkukDropZone');
+        this.mangkuk.setDepth(50);
+
+        this.cookingState = 'mangkuk_placed';
+        gameObject.destroy();
+
+        // Create the separate, draggable finished dish on top of the wajan
+        console.log('Mangkuk placed, creating draggable dish.');
+        if (this.wajan) {
+            const dishX = this.wajan.x;
+            const dishY = this.wajan.y;
+            this.finishedDish = this.add.image(dishX, dishY, 'IkanKuahKuningJadi')
+                .setScale(this.wajan.scale)
+                .setName('IkanKuahKuningJadi')
+                .setInteractive({ draggable: true });
+            this.input.setDraggable(this.finishedDish);
+            this.finishedDish.setDepth(100);
+            
+            // Hide the underlying wajan texture to prevent "duplicate" visual
+            this.wajan.setVisible(false);
+        }
+      } else if (this.mangkuk && dropZone === this.mangkuk && this.cookingState === 'mangkuk_placed' && gameObject.name === 'IkanKuahKuningJadi') {
+        console.log('IkanKuahKuningJadi successfully dropped on Mangkuk!');
+        
+        const finalDishX = this.mangkuk.x;
+        const finalDishY = this.mangkuk.y;
+        const finalDishScale = this.mangkuk.scale;
+
+        // Destroy the objects that are no longer needed
+        gameObject.destroy();      // The dragged finishedDish
+        this.mangkuk.destroy();    // The empty mangkuk
+        
+        // Nullify references
+        this.finishedDish = null;
+        this.mangkuk = null;
+        // The wajan is already invisible and can be nulled too
+        if (this.wajan) {
+            this.wajan.destroy();
+            this.wajan = null;
+        }
+
+        // Create the final plated dish image
+        this.add.image(finalDishX, finalDishY, 'IkanKuahKuning').setScale(finalDishScale);
+
+        this.cookingState = 'finished';
+        this.showSuccessPopup();
+      }      if (this.wajan && dropZone === this.wajan) {
+        switch (this.cookingState) {
+          // ... (existing cases)
+          case 'mendidih':
+            if (gameObject.name === 'Tomat') {
+              this.wajan.setTexture('TambahTomat');
+              this.cookingState = 'tomat_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'tomat_added':
+            if (gameObject.name === 'Garam') {
+              this.wajan.setTexture('TambahGaram');
+              this.cookingState = 'garam_added';
+              gameObject.destroy();
+              this.time.delayedCall(2000, () => this.wajan.setTexture('TambahTomat'));
+            }
+            break;
+          case 'garam_added':
+            if (gameObject.name === 'Gula') {
+              this.wajan.setTexture('TambahGula');
+              this.cookingState = 'gula_added';
+              gameObject.destroy();
+              this.time.delayedCall(2000, () => this.wajan.setTexture('TambahTomat'));
+            }
+            break;
+          case 'gula_added':
+            if (gameObject.name === 'DaunBawang') {
+              // No texture change, just destroy the item
+              this.cookingState = 'daun_bawang_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'daun_bawang_added':
+            if (gameObject.name === 'Asam') {
+              this.wajan.setTexture('TambahAsam');
+              this.cookingState = 'asam_added';
+              gameObject.destroy();
+              this.time.delayedCall(2000, () => {
+                this.wajan.setTexture('AdukFinishing1');
+                this.cookingState = 'mengaduk_finishing';
+                this.isMengaduk = true;
+                this.swipeCount = 0;
+                this.handleMengaduk();
+              });
+            }
+            break;
+        }
+
+        switch (this.cookingState) {
+          case 'bumbu_matang':
+            if (gameObject.name === 'DaunSalam') {
+              this.wajan.setTexture('TambahDaunSalam');
+              this.cookingState = 'daun_salam_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'daun_salam_added':
+            if (gameObject.name === 'Sereh') {
+              this.wajan.setTexture('TambahSereh');
+              this.cookingState = 'sereh_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'sereh_added':
+            if (gameObject.name === 'Lengkuas') {
+              this.wajan.setTexture('TambahLengkuas');
+              this.cookingState = 'lengkuas_added';
+              gameObject.destroy();
+              // Short delay before starting stirring
+              this.time.delayedCall(1000, () => {
+                this.wajan.setTexture('AdukBumbuStep4-1');
+                this.cookingState = 'mengaduk_aromatics';
+                this.isMengaduk = true;
+                this.swipeCount = 0;
+                this.handleMengaduk();
+              });
+            }
+            break;
+          case 'aromatics_done':
+            if (gameObject.name === 'IrisanJahe') {
+              this.wajan.setTexture('TambahJahe');
+              this.cookingState = 'jahe_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'jahe_added':
+            if (gameObject.name === 'DaunJeruk') {
+              this.wajan.setTexture('TambahDaun');
+              this.cookingState = 'daun_jeruk_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'daun_jeruk_added':
+            if (gameObject.name === 'PotonganIkan') {
+              this.wajan.setTexture('TambahIkan');
+              this.cookingState = 'ikan_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'ikan_added':
+            if (gameObject.name === 'Air') {
+              this.wajan.setTexture('TambahAir');
+              this.cookingState = 'air_added';
+              gameObject.destroy();
+              this.time.delayedCall(3000, () => {
+                this.wajan.setTexture('AdukAir2');
+                this.cookingState = 'mengaduk_air';
+                this.isMengaduk = true;
+                this.swipeCount = 0;
+                this.handleMengaduk();
+              });
+            }
+            break;
+        }
+
+        switch (this.cookingState) {
+          case 'bumbu_matang':
+            if (gameObject.name === 'DaunSalam') {
+              this.wajan.setTexture('TambahDaunSalam');
+              this.cookingState = 'daun_salam_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'daun_salam_added':
+            if (gameObject.name === 'Sereh') {
+              this.wajan.setTexture('TambahSereh');
+              this.cookingState = 'sereh_added';
+              gameObject.destroy();
+            }
+            break;
+          case 'sereh_added':
+            if (gameObject.name === 'Lengkuas') {
+              this.wajan.setTexture('AdukBumbuStep4-1');
+              this.cookingState = 'mengaduk_aromatics';
+              this.isMengaduk = true;
+              this.swipeCount = 0;
+              this.handleMengaduk();
+              gameObject.destroy();
+            }
+            break;
+        }
+      }
+
+      if (dropZone === this.cobek) {
+        switch (this.cookingState) {
+          case 'cobek_placed':
+            if (gameObject.name === 'BawangMerah') {
+              this.cobek.setTexture('Ulekan1');
+              this.cookingState = 'ulekan_step_1';
+              gameObject.destroy();
+            }
+            break;
+          case 'ulekan_step_1':
+            if (gameObject.name === 'CabaiKeriting') {
+              this.cobek.setTexture('Ulekan2');
+              this.cookingState = 'ulekan_step_2';
+              gameObject.destroy();
+            }
+            break;
+          case 'ulekan_step_2':
+            if (gameObject.name === 'Kunyit') {
+              this.cobek.setTexture('Ulekan3');
+              this.cookingState = 'ulekan_step_3';
+              gameObject.destroy();
+            }
+            break;
+          case 'ulekan_step_3':
+            if (gameObject.name === 'BawangPutih') {
+              this.cobek.setTexture('Ulekan4');
+              this.cookingState = 'ulekan_step_4';
+              gameObject.destroy();
+              this.nextStep();
+            }
+            break;
+          // Step 2: Add Ulekan to start grinding
+          case 'ulekan_step_4':
+            if (gameObject.name === 'Ulekan') {
+              // Reset mengulek state
+              this.isMengulek = true;
+              this.mengulekPhase = 1;
+              this.swipeCount = 0;
+              this.lastSwipeDirection = null;
+              
+              // Start with first phase texture and scale up for Mengulek (0.7x larger)
+              this.cobek.setTexture('Mengulek1');
+              this.cobek.setScale(0.42 * 2); // 0.42 * 1.7 = 0.714 (0.7x larger)
+              gameObject.destroy();
+              this.handleMengulek();
+            }
+            break;
+        }
       }
     });
 
     this.input.on("dragend", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
       this.isDragging = false;
+      // Skip if item is being returned by another mechanism
+      if (this.itemBeingReturned) {
+        return;
+      }
 
       // Reset semua efek visual
       this.cleanupDragEffects(gameObject);
@@ -901,10 +1396,56 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         return;
       }
 
-      // If not handled by specific logic, return to panel
+      // ALWAYS return item to panel unless it was destroyed by valid drop logic
+      // Check if the gameObject still exists (not destroyed by valid drop)
       if (gameObject.scene) {
-        this.returnItemToPanel(gameObject);
+        console.log(`Returning ${gameObject.name} to ingredient panel`);
+
+        // Reset scale for ingredients going back to panel
+        const originalScale = gameObject.getData('originalScale') || 0.15;
+        gameObject.setScale(originalScale);
+        gameObject.setVisible(true);
+        gameObject.setActive(true);
+
+        if (this.draggedItemOriginalParent) {
+          // Return item to original panel position with animation
+          this.draggedItemOriginalParent.add(gameObject);
+          
+          this.tweens.add({
+            targets: gameObject,
+            x: this.draggedItemOriginalX,
+            y: this.draggedItemOriginalY,
+            duration: 400,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+              gameObject.setInteractive();
+              // Re-enable mask when returning to container
+              if (this.ingredientsContentContainer && this.ingredientsContentMask) {
+                this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+              }
+            }
+          });
+        } else {
+          // Fallback: ensure item is added to ingredients container
+          if (this.ingredientsContentContainer) {
+            this.ingredientsContentContainer.add(gameObject);
+          }
+          gameObject.setInteractive();
+          gameObject.setVisible(true);
+          this.tweens.add({
+            targets: gameObject,
+            x: this.draggedItemOriginalX || 100,
+            y: this.draggedItemOriginalY || 100,
+            duration: 400,
+            ease: 'Back.easeOut'
+          });
+        }
       }
+
+      // Reset properti yang disimpan
+      this.draggedItemOriginalParent = null;
+      this.draggedItemOriginalX = 0;
+      this.draggedItemOriginalY = 0;
     });
   }
 
@@ -1095,6 +1636,50 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     }
   }
 
+  private handleScroll(deltaY: number) {
+    const scrollSpeed = 1; // Reduced from 10 to 3 for slower scrolling
+    let newY = this.ingredientsContentContainer.y - deltaY * scrollSpeed;
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 105;
+    const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+    newY = Math.max(-maxScroll, newY);
+    newY = Math.min(0, newY);
+
+    this.ingredientsContentContainer.y = newY;
+    this.updateScrollbar();
+  }
+
+  private updateScrollbar() {
+    if (!this.scrollbar || !this.scrollbarThumb) return;
+
+    this.scrollbar.clear();
+    this.scrollbarThumb.clear();
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 105;
+    const scrollbarWidth = 12;
+    const scrollbarX = this.layoutConfig.ingredientsPanelWidth - scrollbarWidth - 8;
+    const scrollbarYOffset = 100;
+
+    if (this.scrollContentHeight > scrollableAreaHeight) {
+      this.scrollbar.setVisible(true);
+      this.scrollbarThumb.setVisible(true);
+
+      this.scrollbar.fillStyle(0x4A3428, 0.6);
+      this.scrollbar.fillRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+
+      const thumbHeight = Math.max(20, (scrollableAreaHeight / this.scrollContentHeight) * scrollableAreaHeight);
+      const maxScroll = this.scrollContentHeight - scrollableAreaHeight;
+      const scrollPercentage = maxScroll > 0 ? Math.abs(this.ingredientsContentContainer.y) / maxScroll : 0;
+      const thumbY = scrollbarYOffset + (scrollableAreaHeight - thumbHeight) * scrollPercentage;
+
+      this.scrollbarThumb.fillStyle(0x8B4513, 0.9);
+      this.scrollbarThumb.fillRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+    } else {
+      this.scrollbar.setVisible(false);
+      this.scrollbarThumb.setVisible(false);
+    }
+  }
 
   private isValidIngredient(ingredientName: string): boolean {
     const allowedIngredients = this.ingredientOrder[this.cookingState];
@@ -1105,26 +1690,46 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.cameras.main.shake(300, 0.01);
   }
 
-  private returnItemToOriginalPosition(gameObject: Phaser.GameObjects.Image): void {
+  private returnItemToOriginalPosition(gameObject: Phaser.GameObjects.Image) {
     // Stop all tweens on the object to prevent conflicts
     this.tweens.killTweensOf(gameObject);
     
     // Reset visual properties
+    const originalScale = gameObject.getData('originalScale') || 0.15;
+    gameObject.setScale(originalScale);
     gameObject.clearTint();
     gameObject.setAlpha(1);
     gameObject.setDepth(0);
 
-    // Destroy the item
-    gameObject.destroy();
-
-    // Recreate the item in the ingredients panel
-    const ingredientConfig = this.findIngredientConfig(gameObject.name);
-    if (ingredientConfig) {
-      this.recreateItemInPanel(ingredientConfig);
+    if (this.draggedItemOriginalParent) {
+      // Return to original parent container with smooth animation
+      this.draggedItemOriginalParent.add(gameObject);
+      
+      // Animate return to original position
+      this.tweens.add({
+        targets: gameObject,
+        x: this.draggedItemOriginalX,
+        y: this.draggedItemOriginalY,
+        duration: 300,
+        ease: 'Back.easeOut',
+        onComplete: () => {
+          gameObject.setInteractive();
+          // Re-enable mask when returning to container
+          if (this.ingredientsContentContainer && this.ingredientsContentMask) {
+            this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+          }
+        }
+      });
+    } else {
+      // Fallback: ensure item stays interactive and visible
+      gameObject.setInteractive();
+      gameObject.setVisible(true);
     }
 
-    // Trigger screen shake as warning
-    this.shakeScreen();
+    // Reset stored properties
+    this.draggedItemOriginalParent = null;
+    this.draggedItemOriginalX = 0;
+    this.draggedItemOriginalY = 0;
   }
 
   private createHintButton() {
@@ -1375,6 +1980,38 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private returnItemToPanel(gameObject: Phaser.GameObjects.Image): void {
+    // If the dragged item is the finished dish, return it to the stove, not the panel
+    if (gameObject.name === 'IkanKuahKuningJadi') {
+      this.itemBeingReturned = true; // Set the flag to stop dragend handler
+      this.shakeScreen();
+      console.log(`Returning ${gameObject.name} to its original position on the stove.`);
+      this.cleanupDragEffects(gameObject);
+      
+      // Animate it back to its original spot. The original X/Y are stored on dragstart.
+      this.tweens.add({
+          targets: gameObject,
+          x: this.draggedItemOriginalX,
+          y: this.draggedItemOriginalY,
+          duration: 400,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+              gameObject.setInteractive();
+              this.itemBeingReturned = false; // Reset the flag after animation
+          }
+      });
+      return; // IMPORTANT: exit to avoid panel logic
+    }
+
+    // Check if this item is from kompor - if so, just destroy it
+    if (gameObject.getData('fromKompor')) {
+      console.log(`Item ${gameObject.name} is from kompor, destroying instead of returning to panel`);
+      gameObject.destroy();
+      return;
+    }
+
+    // Set flag to prevent dragend from interfering
+    this.itemBeingReturned = true;
+
     // Trigger screen shake as warning
     this.shakeScreen();
     console.log(`Returning ${gameObject.name} to panel due to invalid drop`);
@@ -1382,14 +2019,59 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Clean up drag effects first
     this.cleanupDragEffects(gameObject);
 
-    // Destroy the item
-    gameObject.destroy();
+    const originalScale = gameObject.getData('originalScale') || 0.15;
+    gameObject.setScale(originalScale);
 
-    // Recreate the item in the ingredients panel
-    const ingredientConfig = this.findIngredientConfig(gameObject.name);
-    if (ingredientConfig) {
-      this.recreateItemInPanel(ingredientConfig);
+    if (this.draggedItemOriginalParent) {
+      // Return to original parent container
+      this.draggedItemOriginalParent.add(gameObject);
+      
+      // Animate return with bounce effect
+      this.tweens.add({
+        targets: gameObject,
+        x: this.draggedItemOriginalX,
+        y: this.draggedItemOriginalY,
+        duration: 500,
+        ease: 'Bounce.easeOut',
+        onComplete: () => {
+          gameObject.setInteractive();
+          
+          // Re-enable mask when returning to container
+          if (this.ingredientsContentContainer && this.ingredientsContentMask) {
+            this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+          }
+          
+          // Reset the return flag
+          this.itemBeingReturned = false;
+        }
+      });
+    } else {
+      // Fallback: Create new item in ingredients panel if original parent is lost
+      console.warn(`Item ${gameObject.name} lost original parent, recreating in ingredients panel`);
+      
+      // Find the item in the ingredients list to get its configuration
+      const ingredientConfig = this.findIngredientConfig(gameObject.name);
+      if (ingredientConfig) {
+        // Destroy the lost item
+        gameObject.destroy();
+        
+        // Recreate the item in ingredients panel
+        this.recreateItemInPanel(ingredientConfig);
+      } else {
+        // Last resort: just add to ingredients container at a safe position
+        this.ingredientsContentContainer.add(gameObject);
+        gameObject.setPosition(50, 50); // Safe fallback position
+        gameObject.setInteractive();
+      }
+      
+      // Reset the return flag in fallback case
+      this.itemBeingReturned = false;
     }
+    
+    // Reset stored properties
+    this.draggedItemOriginalParent = null;
+    this.draggedItemOriginalX = 0;
+    this.draggedItemOriginalY = 0;
   }
 
   private highlightValidDropZones(gameObject: Phaser.GameObjects.Image, pointer: Phaser.Input.Pointer): void {
@@ -1503,7 +2185,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
     itemBg.lineStyle(1, 0x8B4513, 0.4);
     itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-    this.ingredientsPanel.add(itemBg);
+    this.ingredientsContentContainer.add(itemBg);
 
     // Item image
     const item = this.add.image(x, y, ingredientConfig.key)
@@ -1515,7 +2197,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     this.ingredientItems.push(item);
     this.input.setDraggable(item);
-    this.ingredientsPanel.add(item);
+    this.ingredientsContentContainer.add(item);
 
     // Item label
     const label = this.add.text(x, y + 40, ingredientConfig.name, {
@@ -1525,7 +2207,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       align: 'center',
       fontStyle: 'bold'
     }).setOrigin(0.5, 0.5);
-    this.ingredientsPanel.add(label);
+    this.ingredientsContentContainer.add(label);
 
     // Hover effects completely disabled
     item.on('pointerover', () => {
