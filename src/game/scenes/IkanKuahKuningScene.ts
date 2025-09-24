@@ -43,6 +43,10 @@ interface GameStep {
 }
 
 export default class IkanKuahKuningScene extends Phaser.Scene {
+  // Dialog bridge for React integration
+  public dialogBridge: any = null;
+  private useReactDialog: boolean = true; // Flag to use React dialog instead of Phaser dialog (ALWAYS true now)
+
   // Game objects
   private kompor!: Phaser.GameObjects.Image;
   private komporZone!: Phaser.GameObjects.Zone;
@@ -57,10 +61,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private mengulekPhase: 1 | 2 = 1; // Phase 1: Mengulek1/2, Phase 2: Mengulek4/5
 
   // Wajan state
-  private wajan!: Phaser.GameObjects.Image;
+  private wajan: Phaser.GameObjects.Image | null = null;
   private isMengaduk: boolean = false;
   private countdownText!: Phaser.GameObjects.Text;
-  private mangkuk!: Phaser.GameObjects.Image;
+  private mangkuk: Phaser.GameObjects.Image | null = null;
+  private finishedDish: Phaser.GameObjects.Image | null = null;
   private isDragging: boolean = false;
 
   // Stove and timing state
@@ -99,10 +104,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
   // UI Components
   private ingredientsPanel!: Phaser.GameObjects.Container;
-  private dialogPanel!: Phaser.GameObjects.Container;
+  // NOTE: dialogPanel removed - using React dialog system only
   private menuToggleButton!: Phaser.GameObjects.Image;
-  private characterImage!: Phaser.GameObjects.Image;
-  private stepText!: Phaser.GameObjects.Text;
+  // NOTE: characterImage and stepText removed - using React dialog system only
   private isIngredientsPanelOpen = true;
   private currentStep = 0;
   private ingredientItems: Phaser.GameObjects.Image[] = [];
@@ -122,7 +126,6 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private isScrollbarDragging: boolean = false;
   private scrollbarDragStartY: number = 0;
   private contentStartY: number = 0;
-  private hintPopup!: Phaser.GameObjects.Container;
   private infoContent: string = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti ikan cakalang, tongkol, atau ikan kerapu yang dipotong-potong. Bumbu kuah kuning terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum kemudian ditambah air dan santan hingga mendidih. Ikan kemudian dimasukkan dan dimasak hingga matang sambil menyerap cita rasa kuah yang kaya rempah. Hidangan ini biasanya disajikan dengan nasi putih atau papeda, dan memberikan sensasi hangat serta menyegarkan dengan aroma rempah yang khas.`;
 
   // Layout configuration
@@ -133,20 +136,16 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Ingredients panel
     ingredientsPanelWidth: 400,
     ingredientsPanelX: 0, // Will be calculated
-    ingredientsPanelY: 155,
+    ingredientsPanelY: 300, // Turun 150px lagi dari 755 ke 905
     ingredientsPanelHeight: 550,
     
     // Cooking area
     cookingAreaLeft: 20,
     cookingAreaTop: 70,
     cookingAreaRight: 1480, // Expanded cooking area
-    cookingAreaBottom: 180,
-    
-    // Dialog panel
-    dialogPanelHeight: 90,
-    dialogPanelY: 900, // Will be calculated
-    dialogPanelLeft: 50,
-    dialogPanelRight: 20,
+    cookingAreaBottom: 180, // Account for dialog panel
+
+    // NOTE: Dialog panel config removed - using React dialog system
 
     // Character
     characterX: 1000,
@@ -190,7 +189,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     },
     {
       id: 5,
-      text: "Lanjut lagi. Ayo kita masukkan Irisan jahe, Daun Jeruk, Potongan Ikan, dan Air kedalam bumbu yang kita masak tadi. Kemudian aduk lagi sampai semua nya bercampur rata dan Air mendidih.",
+      text: "Lanjut lagi. Ayo kita masukkan Irisan jahe, Daun Jeruk, Ikan Cakalang, dan Air kedalam bumbu yang kita masak tadi. Kemudian aduk lagi sampai semua nya bercampur rata dan Air mendidih.",
       character: "karakter5.png",
       isCompleted: false
     },
@@ -326,21 +325,21 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Create UI components
     this.createIngredientsPanel();
-    this.createDialogPanel();
+    // NOTE: Phaser dialog removed completely - using React dialog system only
 
     // Initial update of panel visuals
     this.updateIngredientsPanelVisuals();
 
     // Setup ingredient panel layout
-    this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
-
+    this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, this.layoutConfig.ingredientsPanelY);
 
     // Initialize drag and drop
     this.initDragAndDrop();
 
-    // Update step display
-    this.updateStepDisplay();
-    this.createHintButton();
+    // NOTE: updateStepDisplay removed - using React dialog system only
+
+    // Setup dialog bridge integration
+    this.setupDialogBridge();
   }
 
   private calculateLayout() {
@@ -355,7 +354,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
-    this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
+    // NOTE: Dialog panel height removed - using React dialog system only
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
@@ -406,7 +405,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     // Center stove in the cooking area
     const stoveX = (gameWidth - this.layoutConfig.ingredientsPanelWidth) / 2;
-    const stoveY = gameHeight / 2 + 100;
+    const stoveY = gameHeight - 280; // 280px dari dasar halaman
 
     this.kompor = this.add.image(stoveX, stoveY, "Kompor").setScale(0.5).setInteractive();
 
@@ -667,60 +666,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.updateScrollbar(); // Initial update of scrollbar
   }
 
-  private createDialogPanel() {
-    // Create dialog panel container
-    this.dialogPanel = this.add.container(
-      this.layoutConfig.dialogPanelLeft,
-      this.layoutConfig.dialogPanelY
-    );
-
-    // const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-    const dialogWidth = this.layoutConfig.cookingAreaRight - 200;
-
-    // Panel background
-    const dialogBg = this.add.graphics();
-    dialogBg.fillStyle(0xFFFFF0, 0.95);
-    dialogBg.fillRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    dialogBg.lineStyle(2, 0x8B4513, 0.6);
-    dialogBg.strokeRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    this.dialogPanel.add(dialogBg);
-
-    // Character container
-    const characterContainer = this.add.graphics();
-    characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    this.dialogPanel.add(characterContainer);
-
-    // Character image
-    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.4)
-      .setOrigin(0.5, 0.5);
-    this.dialogPanel.add(this.characterImage);
-
-    // Step text
-    this.stepText = this.add.text(200, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '15px',
-      fontFamily: 'Chewy, cursive',
-      color: '#2C1810',
-      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 4
-    }).setOrigin(0, 0.5);
-    this.dialogPanel.add(this.stepText);
-
-    // Progress bar
-    const progressBg = this.add.graphics();
-    progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
-    this.dialogPanel.add(progressBg);
-
-    const progressBar = this.add.graphics();
-    progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * (1/7), 6, 3);
-    this.dialogPanel.add(progressBar);
-  }
+  // NOTE: createDialogPanel removed - using React dialog system only
 
   private updateIngredientsPanelVisuals() {
     // Clear and redraw panel background
@@ -795,39 +741,34 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     });
   }
 
-  private updateStepDisplay() {
-    if (this.currentStep < this.gameSteps.length) {
-      const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(`${step.id}. ${step.text}`);
-      this.characterImage.setTexture(step.character.replace('.png', ''));
-      
-      // Animate text appearance
-      this.stepText.setAlpha(0);
-      this.tweens.add({
-        targets: this.stepText,
-        alpha: 1,
-        duration: 500,
-        ease: 'Power2'
-      });
-
-      // Update progress bar
-      const progressPercentage = (this.currentStep + 1) / this.gameSteps.length;
-      const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-      
-      // Find and update progress bar
-      const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
-      progressBar.clear();
-      progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
-    }
-  }
+  // NOTE: updateStepDisplay removed - using React dialog system only
 
   private nextStep() {
     if (this.currentStep < this.gameSteps.length - 1) {
       this.gameSteps[this.currentStep].isCompleted = true;
       this.currentStep++;
-      this.updateStepDisplay();
-      
+
+      // NOTE: updateStepDisplay removed - using React dialog system only
+
+      // Update React dialog system if bridge is available
+      if (this.dialogBridge) {
+        console.log(`🚀 IkanKuahKuning: Game advancing to step ${this.currentStep + 1}`);
+        console.log(`🎯 IkanKuahKuning: Updating dialog to step index ${this.currentStep}`);
+
+        try {
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ IkanKuahKuning: Dialog update successful');
+
+          // Verify the update
+          const verifyStep = this.dialogBridge.getCurrentStep();
+          console.log(`🔍 IkanKuahKuning: Verification - dialog is now at step ${verifyStep}`);
+        } catch (error) {
+          console.error('❌ IkanKuahKuning: Dialog update failed:', error);
+        }
+      } else {
+        console.warn('⚠️ IkanKuahKuning: Dialog bridge not available for step update');
+      }
+
       // Success feedback
       this.cameras.main.flash(200, 144, 238, 144, false);
     } else {
@@ -1058,7 +999,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         this.wajan.setVisible(false);
 
         // Create pouring animation with 2 frames over 4 seconds
-        const tuangAnim = this.add.sprite(this.wajan.x, this.wajan.y, 'TuangBumbu1').setScale(0.3);
+        const tuangAnim = this.add.sprite(this.wajan.x, this.wajan.y, 'TuangBumbu1').setScale(0.8);
         
         // Manual frame switching for precise timing
         let frameIndex = 0;
@@ -1106,27 +1047,52 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         this.mangkuk = this.add.image(targetX, targetY, 'Mangkuk').setScale(0.3);
         this.mangkuk.setInteractive({ dropZone: true });
         this.mangkuk.setName('MangkukDropZone');
-        this.mangkuk.setDepth(50); // Ensure mangkuk is visible but below dragged items
-
-        console.log('Mangkuk created as dropzone at:', targetX, targetY);
-        console.log('Mangkuk properties:', {
-          interactive: this.mangkuk.input?.enabled,
-          dropZone: this.mangkuk.input?.dropZone,
-          name: this.mangkuk.name,
-          depth: this.mangkuk.depth
-        });
+        this.mangkuk.setDepth(50);
 
         this.cookingState = 'mangkuk_placed';
         gameObject.destroy();
+
+        // Create the separate, draggable finished dish on top of the wajan
+        console.log('Mangkuk placed, creating draggable dish.');
+        if (this.wajan) {
+            const dishX = this.wajan.x;
+            const dishY = this.wajan.y;
+            this.finishedDish = this.add.image(dishX, dishY, 'IkanKuahKuningJadi')
+                .setScale(this.wajan.scale)
+                .setName('IkanKuahKuningJadi')
+                .setInteractive({ draggable: true });
+            this.input.setDraggable(this.finishedDish);
+            this.finishedDish.setDepth(100);
+            
+            // Hide the underlying wajan texture to prevent "duplicate" visual
+            this.wajan.setVisible(false);
+        }
       } else if (this.mangkuk && dropZone === this.mangkuk && this.cookingState === 'mangkuk_placed' && gameObject.name === 'IkanKuahKuningJadi') {
         console.log('IkanKuahKuningJadi successfully dropped on Mangkuk!');
-        this.mangkuk.setTexture('IkanKuahKuning');
-        this.cookingState = 'finished';
-        gameObject.destroy();
-        this.showSuccessPopup();
-      }
+        
+        const finalDishX = this.mangkuk.x;
+        const finalDishY = this.mangkuk.y;
+        const finalDishScale = this.mangkuk.scale;
 
-      if (this.wajan && dropZone === this.wajan) {
+        // Destroy the objects that are no longer needed
+        gameObject.destroy();      // The dragged finishedDish
+        this.mangkuk.destroy();    // The empty mangkuk
+        
+        // Nullify references
+        this.finishedDish = null;
+        this.mangkuk = null;
+        // The wajan is already invisible and can be nulled too
+        if (this.wajan) {
+            this.wajan.destroy();
+            this.wajan = null;
+        }
+
+        // Create the final plated dish image
+        this.add.image(finalDishX, finalDishY, 'IkanKuahKuning').setScale(finalDishScale);
+
+        this.cookingState = 'finished';
+        this.showSuccessPopup();
+      }      if (this.wajan && dropZone === this.wajan) {
         switch (this.cookingState) {
           // ... (existing cases)
           case 'mendidih':
@@ -1331,6 +1297,17 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       // Reset semua efek visual
       this.cleanupDragEffects(gameObject);
 
+      // If the finished dish is dropped on an invalid area, return it.
+      if (gameObject.name === 'IkanKuahKuningJadi' && !dropped) {
+          // On return, destroy the dragged object and make the original wajan visible again.
+          gameObject.destroy();
+          this.finishedDish = null;
+          if (this.wajan) {
+              this.wajan.setVisible(true);
+          }
+          return; // Exit to prevent panel return logic
+      }
+
       // Special handling for BumbuHalus in step 3
       if (gameObject.name === 'BumbuHalus' && this.cookingState === 'bumbu_halus_done') {
         console.log(`Returning BumbuHalus to position next to kompor`);
@@ -1506,17 +1483,20 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
             this.isMengaduk = false;
             this.swipeCount = 0;
             this.lastSwipeDirection = null;
-            this.wajan.setTexture('IkanKuahKuningJadi');
-            this.cookingState = 'matang';
-            this.input.setDraggable(this.wajan);
-            this.startCountdown(30);
+            this.wajan.setTexture('IkanKuahKuningJadi'); // Set texture to finished dish
+
+            // Start a 30-second countdown before the dish is considered "matang"
+            this.startCountdown(30, () => {
+              this.cookingState = 'matang';
+              this.nextStep(); // Move to the final step instruction (place the bowl)
+            });
           }
         }
       }
     });
   }
 
-  private startCountdown(duration: number) {
+  private startCountdown(duration: number, onComplete?: () => void) {
     // Disable all drag and drop during countdown
     this.disableAllDragDrop();
 
@@ -1540,7 +1520,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           // Re-enable drag and drop after countdown
           this.enableAllDragDrop();
 
-          this.nextStep();
+          if (onComplete) {
+            onComplete();
+          } else {
+            this.nextStep();
+          }
         }
       },
       loop: true
@@ -1688,63 +1672,101 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     this.draggedItemOriginalY = 0;
   }
 
-  private createHintButton() {
-    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 175, 'hint_normal').setInteractive();
-    hintButton.setScale(0.1);
+  // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
 
-    hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
-    hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
-    hintButton.on('pointerdown', () => {
-      hintButton.setTexture('hint_active');
-      this.showHintPopup();
+
+
+  private showSuccessPopup() {
+    this.showCompletionCelebration();
+  }
+
+  private showCompletionCelebration() {
+    this.time.delayedCall(1000, () => {
+      // Enhanced celebration effects
+      this.cameras.main.flash(500, 255, 215, 0, false);
+      
+      // Create celebration particles
+      for (let i = 0; i < 15; i++) {
+        const particle = this.add.circle(
+          this.cameras.main.width / 2 + (Math.random() - 0.5) * 300,
+          this.cameras.main.height / 2 + (Math.random() - 0.5) * 200,
+          4 + Math.random() * 4,
+          Math.random() > 0.5 ? 0xFFD700 : 0xFF6B6B
+        );
+        
+        this.tweens.add({
+          targets: particle,
+          y: particle.y - 120,
+          x: particle.x + (Math.random() - 0.5) * 100,
+          alpha: 0,
+          scale: 2.5,
+          duration: 2000 + Math.random() * 1000,
+          ease: 'Power2',
+          onComplete: () => particle.destroy()
+        });
+      }
+      
+      // Show completion dialog
+      this.showCompletionDialog();
     });
   }
 
-  private showHintPopup() {
-    if (!this.hintPopup || !this.hintPopup.scene) {
-      this.createHintPopup();
-    }
-    this.hintPopup.setVisible(!this.hintPopup.visible);
-  }
-
-  private createHintPopup() {
-    const popupWidth = 650;
-    const popupHeight = 450;
+  private showCompletionDialog() {
+    const dialogWidth = 500;
+    const dialogHeight = 200;
     const centerX = this.cameras.main.width / 2;
     const centerY = this.cameras.main.height / 2;
 
-    this.hintPopup = this.add.container(centerX, centerY);
-    this.hintPopup.setDepth(100);
+    // Background overlay
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x000000, 0.8);
+    overlay.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
 
-    const background = this.add.graphics();
-    background.fillStyle(0x8B4513, 0.9);
-    background.fillRoundedRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight, 20);
-    this.hintPopup.add(background);
-
-    const contentBg = this.add.graphics();
-    contentBg.fillStyle(0xFFFDD0, 0.95);
-    contentBg.fillRoundedRect(-popupWidth / 2 + 15, -popupHeight / 2 + 15, popupWidth - 30, popupHeight - 30, 15);
-    this.hintPopup.add(contentBg);
-
-    const title = this.add.text(0, -popupHeight / 2 + 45, 'Ikan Kuah Kuning', {
-      fontSize: '28px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#5D4037',
+    // Dialog background
+    const dialogBg = this.add.graphics();
+    dialogBg.fillStyle(0x2A1810, 0.95);
+    dialogBg.fillRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
+    dialogBg.lineStyle(4, 0xFFD700, 1);
+    dialogBg.strokeRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
+    
+    // Completion text
+    const completionTitle = this.add.text(centerX, centerY - 40, "🎉 SELAMAT! 🎉", {
+      fontSize: '32px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFD700',
+      align: 'center',
       fontStyle: 'bold'
     }).setOrigin(0.5);
-    this.hintPopup.add(title);
-
-    const text = this.add.text(-popupWidth / 2 + 40, -popupHeight / 2 + 90, this.infoContent, {
-      fontSize: '16px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#3E2723',
-      wordWrap: { width: popupWidth - 80, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 6
-    }).setOrigin(0, 0);
     
-    this.hintPopup.add(text);
-    this.hintPopup.setVisible(false);
+    const completionText = this.add.text(centerX, centerY, "Ikan Kuah Kuning Berhasil Dibuat!", {
+      fontSize: '24px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFFFFF',
+      align: 'center'
+    }).setOrigin(0.5);
+    
+    const completionSubtext = this.add.text(centerX, centerY + 35, "Anda telah menyelesaikan semua langkah dengan sempurna!", {
+      fontSize: '16px',
+      fontFamily: 'Chewy, cursive',
+      color: '#CCCCCC',
+      align: 'center'
+    }).setOrigin(0.5);
+    
+    // Animate dialog appearance
+    const dialogElements = [overlay, dialogBg, completionTitle, completionText, completionSubtext];
+    dialogElements.forEach(el => {
+        if (el && typeof el.setAlpha === 'function') {
+            el.setAlpha(0);
+        }
+    });
+
+    this.tweens.add({
+        targets: dialogElements,
+        alpha: 1,
+        duration: 500,
+        ease: 'Power2',
+        delay: ((_: any, __: any, ___: any, index: number) => index * 100) as any
+    });
   }
 
   private isValidDrop(gameObject: Phaser.GameObjects.Image, dropZone?: Phaser.GameObjects.Zone | Phaser.GameObjects.Image): boolean {
@@ -1843,6 +1865,28 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private returnItemToPanel(gameObject: Phaser.GameObjects.Image): void {
+    // If the dragged item is the finished dish, return it to the stove, not the panel
+    if (gameObject.name === 'IkanKuahKuningJadi') {
+      this.itemBeingReturned = true; // Set the flag to stop dragend handler
+      this.shakeScreen();
+      console.log(`Returning ${gameObject.name} to its original position on the stove.`);
+      this.cleanupDragEffects(gameObject);
+      
+      // Animate it back to its original spot. The original X/Y are stored on dragstart.
+      this.tweens.add({
+          targets: gameObject,
+          x: this.draggedItemOriginalX,
+          y: this.draggedItemOriginalY,
+          duration: 400,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+              gameObject.setInteractive();
+              this.itemBeingReturned = false; // Reset the flag after animation
+          }
+      });
+      return; // IMPORTANT: exit to avoid panel logic
+    }
+
     // Check if this item is from kompor - if so, just destroy it
     if (gameObject.getData('fromKompor')) {
       console.log(`Item ${gameObject.name} is from kompor, destroying instead of returning to panel`);
@@ -1994,7 +2038,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       { key: "DaunSalam", name: "Daun Salam", scale: 0.15 },
       { key: "IrisanJahe", name: "Irisan Jahe", scale: 0.15 },
       { key: "DaunJeruk", name: "Daun Jeruk", scale: 0.15 },
-      { key: "PotonganIkan", name: "Potongan Ikan", scale: 0.15 },
+      { key: "PotonganIkan", name: "Ikan Cakalang", scale: 0.15 },
       { key: "Air", name: "Air", scale: 0.15 },
       { key: "Asam", name: "Asam", scale: 0.2 },
       { key: "Tomat", name: "Tomat", scale: 0.15 },
@@ -2247,6 +2291,59 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       this.stoveAnimTimer = null;
       if (this.kompor) {
         this.kompor.setTexture('Kompor');
+      }
+    }
+  }
+
+  private setupDialogBridge() {
+    console.log('🔧 IkanKuahKuning: Setting up dialog bridge...');
+
+    // Wait for dialog bridge to be attached by React
+    const checkForBridge = () => {
+      console.log('🔍 IkanKuahKuning: Checking for dialog bridge...');
+      if (this.dialogBridge) {
+        console.log('✅ IkanKuahKuning: Dialog bridge connected!');
+        console.log('🎯 IkanKuahKuning: Current game step:', this.currentStep);
+
+        // Test the bridge
+        try {
+          const currentDialogStep = this.dialogBridge.getCurrentStep();
+          console.log('📊 IkanKuahKuning: Current dialog step:', currentDialogStep);
+
+          // Sync initial step
+          this.syncDialogWithGameStep();
+        } catch (error) {
+          console.error('❌ IkanKuahKuning: Bridge test failed:', error);
+        }
+      } else {
+        console.log('⏳ IkanKuahKuning: Bridge not ready, checking again in 500ms...');
+        // Try again in 500ms
+        this.time.delayedCall(500, checkForBridge);
+      }
+    };
+
+    // Start checking for bridge
+    this.time.delayedCall(100, checkForBridge);
+  }
+
+  private syncDialogWithGameStep() {
+    if (this.dialogBridge) {
+      console.log('🔄 IkanKuahKuning: Syncing dialog with game step...');
+
+      try {
+        // Make sure dialog is at the correct step
+        const currentDialogStep = this.dialogBridge.getCurrentStep();
+        console.log(`📊 IkanKuahKuning: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
+
+        if (this.currentStep !== currentDialogStep) {
+          console.log(`🔄 IkanKuahKuning: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ IkanKuahKuning: Dialog sync complete');
+        } else {
+          console.log('✅ IkanKuahKuning: Dialog already in sync');
+        }
+      } catch (error) {
+        console.error('❌ IkanKuahKuning: Dialog sync failed:', error);
       }
     }
   }

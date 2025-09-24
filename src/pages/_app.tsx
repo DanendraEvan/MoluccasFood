@@ -1,14 +1,18 @@
 // src/pages/_app.tsx
 import React, { useState, useEffect } from 'react';
 import type { AppProps } from 'next/app';
+import { useRouter } from 'next/router';
 import PageTracker from '../components/PageTracker';
 import MusicDebug from '../components/MusicDebug';
+import FullscreenExitDetector from '../components/FullscreenExitDetector';
 import '../styles/globals.css';
+import '../styles/responsive.css';
 import { MusicProvider } from '../contexts/MusicContext';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [showDebug, setShowDebug] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
@@ -18,10 +22,18 @@ function MyApp({ Component, pageProps }: AppProps) {
     }
   }, []);
 
+  const shouldUseFullscreenDetector = router.pathname !== '/fullscreen-landing';
+
   return (
     <MusicProvider>
       <PageTracker />
-      <Component {...pageProps} />
+      {shouldUseFullscreenDetector ? (
+        <FullscreenExitDetector>
+          <Component {...pageProps} />
+        </FullscreenExitDetector>
+      ) : (
+        <Component {...pageProps} />
+      )}
 
       {/* ✅ Music Debugger */}
       {isClient && showDebug && <MusicDebug />}

@@ -1,5 +1,7 @@
 // src/game/scenes/KohuKohuScene.ts - Enhanced with UI Components from NasiLapola
 import * as Phaser from "phaser";
+import ResponsiveGameUtils, { ResponsiveLayout } from "../utils/ResponsiveUtils";
+import ResponsiveMixin, { ResponsiveScene } from "../utils/ResponsiveMixin";
 
 // State untuk wajan dan teflon
 type BowlState = 
@@ -16,6 +18,7 @@ type BowlState =
 type WajanState = 
   | "empty"
   | "kemangi"
+  | "kacangpanjang"
   | "sawi"
   | "tauge"
   | "cabeBawangMerah"
@@ -39,7 +42,14 @@ interface GameStep {
   isCompleted: boolean;
 }
 
-export default class KohuKohuScene extends Phaser.Scene {
+export default class KohuKohuScene extends Phaser.Scene implements ResponsiveScene {
+  // Dialog bridge for React integration
+  public dialogBridge: any = null;
+  private useReactDialog: boolean = true; // Flag to use React dialog instead of Phaser dialog (ALWAYS true now)
+
+  // Responsive system
+  private responsiveLayout!: ResponsiveLayout;
+  private originalIngredientsPanelConfig: any = null;
   // Definisikan semua objek game
   private Teflon!: Phaser.GameObjects.Image;
   private Wajan!: Phaser.GameObjects.Image;
@@ -76,17 +86,15 @@ export default class KohuKohuScene extends Phaser.Scene {
 
   // UI Components
   private ingredientsPanel!: Phaser.GameObjects.Container;
-  private dialogPanel!: Phaser.GameObjects.Container;
+  // NOTE: dialogPanel removed - using React dialog system only
   private menuToggleButton!: Phaser.GameObjects.Image;
-  private characterImage!: Phaser.GameObjects.Image;
-  private stepText!: Phaser.GameObjects.Text;
+  // NOTE: characterImage and stepText removed - using React dialog system only
   private isIngredientsPanelOpen = true;
   private currentStep = 0;
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
-  private hintPopup!: Phaser.GameObjects.Container;
-  private infoContent: string = `Kohu-kohu adalah salah satu makanan khas Maluku yang sangat populer dan mudah ditemukan di berbagai daerah. Makanan ini merupakan sejenis salad segar yang terbuat dari campuran sayuran mentah seperti kacang panjang, tauge, kangkung, dan kemangi yang dipotong-potong kecil. Yang membuat kohu-kohu istimewa adalah bumbunya yang kaya rempah, terdiri dari kelapa parut, cabai rawit, bawang merah, bawang putih, garam, dan kadang ditambah ikan teri atau udang kering. Semua bahan dicampur dan diremas-remas hingga bumbu meresap sempurna. Kohu-kohu biasanya disajikan sebagai lalapan pendamping nasi atau makanan pokok lainnya, dan memberikan rasa segar yang menyegarkan dengan sensasi pedas dari cabai rawit.`;
+  private infoContent: string = `Kohu-kohu adalah salad segar dari Maluku! Makanan ini dibuat dari sayuran mentah seperti kacang panjang, tauge, dan kemangi. Bumbunya spesial, yaitu kelapa parut yang disangrai dan dicampur dengan bumbu lain seperti cabai dan bawang. Rasanya segar, gurih, dan sedikit pedas. Enak sekali dimakan bersama nasi!`;
 
   // Layout configuration
   private layoutConfig = {
@@ -95,8 +103,8 @@ export default class KohuKohuScene extends Phaser.Scene {
     
     // Ingredients panel
     ingredientsPanelWidth: 375,
-    ingredientsPanelX: 0, // Will be calculated
-    ingredientsPanelY: 155,
+    ingredientsPanelX: 1100, // Set posisi X manual
+    ingredientsPanelY: 300, // Turun 150px lagi dari 755 ke 905
     ingredientsPanelHeight: 600,
     
     // Cooking area
@@ -105,11 +113,12 @@ export default class KohuKohuScene extends Phaser.Scene {
     cookingAreaRight: 290,
     cookingAreaBottom: 180,
     
-    // Dialog panel
-    dialogPanelHeight: 120,
-    dialogPanelY: 900, // Will be calculated
-    dialogPanelLeft: 50,
-    dialogPanelRight: 20,
+    // NOTE: Dialog panel config removed - using React dialog system
+
+    // dialogPanelHeight: 120,
+    // dialogPanelY: 850, // Will be calculated
+    // dialogPanelLeft: 50,
+    // dialogPanelRight: 20,
 
     // Character
     characterX: 1000,
@@ -122,7 +131,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     
     // Plating area (renamed from staging)
     platingAreaX: 200,
-    platingAreaY: 300,
+    platingAreaY: 400, // Turun 100px dari 300 ke 400
     platingAreaWidth: 300,
     platingAreaHeight: 225
   }
@@ -131,79 +140,79 @@ export default class KohuKohuScene extends Phaser.Scene {
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Halo! Mari kita buat Kohu-Kohu. Pertama, masukkan kelapa ke dalam baskom.",
+      text: "Halo! Mari kita buat Kohu-Kohu. Pertama, ambil Kelapa dari panel bahan di sebelah kanan, lalu seret dan letakkan di atas baskom di tengah.",
       character: "karakter1.png",
       isCompleted: false
     },
     {
       id: 2,
-      text: "Bagus! Sekarang, drag baskom berisi kelapa untuk memindahkannya ke teflon.",
+      text: "Bagus! Kelapanya sudah diparut. Sekarang, klik di sekitar kanan Baskom dan seret Baskom berisi kelapa parut dan letakkan di atas teflon di sebelah kanan.",
       character: "karakter2.png",
       isCompleted: false
     },
     {
       id: 3,
-      text: "Saatnya menyangrai kelapa. Gunakan spatula untuk mengaduk.",
+      text: "Saatnya menyangrai kelapa. Ambil Spatula dari panel kanan, lalu seret ke atas teflon untuk mulai mengaduk. Geser ke kiri dan kanan berulang kali ya!",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Sip! Sekarang, kita siapkan sayurannya. Masukkan kemangi ke dalam wajan.",
+      text: "Sip, kelapa sangrai sudah jadi! Sekarang, kita siapkan sayurannya. Ambil Kemangi dari panel kanan dan masukkan ke dalam wajan di sebelah kiri.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Lanjutkan dengan memasukkan selada.",
+      text: "Lanjutkan dengan mengambil Kacang Panjang dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Sekarang masukkan sawi.",
+      text: "Sekarang, ambil Sawi dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Terakhir, masukkan tauge.",
+      text: "Terakhir, ambil Tauge dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 8,
-      text: "Supaya ada sensasi pedasnya, coba masukkan potongan cabe dan irisan bawang merah. Setelah itu, ambil suwiran daging ikan cakalang kita dan masukkan ke wajan. Ini yang bikin rasanya makin gurih.",
+      text: "Biar makin lezat, ayo tambahkan bumbu! Ambil Cabai dan Bawang Merah, lalu masukkan ke wajan. Setelah itu, ambil Ikan Cakalang dan masukkan juga ke wajan ya.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 9,
-      text: "Terakhir, tuangkan sedikit minyak ikan untuk sentuhan akhir yang sempurna.",
+      text: "Hampir selesai! Ambil Minyak Ikan dari panel kanan dan tuangkan ke dalam wajan untuk rasa yang lebih mantap.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 10,
-      text: "Bagus! Sekarang ambil piring dari panel bahan dan letakkan di area plating di sebelah kiri.",
+      text: "Bagus! Semua bahan sudah tercampur. Sekarang ambil Piring dari panel bahan dan letakkan di Area Penyajian di sebelah kiri.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 11,
-      text: "Letakkan kelapa sangrai dari teflon ke atas piring.",
+      text: "Pertama, seret Teflon yang berisi kelapa sangrai dan letakkan di atas piring.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 12,
-      text: "Hampir selesai! Ambil sayuran dari wajan menggunakan spatula dan taruh di atas piring.",
+      text: "Luar biasa! Sekarang, ambil Spatula dan seret ke wajan untuk mengangkat sayuran. Lalu, bawa sayuran itu ke atas piring.",
       character: "karakter6.png",
       isCompleted: false
     },
     {
       id: 13,
-      text: "Wah, kamu luar biasa! Kohu Kohu kita sudah siap disajikan!",
+      text: "Wah, kamu hebat! Kohu-Kohu buatanmu sudah jadi dan siap disajikan! Selamat menikmati!",
       character: "karakter6.png",
       isCompleted: false
     }
@@ -233,7 +242,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
     this.load.image("Sawi", "/assets/foods/kohu_kohu/Sawi.png");
     this.load.image("Tauge", "/assets/foods/kohu_kohu/Tauge.png");
-    this.load.image("Selada", "/assets/foods/kohu_kohu/Selada.png");
+    this.load.image("KacangPanjang", "/assets/foods/kohu_kohu/KacangPanjang.png");
     this.load.image("Kemangi", "/assets/foods/kohu_kohu/Kemangi.png");
     this.load.image("Cabe", "/assets/foods/kohu_kohu/Cabe.png");
     this.load.image("BawangMerah", "/assets/foods/kohu_kohu/Bawang Merah.png");
@@ -252,7 +261,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.png");
     this.load.image("tambahanSawi", "/assets/foods/kohu_kohu/tambahanSawi.png");
     this.load.image("tambahanTauge", "/assets/foods/kohu_kohu/tambahanTauge.png");
-    this.load.image("tambahanSelada", "/assets/foods/kohu_kohu/tambahanSelada.png");
+    this.load.image("tambahanKacangPanjang", "/assets/foods/kohu_kohu/tambahanKacangPanjang.png");
     this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.png");
     this.load.image("tambahanDaging", "/assets/foods/kohu_kohu/TambahanDaging.png");
     this.load.image("tambahanMinyak", "/assets/foods/kohu_kohu/tambahanMinyak.png");
@@ -276,7 +285,10 @@ export default class KohuKohuScene extends Phaser.Scene {
 
   create() {
     this.add.image(0, 0, "background").setOrigin(0);
-    
+
+    // Setup responsive system
+    this.setupResponsiveSystem();
+
     // Calculate layout positions
     this.calculateLayout();
 
@@ -285,35 +297,59 @@ export default class KohuKohuScene extends Phaser.Scene {
 
     // Create UI components
     this.createIngredientsPanel();
-    this.createDialogPanel();
+    // NOTE: Phaser dialog removed completely - using React dialog system only
 
     // Initial update of panel visuals
     this.updateIngredientsPanelVisuals();
 
     // Setup ingredient panel layout
-    this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
+    this.setupIngredientsPanelLayout(undefined, undefined, undefined, this.layoutConfig.ingredientsPanelX, this.layoutConfig.ingredientsPanelY);
 
     // Initialize drag and drop
     this.initDragAndDrop();
 
-    // Update step display
-    this.updateStepDisplay();
-    this.createHintButton();
+    // NOTE: updateStepDisplay removed - using React dialog system only
+
+    // Setup dialog bridge integration
+    this.setupDialogBridge();
+  }
+
+  private setupResponsiveSystem() {
+    // Use mixin untuk setup responsive system
+    ResponsiveMixin.setupResponsiveSystem(this);
+
+    // Expose dialog config untuk React
+    ResponsiveMixin.exposeDialogConfigToReact(this);
+
+    // Save original config
+    this.originalIngredientsPanelConfig = { ...this.layoutConfig };
+  }
+
+  private updateResponsiveLayout() {
+    // Use mixin untuk update responsive layout
+    ResponsiveMixin.updateResponsiveLayout(this);
   }
 
   private calculateLayout() {
     const gameWidth = this.cameras.main.width;
     const gameHeight = this.cameras.main.height;
 
-    // Calculate ingredients panel position
-    this.layoutConfig.ingredientsPanelX = gameWidth - this.layoutConfig.ingredientsPanelWidth - 15;
-    
-    // Calculate dialog panel position - use the configured value instead of calculating
-    // this.layoutConfig.dialogPanelY = gameHeight - this.layoutConfig.dialogPanelHeight - 15;
-    
+    // Use responsive config if available
+    if (this.responsiveLayout) {
+      // Already handled in updateResponsiveLayout
+    } else {
+      // Only auto-calculate if not manually set
+      if (this.layoutConfig.ingredientsPanelX === 0) {
+        // Fallback to original calculation
+        this.layoutConfig.ingredientsPanelX = gameWidth - this.layoutConfig.ingredientsPanelWidth - 15;
+      }
+    }
+
+    // NOTE: Dialog panel calculation removed - using React dialog system
+
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
-    this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
+    this.layoutConfig.cookingAreaBottom = gameHeight - 180; // Account for React dialog panel
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
@@ -363,17 +399,29 @@ export default class KohuKohuScene extends Phaser.Scene {
     const komporY = this.layoutConfig.cookingAreaBottom - 100;
     
     // --- Kompor kiri untuk WAJAN - Fixed position ---
-    this.KomporWajan = this.add.image(640, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
-    this.wajanZone = this.add.zone(640, 530, 120, 120).setRectangleDropZone(120, 120);
+    const gameHeight = this.cameras.main.height;
+    const komporYPos = gameHeight - 280; // 280px dari dasar halaman
+    const wajanYPos = gameHeight - 350; // Wajan sedikit di atas kompor
+
+    this.KomporWajan = this.add.image(640, komporYPos, "Kompor").setScale(this.layoutConfig.stoveScale);
+    this.wajanZone = this.add.zone(640, wajanYPos, 120, 120).setRectangleDropZone(120, 120);
     this.wajanZone.name = "wajanZone";
     this.Wajan = this.add.image(this.wajanZone.x, this.wajanZone.y, "Wajan").setScale(this.layoutConfig.vesselScale);
     this.Wajan.setData('initialScale', this.layoutConfig.vesselScale);
     this.Wajan.setData('targetWidth', this.Wajan.displayWidth);
 
     // --- Kompor kanan untuk TEFLON - Fixed position ---
-    this.KomporTeflon = this.add.image(1140, 600, "Kompor").setScale(this.layoutConfig.stoveScale);
-    this.teflonZone = this.add.zone(1140, 530, 120, 120).setRectangleDropZone(120, 120);
+    this.KomporTeflon = this.add.image(1140, komporYPos, "Kompor").setScale(this.layoutConfig.stoveScale);
+    // Memperbesar drop zone untuk teflon agar lebih mudah drop baskom
+    this.teflonZone = this.add.zone(1140, wajanYPos, 180, 180).setRectangleDropZone(180, 180);
     this.teflonZone.name = "teflonZone";
+
+    // Visual indicator untuk drop zone teflon (akan muncul saat dragging baskom)
+    const teflonDropIndicator = this.add.graphics();
+    teflonDropIndicator.lineStyle(3, 0x00FF00, 0.8);
+    teflonDropIndicator.strokeCircle(this.teflonZone.x, this.teflonZone.y, 90);
+    teflonDropIndicator.setVisible(false);
+    this.teflonZone.setData('dropIndicator', teflonDropIndicator);
     this.Teflon = this.add.image(this.teflonZone.x, this.teflonZone.y, "Teflon").setScale(this.layoutConfig.vesselScale);
     this.Teflon.setData('targetWidth', this.Teflon.displayWidth);
     this.Teflon.setData('initialScale', this.layoutConfig.vesselScale);
@@ -416,7 +464,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     const platingLabel = this.add.text(
       this.platingZone.x,
       this.platingZone.y,
-      "Area Plating",
+      "Area Penyajian",
       {
         fontSize: '24px',
         fontFamily: 'Chewy, cursive',
@@ -459,10 +507,10 @@ export default class KohuKohuScene extends Phaser.Scene {
       { key: "Kemangi", name: "Kemangi", scale: 0.18 },
       { key: "Sawi", name: "Sawi", scale: 0.15 },
       { key: "Tauge", name: "Tauge", scale: 0.18 },
-      { key: "Selada", name: "Selada", scale: 0.15 },
+      { key: "KacangPanjang", name: "Kacang Panjang", scale: 0.15 },
       { key: "Cabe", name: "Cabai", scale: 0.2 },
       { key: "BawangMerah", name: "Bawang Merah", scale: 0.16 },
-      { key: "Daging", name: "Daging Cakalang", scale: 0.18 },
+      { key: "Daging", name: "Ikan Cakalang", scale: 0.18 },
       { key: "MinyakIkan", name: "Minyak Ikan", scale: 0.16 },
       { key: "Sepatula", name: "Spatula", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.17 }
@@ -536,59 +584,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     });
   }
 
-  private createDialogPanel() {
-    // Create dialog panel container
-    this.dialogPanel = this.add.container(
-      this.layoutConfig.dialogPanelLeft,
-      this.layoutConfig.dialogPanelY
-    );
-
-    const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-
-    // Panel background
-    const dialogBg = this.add.graphics();
-    dialogBg.fillStyle(0xFFFFF0, 0.95);
-    dialogBg.fillRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    dialogBg.lineStyle(2, 0x8B4513, 0.6);
-    dialogBg.strokeRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    this.dialogPanel.add(dialogBg);
-
-    // Character container
-    const characterContainer = this.add.graphics();
-    characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
-    characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 32);
-    this.dialogPanel.add(characterContainer);
-
-    // Character image
-    this.characterImage = this.add.image(55, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.36)
-      .setOrigin(0.5, 0.5);
-    this.dialogPanel.add(this.characterImage);
-
-    // Step text
-    this.stepText = this.add.text(120, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '25px',
-      fontFamily: 'Chewy, cursive',
-      color: '#2C1810',
-      wordWrap: { width: dialogWidth - 160, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 4
-    }).setOrigin(0, 0.5);
-    this.dialogPanel.add(this.stepText);
-
-    // Progress bar
-    const progressBg = this.add.graphics();
-    progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, dialogWidth - 40, 6, 3);
-    this.dialogPanel.add(progressBg);
-
-    const progressBar = this.add.graphics();
-    progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * (1/6), 6, 3);
-    this.dialogPanel.add(progressBar);
-  }
+  // NOTE: createDialogPanel removed - using React dialog system only
 
   private updateIngredientsPanelVisuals() {
     // Clear and redraw panel background
@@ -602,10 +598,14 @@ export default class KohuKohuScene extends Phaser.Scene {
     this.panelBg.fillStyle(0x4A3428, 0.9);
     this.panelBg.fillRoundedRect(10, 10, this.layoutConfig.ingredientsPanelWidth - 20, 40, 8);
 
-    // Update panel title
+    // Update panel title with responsive font size
+    const titleFontSize = this.responsiveLayout
+      ? this.responsiveLayout.infoPanel.titleFontSize
+      : 24;
+
     this.panelTitle.setText("BAHAN & ALAT");
     this.panelTitle.setStyle({
-      fontSize: '24px',
+      fontSize: `${titleFontSize}px`,
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -661,83 +661,166 @@ export default class KohuKohuScene extends Phaser.Scene {
     });
   }
 
-  private updateStepDisplay() {
-    if (this.currentStep < this.gameSteps.length) {
-      const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(step.text); // Hilangkan angka, langsung tampilkan dialog
-      this.characterImage.setTexture(step.character.replace('.png', ''));
-      
-      // Animate text appearance
-      this.stepText.setAlpha(0);
-      this.tweens.add({
-        targets: this.stepText,
-        alpha: 1,
-        duration: 500,
-        ease: 'Power2'
-      });
-
-      // Update progress bar
-      const progressPercentage = (this.currentStep + 1) / this.gameSteps.length;
-      const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-      
-      // Find and update progress bar
-      const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
-      progressBar.clear();
-      progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 18, (dialogWidth - 40) * progressPercentage, 6, 3);
-    }
-  }
+  // NOTE: updateStepDisplay removed - using React dialog system only
 
   private nextStep() {
-    if (this.currentStep < this.gameSteps.length - 1) {
-      this.gameSteps[this.currentStep].isCompleted = true;
-      this.currentStep++;
-      this.updateStepDisplay();
-      
-      // Success feedback
-      this.cameras.main.flash(200, 144, 238, 144, false);
+    if (this.currentStep >= this.gameSteps.length - 1) return;
+
+    this.gameSteps[this.currentStep].isCompleted = true;
+    this.currentStep++;
+
+    // NOTE: updateStepDisplay removed - using React dialog system only
+
+    // Update React dialog system if bridge is available
+    if (this.dialogBridge) {
+      console.log(`🚀 KohuKohu: Game advancing to step ${this.currentStep + 1}`);
+      console.log(`🎯 KohuKohu: Updating dialog to step index ${this.currentStep}`);
+
+      try {
+        this.dialogBridge.setStep(this.currentStep);
+        console.log('✅ KohuKohu: Dialog update successful');
+
+        // Verify the update
+        const verifyStep = this.dialogBridge.getCurrentStep();
+        console.log(`🔍 KohuKohu: Verification - dialog is now at step ${verifyStep}`);
+      } catch (error) {
+        console.error('❌ KohuKohu: Dialog update failed:', error);
+      }
+    } else {
+      console.warn('⚠️ KohuKohu: Dialog bridge not available for step update');
+    }
+
+    this.showSuccessFeedback();
+
+    if (this.currentStep === this.gameSteps.length - 1) { // Last step
+        this.showCompletionCelebration();
     }
   }
 
   private initDragAndDrop() {
-    this.input.on("dragstart", (pointer: any, gameObject: Phaser.GameObjects.Image) => {
+    this.input.on("dragstart", (pointer: any, gameObject: any) => {
       // Store original position
       gameObject.setData('dragStartX', gameObject.x);
       gameObject.setData('dragStartY', gameObject.y);
-      
+
       // Store original scale if not already set
       if (!gameObject.getData('originalScale')) {
         gameObject.setData('originalScale', gameObject.scale);
+      }
+
+      // Special handling for baskom drag area
+      const baskomImage = gameObject.getData('baskomImage');
+      if (baskomImage) {
+        baskomImage.setTint(0xFFFFAA);
+
+        // Hide drag outline and hint during drag
+        const dragOutline = gameObject.getData('dragOutline');
+        const dragHint = gameObject.getData('dragHint');
+        if (dragOutline) dragOutline.setVisible(false);
+        if (dragHint) dragHint.setVisible(false);
+
+        // Show drop indicator for teflon when dragging baskom
+        if (gameObject.name === "Baskom" && this.baskomState === "baskomkelapa" && this.currentStep === 1) {
+          const dropIndicator = this.teflonZone.getData('dropIndicator');
+          if (dropIndicator) {
+            dropIndicator.setVisible(true);
+
+            // Add pulsing animation
+            this.tweens.add({
+              targets: dropIndicator,
+              alpha: 0.3,
+              duration: 500,
+              ease: 'Power2',
+              yoyo: true,
+              repeat: -1
+            });
+          }
+        }
       }
     });
 
     this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
       gameObject.x = dragX;
       gameObject.y = dragY;
-      gameObject.setTint(0xFFFFAA);
+
+      // Special handling for baskom drag area
+      const baskomImage = gameObject.getData('baskomImage');
+      if (baskomImage) {
+        baskomImage.x = dragX;
+        baskomImage.y = dragY;
+        baskomImage.setTint(0xFFFFAA);
+      } else {
+        gameObject.setTint(0xFFFFAA);
+      }
     });
 
     this.input.on("dragend", (pointer: any, gameObject: any, dropped: any) => {
-      gameObject.clearTint();
-      
-      if (!dropped) {
-        // Restore original scale based on object type
-        let originalScale = gameObject.getData('originalScale') || 0.2;
-        
-                 // Special handling for spatula to maintain consistent size
-         if (gameObject.name === 'Sepatula') {
-           originalScale = 0.15; // Consistent spatula size
-         }
-        
-        gameObject.setScale(originalScale);
-        
-        this.tweens.add({
-          targets: gameObject,
-          x: gameObject.getData('dragStartX'),
-          y: gameObject.getData('dragStartY'),
-          duration: 400,
-          ease: 'Back.easeOut'
-        });
+      // Special handling for baskom drag area
+      const baskomImage = gameObject.getData('baskomImage');
+      if (baskomImage) {
+        baskomImage.clearTint();
+
+        // Show drag outline and hint again after drag
+        const dragOutline = gameObject.getData('dragOutline');
+        const dragHint = gameObject.getData('dragHint');
+
+        // Hide drop indicator when drag ends
+        if (gameObject.name === "Baskom") {
+          const dropIndicator = this.teflonZone.getData('dropIndicator');
+          if (dropIndicator) {
+            // Stop pulsing animation and hide
+            this.tweens.killTweensOf(dropIndicator);
+            dropIndicator.setAlpha(1);
+            dropIndicator.setVisible(false);
+          }
+        }
+
+        if (!dropped) {
+          // Show outline and hint again if drag failed
+          if (dragOutline) dragOutline.setVisible(true);
+          if (dragHint) dragHint.setVisible(true);
+
+          this.tweens.add({
+            targets: [gameObject, baskomImage],
+            x: gameObject.getData('dragStartX'),
+            y: gameObject.getData('dragStartY'),
+            duration: 400,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+              // Update outline and hint positions
+              if (dragOutline) {
+                dragOutline.clear();
+                dragOutline.lineStyle(2, 0xFFFF00, 0.6);
+                dragOutline.strokeRoundedRect(baskomImage.x - 125, baskomImage.y - 125, 250, 250, 10);
+              }
+              if (dragHint) {
+                dragHint.setPosition(baskomImage.x, baskomImage.y - 150);
+              }
+            }
+          });
+        }
+      } else {
+        gameObject.clearTint();
+
+        if (!dropped) {
+          // Restore original scale based on object type
+          let originalScale = gameObject.getData('originalScale') || 0.2;
+
+                   // Special handling for spatula to maintain consistent size
+           if (gameObject.name === 'Sepatula') {
+             originalScale = 0.15; // Consistent spatula size
+           }
+
+          gameObject.setScale(originalScale);
+
+          this.tweens.add({
+            targets: gameObject,
+            x: gameObject.getData('dragStartX'),
+            y: gameObject.getData('dragStartY'),
+            duration: 400,
+            ease: 'Back.easeOut'
+          });
+        }
       }
     });
 
@@ -769,9 +852,56 @@ export default class KohuKohuScene extends Phaser.Scene {
                       this.time.delayedCall(500, () => {
                           this.baskom.setTexture("Baskomkelapa");
                           this.baskomState = "baskomkelapa";
-                          this.baskom.setInteractive();
-                          this.input.setDraggable(this.baskom);
-                          this.baskom.setName("Baskom");
+
+                          // Buat drag area yang SANGAT besar untuk baskom agar mudah di-drag
+                          const dragArea = this.add.zone(this.baskom.x, this.baskom.y, 250, 250);
+                          dragArea.setInteractive();
+                          dragArea.setName("Baskom");
+                          this.input.setDraggable(dragArea);
+
+                          // Store reference to baskom for visual updates
+                          dragArea.setData('baskomImage', this.baskom);
+
+                          // Tambahkan visual outline untuk menunjukkan area drag
+                          const dragOutline = this.add.graphics();
+                          dragOutline.lineStyle(3, 0xFFFF00, 0.8);
+                          dragOutline.strokeRoundedRect(this.baskom.x - 125, this.baskom.y - 125, 250, 250, 15);
+                          dragArea.setData('dragOutline', dragOutline);
+
+                          // Tambahkan animasi berkedip pada outline
+                          this.tweens.add({
+                            targets: dragOutline,
+                            alpha: 0.3,
+                            duration: 800,
+                            ease: 'Power2',
+                            yoyo: true,
+                            repeat: -1
+                          });
+
+                          // Tambahkan teks petunjuk
+                          const dragHint = this.add.text(this.baskom.x, this.baskom.y - 150, 'DRAG SINI!', {
+                            fontSize: '20px',
+                            fontFamily: 'Chewy, cursive',
+                            color: '#FFFF00',
+                            align: 'center',
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: { x: 10, y: 5 }
+                          }).setOrigin(0.5);
+                          dragArea.setData('dragHint', dragHint);
+
+                          // Tambahkan hover effects
+                          dragArea.on('pointerover', () => {
+                            this.baskom.setTint(0xFFFFAA);
+                            dragOutline.setAlpha(1);
+                            dragHint.setStyle({ color: '#FFFFFF' });
+                          });
+
+                          dragArea.on('pointerout', () => {
+                            this.baskom.clearTint();
+                            dragOutline.setAlpha(0.6);
+                            dragHint.setStyle({ color: '#FFFF00' });
+                          });
+
                           this.nextStep();
                       });
                   }
@@ -782,11 +912,39 @@ export default class KohuKohuScene extends Phaser.Scene {
       }
       // Step 2: Add baskomkelapa to teflon
       else if (dropZone === this.teflonZone && this.bowlState === "empty" && this.baskomState === "baskomkelapa" && droppedKey === "Baskom" && this.currentStep === 1) {
-        this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Teflon, "TeflonKelapa");
-          this.bowlState = "teflonKelapa";
-          this.nextStep();
-        });
+        // Handle special case for baskom drag area
+        const baskomImage = gameObject.getData('baskomImage');
+        if (baskomImage) {
+          // Get outline and hint for cleanup
+          const dragOutline = gameObject.getData('dragOutline');
+          const dragHint = gameObject.getData('dragHint');
+
+          // Animate both the drag area and the visual baskom
+          this.tweens.add({
+            targets: [gameObject, baskomImage],
+            alpha: 0,
+            scale: 0,
+            duration: 400,
+            ease: 'Power2.easeOut',
+            onComplete: () => {
+              gameObject.destroy();
+              // Clean up outline and hint
+              if (dragOutline) dragOutline.destroy();
+              if (dragHint) dragHint.destroy();
+
+              this.setVesselTexture(this.Teflon, "TeflonKelapa");
+              this.bowlState = "teflonKelapa";
+              this.showSuccessFeedback();
+              this.nextStep();
+            }
+          });
+        } else {
+          this.executeSuccessfulDrop(gameObject, () => {
+            this.setVesselTexture(this.Teflon, "TeflonKelapa");
+            this.bowlState = "teflonKelapa";
+            this.nextStep();
+          });
+        }
       }
       // Step 3: Stir the coconut
       else if (dropZone === this.teflonZone && this.bowlState === "teflonKelapa" && droppedKey === "Sepatula" && this.currentStep === 2) {
@@ -820,16 +978,16 @@ export default class KohuKohuScene extends Phaser.Scene {
           this.nextStep();
         });
       }
-      // Step 5: Add selada to wajan
-      else if (dropZone === this.wajanZone && this.wajanState === "kemangi" && droppedKey === "Selada" && this.currentStep === 4) {
+      // Step 5: Add kacang panjang to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "kemangi" && droppedKey === "KacangPanjang" && this.currentStep === 4) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, "tambahanSelada");
-          this.wajanState = "selada";
+          this.setVesselTexture(this.Wajan, "tambahanKacangPanjang");
+          this.wajanState = "kacangpanjang";
           this.nextStep();
         });
       }
       // Step 6: Add sawi to wajan
-      else if (dropZone === this.wajanZone && this.wajanState === "selada" && droppedKey === "Sawi" && this.currentStep === 5) {
+      else if (dropZone === this.wajanZone && this.wajanState === "kacangpanjang" && droppedKey === "Sawi" && this.currentStep === 5) {
         this.executeSuccessfulDrop(gameObject, () => {
           this.setVesselTexture(this.Wajan, "tambahanSawi");
           this.wajanState = "sawi";
@@ -1137,29 +1295,7 @@ export default class KohuKohuScene extends Phaser.Scene {
     }
   }
 
-  private showSuccessFeedback() {
-    this.cameras.main.flash(150, 144, 238, 144, false);
-    
-    // Success particle burst
-    for (let i = 0; i < 5; i++) {
-      const particle = this.add.circle(
-        this.cameras.main.width / 2 + (Math.random() - 0.5) * 100,
-        this.cameras.main.height / 2 + (Math.random() - 0.5) * 100,
-        3 + Math.random() * 3,
-        0xFFD700
-      );
-      
-      this.tweens.add({
-        targets: particle,
-        y: particle.y - 60,
-        alpha: 0,
-        scale: 2,
-        duration: 1500,
-        ease: 'Power2',
-        onComplete: () => particle.destroy()
-      });
-    }
-  }
+  private showSuccessFeedback() { this.cameras.main.flash(100, 144, 238, 144); }
 
   private showCompletionCelebration() {
     this.time.delayedCall(1000, () => {
@@ -1281,81 +1417,58 @@ export default class KohuKohuScene extends Phaser.Scene {
     console.log(`Wajan texture changed to: ${textureKey}, State: ${this.wajanState}`);
   }
 
-  private createHintButton() {
-    const hintButton = this.add.image(this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2, this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 120, 'hint_normal').setInteractive();
-    hintButton.setScale(0.1);
+  // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
 
-    hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
-    hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
-    hintButton.on('pointerdown', () => {
-      hintButton.setTexture('hint_active');
-      this.showHintPopup();
-    });
+  private setupDialogBridge() {
+    console.log('🔧 KohuKohu: Setting up dialog bridge...');
+
+    // Wait for dialog bridge to be attached by React
+    const checkForBridge = () => {
+      console.log('🔍 KohuKohu: Checking for dialog bridge...');
+      if (this.dialogBridge) {
+        console.log('✅ KohuKohu: Dialog bridge connected!');
+        console.log('🎯 KohuKohu: Current game step:', this.currentStep);
+
+        // Test the bridge
+        try {
+          const currentDialogStep = this.dialogBridge.getCurrentStep();
+          console.log('📊 KohuKohu: Current dialog step:', currentDialogStep);
+
+          // Sync initial step
+          this.syncDialogWithGameStep();
+        } catch (error) {
+          console.error('❌ KohuKohu: Bridge test failed:', error);
+        }
+      } else {
+        console.log('⏳ KohuKohu: Bridge not ready, checking again in 500ms...');
+        // Try again in 500ms
+        this.time.delayedCall(500, checkForBridge);
+      }
+    };
+
+    // Start checking for bridge
+    this.time.delayedCall(100, checkForBridge);
   }
 
-  private showHintPopup() {
-    if (!this.hintPopup) {
-      this.createHintPopup();
+  private syncDialogWithGameStep() {
+    if (this.dialogBridge) {
+      console.log('🔄 KohuKohu: Syncing dialog with game step...');
+
+      try {
+        // Make sure dialog is at the correct step
+        const currentDialogStep = this.dialogBridge.getCurrentStep();
+        console.log(`📊 KohuKohu: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
+
+        if (this.currentStep !== currentDialogStep) {
+          console.log(`🔄 KohuKohu: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ KohuKohu: Dialog sync complete');
+        } else {
+          console.log('✅ KohuKohu: Dialog already in sync');
+        }
+      } catch (error) {
+        console.error('❌ KohuKohu: Dialog sync failed:', error);
+      }
     }
-    // Toggle popup visibility
-    this.hintPopup.setVisible(!this.hintPopup.visible);
-  }
-
-  private createHintPopup() {
-    const popupWidth = 650;
-    const popupHeight = 450;
-    const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
-
-    this.hintPopup = this.add.container(centerX, centerY);
-    this.hintPopup.setDepth(100);
-
-    // Modern brown gradient background
-    const background = this.add.graphics();
-    background.fillGradientStyle(0x8B4513, 0xA0522D, 0xCD853F, 0xDEB887, 1);
-    background.fillRoundedRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight, 20);
-    this.hintPopup.add(background);
-
-    // Inner content area with cream background
-    const contentBg = this.add.graphics();
-    contentBg.fillStyle(0xFFFDD0, 0.95);
-    contentBg.fillRoundedRect(-popupWidth / 2 + 15, -popupHeight / 2 + 15, popupWidth - 30, popupHeight - 30, 15);
-    this.hintPopup.add(contentBg);
-
-    // Title header
-    const title = this.add.text(0, -popupHeight / 2 + 45, 'Kohu-Kohu', {
-      fontSize: '28px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#5D4037',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-    this.hintPopup.add(title);
-
-    // Divider line
-    const divider = this.add.graphics();
-    divider.lineStyle(2, 0x8B4513, 0.8);
-    divider.lineBetween(-popupWidth / 2 + 40, -popupHeight / 2 + 70, popupWidth / 2 - 40, -popupHeight / 2 + 70);
-    this.hintPopup.add(divider);
-
-    // Text content - simplified without masking
-    const textAreaWidth = popupWidth - 80;
-    const textStartX = -popupWidth / 2 + 40;
-    const textStartY = -popupHeight / 2 + 90;
-    
-    // Food information content
-    const kohuKohuContent = `Kohu-kohu adalah salah satu makanan khas Maluku yang sangat populer dan mudah ditemukan di berbagai daerah. Makanan ini merupakan sejenis salad segar yang terbuat dari campuran sayuran mentah seperti kacang panjang, tauge, kangkung, dan kemangi yang dipotong-potong kecil. Yang membuat kohu-kohu istimewa adalah bumbunya yang kaya rempah, terdiri dari kelapa parut, cabai rawit, bawang merah, bawang putih, garam, dan kadang ditambah ikan teri atau udang kering. Semua bahan dicampur dan diremas-remas hingga bumbu meresap sempurna. Kohu-kohu biasanya disajikan sebagai lalapan pendamping nasi atau makanan pokok lainnya, dan memberikan rasa segar yang menyegarkan dengan sensasi pedas dari cabai rawit.`;
-    
-    // Add the main text directly to popup
-    const text = this.add.text(textStartX, textStartY, kohuKohuContent, {
-      fontSize: '16px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#3E2723',
-      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 6
-    }).setOrigin(0, 0);
-    
-    this.hintPopup.add(text);
-    this.hintPopup.setVisible(false);
   }
 }

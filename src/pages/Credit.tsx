@@ -1,5 +1,5 @@
 // src/pages/Credit.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import CreditInfoWrapper from '../components/CreditInfoWrapper';
 import MusicButton from '../components/MusicButton';
@@ -13,20 +13,54 @@ const UI_CONFIG = {
     position: { top: 22, left: 2 }
   },
   titleBox: {
-    fontSize: '2.5rem',
-    padding: { x: 40, y: 16 },
-    maxWidth: '50rem'
+    fontSize: 'clamp(1.2rem, 3vw, 2rem)', // Smaller for landscape
+    padding: { x: 'clamp(8px, 3vw, 20px)', y: 'clamp(4px, 1vw, 8px)' }, // Reduced padding
+    maxWidth: 'min(90vw, 40rem)' // Smaller max width
   },
   cardContainer: {
-    gap: 32,
-    maxWidth: '80rem',
-    padding: { x: 24, y: 64 }
+    gap: 'clamp(8px, 2vw, 16px)', // Reduced gap
+    maxWidth: 'min(95vw, 70rem)',
+    padding: { x: 'clamp(8px, 2vw, 16px)', y: 'clamp(16px, 4vw, 32px)' } // Much reduced padding
   }
 };
 
 const CreditPage: React.FC = () => {
   const router = useRouter();
   const [homeButtonState, setHomeButtonState] = useState<ButtonState>('normal');
+  const [screenSize, setScreenSize] = useState('lg');
+  const [isLandscape, setIsLandscape] = useState(true);
+
+  useEffect(() => {
+    const updateLayout = () => {
+      if (typeof window !== 'undefined') {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        setIsLandscape(width > height);
+
+        if (width < 480) {
+          setScreenSize('xs');
+        } else if (width < 640) {
+          setScreenSize('sm');
+        } else if (width < 768) {
+          setScreenSize('md');
+        } else if (width < 1024) {
+          setScreenSize('lg');
+        } else {
+          setScreenSize('xl');
+        }
+      }
+    };
+
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    window.addEventListener('orientationchange', updateLayout);
+
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      window.removeEventListener('orientationchange', updateLayout);
+    };
+  }, []);
 
   const handleHomeClick = (): void => {
     router.push('/menu');
@@ -72,11 +106,11 @@ const CreditPage: React.FC = () => {
       />
 
       {/* Button Container - No gap and proper left margin */}
-      <div 
+      <div
         className="absolute z-50 flex items-center"
         style={{
-          top: '22px',
-          left: '20px', // Space from left side of page
+          top: 'clamp(12px, 3vw, 22px)',
+          left: 'clamp(10px, 2.5vw, 20px)', // Space from left side of page
         }}
       >
         {/* Home Button */}
@@ -99,9 +133,9 @@ const CreditPage: React.FC = () => {
           <Image
             src={getHomeButtonImage()}
             alt="Home Button"
-            width={100}
-            height={100}
-            style={{ 
+            width={screenSize === 'xs' ? 60 : screenSize === 'sm' ? 80 : 100}
+            height={screenSize === 'xs' ? 60 : screenSize === 'sm' ? 80 : 100}
+            style={{
               objectFit: 'contain'
             }}
           />

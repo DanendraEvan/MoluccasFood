@@ -11,6 +11,10 @@ interface GameStep {
 }
 
 export default class PapedaScene extends Phaser.Scene {
+  // Dialog bridge for React integration
+  public dialogBridge: any = null;
+  private useReactDialog: boolean = true; // Flag to use React dialog instead of Phaser dialog (ALWAYS true now)
+
   // Original game objects
   private dropZone!: Phaser.GameObjects.Zone;
   private flourDropZone!: Phaser.GameObjects.Zone;
@@ -54,17 +58,16 @@ export default class PapedaScene extends Phaser.Scene {
 
   // UI Components (from NasiLapola)
   private ingredientsPanel!: Phaser.GameObjects.Container;
-  private dialogPanel!: Phaser.GameObjects.Container;
+  // NOTE: dialogPanel removed - using React dialog system only
   private stagingArea!: Phaser.GameObjects.Container;
   private menuToggleButton!: Phaser.GameObjects.Image;
-  private characterImage!: Phaser.GameObjects.Image;
-  private stepText!: Phaser.GameObjects.Text;
+  // NOTE: characterImage and stepText removed - using React dialog system only
   private isIngredientsPanelOpen = true;
   private currentStep = 0;
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
-  private hintPopup!: Phaser.GameObjects.Container;
+  // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
   private infoContent: string = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
 
   // Layout configuration
@@ -75,20 +78,16 @@ export default class PapedaScene extends Phaser.Scene {
     // Ingredients panel
     ingredientsPanelWidth: 375,
     ingredientsPanelX: 0, // Will be calculated
-    ingredientsPanelY: 155,
+    ingredientsPanelY: 300, // Turun 150px lagi dari 755 ke 905
     ingredientsPanelHeight: 600,
     
     // Cooking area
     cookingAreaLeft: 20,
     cookingAreaTop: 70,
     cookingAreaRight: 290,
-    cookingAreaBottom: 180,
-    
-    // Dialog panel
-    dialogPanelHeight: 90,
-    dialogPanelY: 900, // Will be calculated
-    dialogPanelLeft: 50,
-    dialogPanelRight: 20,
+    cookingAreaBottom: 180, // Account for dialog panel
+
+    // NOTE: Dialog panel config removed - using React dialog system
 
     // Character
     characterX: 1000,
@@ -99,7 +98,7 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Staging area
     stagingAreaX: 180,
-    stagingAreaY: 250,
+    stagingAreaY: 350, // Turun 100px dari 250 ke 350
     stagingAreaWidth: 300,
     stagingAreaHeight: 225
   };
@@ -114,7 +113,7 @@ export default class PapedaScene extends Phaser.Scene {
     },
     {
       id: 2,
-      text: "Step ke 2 ayo kita potong bungkus tepungnya. Klik terus pada Area Potong di kiri atas sampai tepung terbuka. Sudah? Selanjutnya ambil Tepung Sagu dan taruh pada Mangkuk di Meja.",
+      text: "Step ke 2 ayo kita potong bungkus tepungnya. Klik terus pada Area tengah tepung sampai terbuka. Sudah? Selanjutnya ambil Tepung Sagu dan taruh pada Mangkuk di Meja.",
       character: "karakter2.png",
       isCompleted: false
     },
@@ -279,21 +278,23 @@ export default class PapedaScene extends Phaser.Scene {
     // Create game elements
     this.createCookingArea();
     this.createIngredientsPanel();
-    this.createDialogPanel();
+    // NOTE: Phaser dialog removed completely - using React dialog system only
     this.createStagingArea();
 
     // Update panel visuals
     this.updateIngredientsPanelVisuals();
 
     // Setup ingredient panel layout
-    this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, 230);
+    this.setupIngredientsPanelLayout(undefined, undefined, undefined, 1500, this.layoutConfig.ingredientsPanelY);
 
     // Initialize drag and drop
     this.initDragAndDrop();
 
-    // Update step display
-    this.updateStepDisplay();
-    this.createHintButton();
+    // NOTE: updateStepDisplay removed - using React dialog system only
+    // NOTE: createHintButton removed - hint system now handled by React components in KitchenBackgroundWrapper
+
+    // Setup dialog bridge integration
+    this.setupDialogBridge();
   }
 
   private calculateLayout() {
@@ -308,20 +309,21 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
-    this.layoutConfig.cookingAreaBottom = gameHeight - this.layoutConfig.dialogPanelHeight - 40;
+    // NOTE: Dialog panel height removed - using React dialog system only
   }
 
   private createCookingArea() {
     // Atur posisi mangkuk untuk mengolah papeda secara manual di sini
+    const gameHeight = this.cameras.main.height;
     const mangkukX = 800; // Ganti nilai ini untuk posisi horizontal (sumbu X)
-    const mangkukY = 550; // Ganti nilai ini untuk posisi vertikal (sumbu Y)
+    const mangkukY = gameHeight - 280; // 280px dari dasar halaman
 
     // Create much larger drop zone for easier dropping - covers most of the cooking area
     const dropZoneWidth = 600; // Much wider
     const dropZoneHeight = 400; // Much taller
     const dropZoneX = 750; // Center the larger zone
-    const dropZoneY = 500;
-    
+    const dropZoneY = mangkukY; // Gunakan posisi yang sama dengan mangkuk
+
     this.dropZone = this.add.zone(dropZoneX, dropZoneY, dropZoneWidth, dropZoneHeight).setRectangleDropZone(dropZoneWidth, dropZoneHeight);
     
     // Create the main bowl - DIHAPUS AGAR TIDAK SPAWN DI AWAL
@@ -487,59 +489,7 @@ export default class PapedaScene extends Phaser.Scene {
     });
   }
 
-  private createDialogPanel() {
-    // Create dialog panel container
-    this.dialogPanel = this.add.container(
-      this.layoutConfig.dialogPanelLeft,
-      this.layoutConfig.dialogPanelY
-    );
-
-    const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-
-    // Panel background
-    const dialogBg = this.add.graphics();
-    dialogBg.fillStyle(0xFFFFF0, 0.95);
-    dialogBg.fillRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    dialogBg.lineStyle(2, 0x8B4513, 0.6);
-    dialogBg.strokeRoundedRect(0, 0, dialogWidth, this.layoutConfig.dialogPanelHeight, 20);
-    this.dialogPanel.add(dialogBg);
-
-    // Character container
-    const characterContainer = this.add.graphics();
-    characterContainer.fillStyle(0x8B4513, 0.1);
-    characterContainer.fillCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    characterContainer.lineStyle(2, 0x8B4513, 0.4);
-    characterContainer.strokeCircle(50, this.layoutConfig.dialogPanelHeight/2, 35);
-    this.dialogPanel.add(characterContainer);
-
-    // Character image
-    this.characterImage = this.add.image(50, this.layoutConfig.dialogPanelHeight/2, "karakter1")
-      .setScale(0.4)
-      .setOrigin(0.5, 0.5);
-    this.dialogPanel.add(this.characterImage);
-
-    // Step text
-    this.stepText = this.add.text(110, this.layoutConfig.dialogPanelHeight/2, "", {
-      fontSize: '25px',
-      fontFamily: 'Chewy, cursive',
-      color: '#000000',
-      wordWrap: { width: dialogWidth - 140, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 4
-    }).setOrigin(0, 0.5);
-    this.dialogPanel.add(this.stepText);
-
-    // Progress bar
-    const progressBg = this.add.graphics();
-    progressBg.fillStyle(0x8B4513, 0.2);
-    progressBg.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, dialogWidth - 40, 6, 3);
-    this.dialogPanel.add(progressBg);
-
-    const progressBar = this.add.graphics();
-    progressBar.fillStyle(0xFFD700, 1);
-    progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * (1/6), 6, 3);
-    this.dialogPanel.add(progressBar);
-  }
+  // NOTE: createDialogPanel removed - using React dialog system only
 
   private updateIngredientsPanelVisuals() {
     // Clear and redraw panel background
@@ -657,31 +607,7 @@ export default class PapedaScene extends Phaser.Scene {
     });
   }
 
-  private updateStepDisplay() {
-    if (this.currentStep < this.gameSteps.length) {
-      const step = this.gameSteps[this.currentStep];
-      this.stepText.setText(`${step.id}. ${step.text}`);
-      this.characterImage.setTexture(step.character.replace('.png', ''));
-      
-      // Animate text appearance
-      this.stepText.setAlpha(0);
-      this.tweens.add({
-        targets: this.stepText,
-        alpha: 1,
-        duration: 500,
-        ease: 'Power2'
-      });
-
-      // Update progress bar
-      const progressPercentage = (this.currentStep + 1) / this.gameSteps.length;
-      const dialogWidth = this.layoutConfig.cookingAreaRight - this.layoutConfig.dialogPanelLeft;
-      
-      const progressBar = this.dialogPanel.list[this.dialogPanel.list.length - 1] as Phaser.GameObjects.Graphics;
-      progressBar.clear();
-      progressBar.fillStyle(0xFFD700, 1);
-      progressBar.fillRoundedRect(20, this.layoutConfig.dialogPanelHeight - 15, (dialogWidth - 40) * progressPercentage, 6, 3);
-    }
-  }
+  // NOTE: updateStepDisplay removed - using React dialog system only
 
   private nextStep() {
     if (this.gameSteps[this.currentStep].isCompleted) return;
@@ -691,7 +617,27 @@ export default class PapedaScene extends Phaser.Scene {
 
     if (this.currentStep < this.gameSteps.length - 1) {
       this.currentStep++;
-      this.updateStepDisplay();
+
+      // NOTE: updateStepDisplay removed - using React dialog system only
+
+      // Update React dialog system if bridge is available
+      if (this.dialogBridge) {
+        console.log(`🚀 Papeda: Game advancing to step ${this.currentStep + 1}`);
+        console.log(`🎯 Papeda: Updating dialog to step index ${this.currentStep}`);
+
+        try {
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ Papeda: Dialog update successful');
+
+          // Verify the update
+          const verifyStep = this.dialogBridge.getCurrentStep();
+          console.log(`🔍 Papeda: Verification - dialog is now at step ${verifyStep}`);
+        } catch (error) {
+          console.error('❌ Papeda: Dialog update failed:', error);
+        }
+      } else {
+        console.warn('⚠️ Papeda: Dialog bridge not available for step update');
+      }
     }
 
     if (this.currentStep === 1) {
@@ -841,8 +787,9 @@ export default class PapedaScene extends Phaser.Scene {
       if (this.currentStep === 0) {
         if (droppedItemKey === 'Mangkuk' && dropZone === this.dropZone) {
           // Fixed position for main bowl in CookingArea
+          const gameHeight = this.cameras.main.height;
           const fixedBowlX = 800;
-          const fixedBowlY = 550;
+          const fixedBowlY = gameHeight - 280; // 280px dari dasar halaman
           
           const fixedBowl = this.add.image(fixedBowlX, fixedBowlY, 'Mangkuk')
             .setScale(this.layoutConfig.bowlScale)
@@ -989,8 +936,9 @@ export default class PapedaScene extends Phaser.Scene {
         // Place second bowl directly in CookingArea (any drop zone)
         if (droppedItemKey === 'Mangkuk' && (dropZone === this.dropZone || dropZone === this.flourDropZone)) {
           // Fixed position for second bowl (much further right from DenganTepung)
+          const gameHeight = this.cameras.main.height;
           const secondBowlX = 1100; // Much further right to prevent overlap
-          const secondBowlY = 550;
+          const secondBowlY = gameHeight - 280; // 280px dari dasar halaman
           
           const fixedSecondBowl = this.add.image(secondBowlX, secondBowlY, 'Mangkuk')
             .setScale(this.layoutConfig.bowlScale)
@@ -1779,87 +1727,7 @@ export default class PapedaScene extends Phaser.Scene {
     // Update method can be used for any per-frame logic if needed
   }
 
-  private createHintButton() {
-    // Position hint button further below the ingredients panel
-    const hintButtonX = this.layoutConfig.ingredientsPanelX + this.layoutConfig.ingredientsPanelWidth / 2;
-    const hintButtonY = this.layoutConfig.ingredientsPanelY + this.layoutConfig.ingredientsPanelHeight + 60;
-    
-    const hintButton = this.add.image(hintButtonX, hintButtonY, 'hint_normal').setInteractive();
-    hintButton.setScale(0.08); // Slightly smaller for better appearance
-
-    hintButton.on('pointerover', () => hintButton.setTexture('hint_hover'));
-    hintButton.on('pointerout', () => hintButton.setTexture('hint_normal'));
-    hintButton.on('pointerdown', () => {
-      hintButton.setTexture('hint_active');
-      this.showHintPopup();
-    });
-  }
-
-  private showHintPopup() {
-    if (!this.hintPopup) {
-      this.createHintPopup();
-    }
-    // Toggle popup visibility
-    this.hintPopup.setVisible(!this.hintPopup.visible);
-  }
-
-  private createHintPopup() {
-    const popupWidth = 650;
-    const popupHeight = 450;
-    const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
-
-    this.hintPopup = this.add.container(centerX, centerY);
-    this.hintPopup.setDepth(100);
-
-    // Modern brown gradient background
-    const background = this.add.graphics();
-    background.fillGradientStyle(0x8B4513, 0xA0522D, 0xCD853F, 0xDEB887, 1);
-    background.fillRoundedRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight, 20);
-    this.hintPopup.add(background);
-
-    // Inner content area with cream background
-    const contentBg = this.add.graphics();
-    contentBg.fillStyle(0xFFFDD0, 0.95);
-    contentBg.fillRoundedRect(-popupWidth / 2 + 15, -popupHeight / 2 + 15, popupWidth - 30, popupHeight - 30, 15);
-    this.hintPopup.add(contentBg);
-
-    // Title header
-    const title = this.add.text(0, -popupHeight / 2 + 45, 'Papeda', {
-      fontSize: '28px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#5D4037',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-    this.hintPopup.add(title);
-
-    // Divider line
-    const divider = this.add.graphics();
-    divider.lineStyle(2, 0x8B4513, 0.8);
-    divider.lineBetween(-popupWidth / 2 + 40, -popupHeight / 2 + 70, popupWidth / 2 - 40, -popupHeight / 2 + 70);
-    this.hintPopup.add(divider);
-
-    // Text content - simplified without masking
-    const textAreaWidth = popupWidth - 80;
-    const textStartX = -popupWidth / 2 + 40;
-    const textStartY = -popupHeight / 2 + 90;
-    
-    // Food information content
-    const papedaContent = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
-    
-    // Add the main text directly to popup
-    const text = this.add.text(textStartX, textStartY, papedaContent, {
-      fontSize: '16px',
-      fontFamily: 'Arial, sans-serif',
-      color: '#3E2723',
-      wordWrap: { width: textAreaWidth, useAdvancedWrap: true },
-      align: 'left',
-      lineSpacing: 6
-    }).setOrigin(0, 0);
-    
-    this.hintPopup.add(text);
-    this.hintPopup.setVisible(false);
-  }
+  // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
 
   // Step 7: Air 100ml animation and stirring
   private startAir100mlAnimation() {
@@ -2607,6 +2475,59 @@ export default class PapedaScene extends Phaser.Scene {
           particle.destroy();
         }
       });
+    }
+  }
+
+  private setupDialogBridge() {
+    console.log('🔧 Papeda: Setting up dialog bridge...');
+
+    // Wait for dialog bridge to be attached by React
+    const checkForBridge = () => {
+      console.log('🔍 Papeda: Checking for dialog bridge...');
+      if (this.dialogBridge) {
+        console.log('✅ Papeda: Dialog bridge connected!');
+        console.log('🎯 Papeda: Current game step:', this.currentStep);
+
+        // Test the bridge
+        try {
+          const currentDialogStep = this.dialogBridge.getCurrentStep();
+          console.log('📊 Papeda: Current dialog step:', currentDialogStep);
+
+          // Sync initial step
+          this.syncDialogWithGameStep();
+        } catch (error) {
+          console.error('❌ Papeda: Bridge test failed:', error);
+        }
+      } else {
+        console.log('⏳ Papeda: Bridge not ready, checking again in 500ms...');
+        // Try again in 500ms
+        this.time.delayedCall(500, checkForBridge);
+      }
+    };
+
+    // Start checking for bridge
+    this.time.delayedCall(100, checkForBridge);
+  }
+
+  private syncDialogWithGameStep() {
+    if (this.dialogBridge) {
+      console.log('🔄 Papeda: Syncing dialog with game step...');
+
+      try {
+        // Make sure dialog is at the correct step
+        const currentDialogStep = this.dialogBridge.getCurrentStep();
+        console.log(`📊 Papeda: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
+
+        if (this.currentStep !== currentDialogStep) {
+          console.log(`🔄 Papeda: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ Papeda: Dialog sync complete');
+        } else {
+          console.log('✅ Papeda: Dialog already in sync');
+        }
+      } catch (error) {
+        console.error('❌ Papeda: Dialog sync failed:', error);
+      }
     }
   }
 }

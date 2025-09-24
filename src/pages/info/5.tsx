@@ -6,26 +6,38 @@ import FoodInfoWrapper from '../../components/FoodInfoWrapper';
 
 type ButtonState = 'normal' | 'hover' | 'active';
 
-// Configuration object untuk pengaturan ukuran
+// Configuration object untuk pengaturan ukuran - Responsive
 const UI_CONFIG = {
   homeButton: {
-    size: 120, // Ukuran home button dalam pixel - diperbesar dari 100
-    position: { top: 24, left: 24 } // Posisi dari top dan left dalam pixel
+    size: 'clamp(80px, 12vw, 120px)', // Responsive size
+    position: {
+      top: 'clamp(16px, 3vw, 24px)',
+      left: 'clamp(16px, 3vw, 24px)'
+    }
   },
   titleBox: {
-    fontSize: '1.875rem', // text-3xl equivalent (30px)
-    padding: { x: 32, y: 16 }, // padding horizontal dan vertical
-    maxWidth: '28rem' // max width container
+    fontSize: 'clamp(1.25rem, 4vw, 1.875rem)', // Responsive font size
+    padding: {
+      x: 'clamp(16px, 4vw, 32px)',
+      y: 'clamp(12px, 2vw, 16px)'
+    },
+    maxWidth: 'min(90vw, 28rem)' // Responsive max width
   },
   contentBox: {
-    fontSize: '1rem', // text-base equivalent (16px)
-    padding: { x: 32, y: 32 }, // padding horizontal dan vertical  
-    maxWidth: '56rem', // max width container
-    lineHeight: '1.75' // leading-relaxed equivalent
+    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)', // Responsive font size
+    padding: {
+      x: 'clamp(16px, 4vw, 32px)',
+      y: 'clamp(16px, 4vw, 32px)'
+    },
+    maxWidth: 'min(95vw, 56rem)', // Responsive max width
+    lineHeight: 'clamp(1.5, 2vw, 1.75)' // Responsive line height
   },
   backButton: {
-    fontSize: '1rem', // ukuran font button
-    padding: { x: 24, y: 8 } // padding horizontal dan vertical
+    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)', // Responsive font size
+    padding: {
+      x: 'clamp(16px, 3vw, 24px)',
+      y: 'clamp(6px, 1.5vw, 8px)'
+    }
   }
 };
 
@@ -73,12 +85,12 @@ const NasiLapolaPage: React.FC = () => {
         }
       `}</style>
 
-      {/* Home Button - Top Left */}
-      <div 
+      {/* Home Button - Top Left - Responsive */}
+      <div
         className="fixed z-50"
-        style={{ 
-          top: `${UI_CONFIG.homeButton.position.top}px`, 
-          left: `${UI_CONFIG.homeButton.position.left}px` 
+        style={{
+          top: UI_CONFIG.homeButton.position.top,
+          left: UI_CONFIG.homeButton.position.left
         }}
       >
         <button
@@ -99,12 +111,14 @@ const NasiLapolaPage: React.FC = () => {
           <Image
             src={getHomeButtonImage()}
             alt="Home Button"
-            width={UI_CONFIG.homeButton.size}
-            height={UI_CONFIG.homeButton.size}
-            className="w-auto h-auto"
+            width={typeof window !== 'undefined' && window.innerWidth < 640 ? 60 : 80}
+            height={typeof window !== 'undefined' && window.innerWidth < 640 ? 60 : 80}
+            className="w-auto h-auto object-contain"
             style={{
               background: 'transparent',
-              backgroundColor: 'transparent'
+              backgroundColor: 'transparent',
+              maxWidth: UI_CONFIG.homeButton.size,
+              maxHeight: UI_CONFIG.homeButton.size
             }}
           />
         </button>
