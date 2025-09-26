@@ -79,18 +79,18 @@ const CreditPage: React.FC = () => {
 
   const developers = [
     {
-      name: "Carlo Bohan Matakena",
+      name: "Carlo Behan Matakena",
       description: "murid SMA Laboratorium Universitas Patimura. Carlo saat ini sedang menempuh pendidikan di kelas XII.",
       image: "/assets/credit/carlo.jpeg"
     },
     {
-      name: "Jidel Yunantin Mauwa",
+      name: "Jifdei Yunantin Mauwa",
       description: "murid SMA Laboratorium Universitas Patimura. Jidel saat ini sedang menempuh pendidikan di kelas XII.",
       image: "/assets/credit/jifdei.jpeg"
     },
     {
-      name: "Ivandra Immanuela Latumahulita",
-      description: "M.Pd merupakan guru SMA Laboratorium Universitas Patimura. Pak Ivan merupakan guru pembimbing kami.",
+      name: "Ivandra Immanuela Latumakulita, M.Pd",
+      description: "Merupakan guru SMA Laboratorium Universitas Patimura. Pak Ivan merupakan guru pembimbing kami.",
       image: "/assets/credit/ivandra.jpeg"
     }
   ];

@@ -714,7 +714,7 @@ export default class PapedaScene extends Phaser.Scene {
     this.mangkuk.off('pointerdown', this.handleStirring, this);
 
     // Mainkan animasi aduk
-    const stirAnim = this.add.sprite(this.mangkuk.x, this.mangkuk.y, 'PapedaAduk1').setScale(this.mangkuk.scale);
+    const stirAnim = this.add.sprite(this.mangkuk.x, this.mangkuk.y, 'PapedaAduk1').setScale(0.5);
     this.mangkuk.setVisible(false);
 
     this.anims.create({
@@ -788,11 +788,11 @@ export default class PapedaScene extends Phaser.Scene {
         if (droppedItemKey === 'Mangkuk' && dropZone === this.dropZone) {
           // Fixed position for main bowl in CookingArea
           const gameHeight = this.cameras.main.height;
-          const fixedBowlX = 800;
+          const fixedBowlX = 600;
           const fixedBowlY = gameHeight - 280; // 280px dari dasar halaman
           
           const fixedBowl = this.add.image(fixedBowlX, fixedBowlY, 'Mangkuk')
-            .setScale(this.layoutConfig.bowlScale)
+            .setScale(0.6)
             .setDepth(10)
             .setData('isFixed', true);
           
@@ -809,7 +809,7 @@ export default class PapedaScene extends Phaser.Scene {
         } else if (droppedItemKey === 'Tepung' && dropZone === this.flourDropZone) {
           // Create a new flour at fixed position in staging area with larger size
           const fixedFlour = this.add.image(this.stagingArea.x, this.stagingArea.y, 'Tepung')
-            .setScale(0.25)
+            .setScale(0.4)
             .setDepth(10);
           
           // Remove the dragged item
@@ -840,9 +840,9 @@ export default class PapedaScene extends Phaser.Scene {
             this.mangkuk.setVisible(false);
             
             // Center animation in CookingArea with smaller size
-            const centerX = 875; // Center of cooking area
-            const centerY = 500;
-            const pourAnim = this.add.sprite(centerX, centerY, 'TuangTepung1').setScale(0.2);
+            const centerX = 600; // Center of cooking area
+            const centerY = 600;
+            const pourAnim = this.add.sprite(centerX, centerY, 'TuangTepung1').setScale(0.5);
             
             this.anims.create({
                 key: 'pour_flour_anim',
@@ -878,9 +878,9 @@ export default class PapedaScene extends Phaser.Scene {
                 this.mangkuk.setVisible(false);
                 
                 // Center animation in CookingArea with smaller size
-                const centerX = 875;
-                const centerY = 500;
-                const pourWaterAnim = this.add.sprite(centerX, centerY, 'Air200ml1').setScale(0.2);
+                const centerX = 650;
+                const centerY = 600;
+                const pourWaterAnim = this.add.sprite(centerX, centerY, 'Air200ml1').setScale(0.5);
                 
                 this.anims.create({
                     key: 'pour_water_anim',
@@ -914,9 +914,12 @@ export default class PapedaScene extends Phaser.Scene {
         if (droppedItemKey === 'Spoon' && dropZone === this.dropZone) {
           // Check if bowl texture is HasilAduk1 (after water was added)
           if (this.mangkuk.texture.key === 'HasilAduk1') {
-            this.executeSuccessfulDrop(gameObject, () => {
+            // Keep spoon instance for returning to its original place later
+            this.spoonItem = gameObject;
+            this.executeSuccessfulDropKeepItem(gameObject, () => {
               // Change bowl texture to show spoon dropped on HasilAduk1
               this.mangkuk.setTexture('Aduk3');
+              this.mangkuk.setScale(0.5);
               // Make bowl fixed in position - remove from draggable objects
               this.mangkuk.setData('isFixed', true);
               // Start interactive stirring mechanism
@@ -937,11 +940,11 @@ export default class PapedaScene extends Phaser.Scene {
         if (droppedItemKey === 'Mangkuk' && (dropZone === this.dropZone || dropZone === this.flourDropZone)) {
           // Fixed position for second bowl (much further right from DenganTepung)
           const gameHeight = this.cameras.main.height;
-          const secondBowlX = 1100; // Much further right to prevent overlap
-          const secondBowlY = gameHeight - 280; // 280px dari dasar halaman
+          const secondBowlX = 1200; // Much further right to prevent overlap
+          const secondBowlY = gameHeight - 300; // 280px dari dasar halaman
           
           const fixedSecondBowl = this.add.image(secondBowlX, secondBowlY, 'Mangkuk')
-            .setScale(this.layoutConfig.bowlScale)
+            .setScale(0.6)
             .setDepth(10)
             .setData('isFixed', true);
           
@@ -965,6 +968,10 @@ export default class PapedaScene extends Phaser.Scene {
               this.executeSuccessfulDrop(gameObject, () => {
                 // Change second bowl to show strainer placed on it
                 this.secondBowl!.setTexture('SaringKosong1');
+                // Set explicit position for SaringKosong1
+                const saringX = 1200;
+                const saringY = this.cameras.main.height - 500;
+                this.secondBowl!.setPosition(saringX, saringY);
                 this.secondBowl!.setData('isFixed', true);
                 this.strainerBowl = this.secondBowl;
                 
@@ -1033,7 +1040,8 @@ export default class PapedaScene extends Phaser.Scene {
         }
         
         if (droppedItemKey === 'Spoon' && this.kerasItem && this.kerasItem.texture.key === 'HasilAduk2') {
-          this.executeSuccessfulDrop(gameObject, () => {
+          this.spoonItem = gameObject;
+          this.executeSuccessfulDropKeepItem(gameObject, () => {
             this.kerasItem!.setTexture('Aduk3');
             this.startStep7Stirring();
           });
@@ -1061,7 +1069,8 @@ export default class PapedaScene extends Phaser.Scene {
       // STEP 9: Dialog 9 - Spoon to AdonanJeruk
       if (this.currentStep === 8) {
         if (droppedItemKey === 'Spoon' && this.kerasItem && this.kerasItem.texture.key === 'AdonanJeruk') {
-          this.executeSuccessfulDrop(gameObject, () => {
+          this.spoonItem = gameObject;
+          this.executeSuccessfulDropKeepItem(gameObject, () => {
             this.kerasItem!.setTexture('AdukJeruk1');
             this.startStep9Stirring();
           });
@@ -1088,7 +1097,8 @@ export default class PapedaScene extends Phaser.Scene {
       // STEP 11: Dialog 11 - Spoon to Tambahan-Air-Panas
       if (this.currentStep === 10) {
         if (droppedItemKey === 'Spoon' && this.kerasItem && this.kerasItem.texture.key === 'Tambahan-Air-Panas') {
-          this.executeSuccessfulDrop(gameObject, () => {
+          this.spoonItem = gameObject;
+          this.executeSuccessfulDropKeepItem(gameObject, () => {
             this.kerasItem!.setTexture('Aduk3');
             this.startStep11Stirring();
           });
@@ -1151,6 +1161,26 @@ export default class PapedaScene extends Phaser.Scene {
       ease: 'Power2.easeOut',
       onComplete: () => {
         gameObject.destroy();
+        callback();
+      }
+    });
+  }
+
+  // Variant of successful drop that KEEPS the item (not destroy), hides it during action
+  private executeSuccessfulDropKeepItem(gameObject: Phaser.GameObjects.Image, callback: () => void) {
+    // Store drag start positions if missing
+    if (gameObject.getData('dragStartX') === undefined) {
+      gameObject.setData('dragStartX', gameObject.x);
+      gameObject.setData('dragStartY', gameObject.y);
+    }
+    this.tweens.add({
+      targets: gameObject,
+      alpha: 0,
+      scale: gameObject.scale * 0.8,
+      duration: 300,
+      ease: 'Power2.easeOut',
+      onComplete: () => {
+        gameObject.setVisible(false);
         callback();
       }
     });
@@ -1393,7 +1423,8 @@ export default class PapedaScene extends Phaser.Scene {
       fontSize: '20px',
       fontFamily: 'Chewy, cursive',
       color: '#FFD700',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      margin: '20px'
     }).setOrigin(0.5).setDepth(100);
     
     // Make bowl interactive for swipe detection
@@ -1404,6 +1435,9 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Store instruction text for updates
     this.mangkuk.setData('instructionText', instructionText);
+
+    // Ensure fixed scale 0.6 at the start of Step 4 stirring
+    this.mangkuk.setScale(0.6);
   }
   
   private onSwipeStart(pointer: Phaser.Input.Pointer) {
@@ -1419,7 +1453,7 @@ export default class PapedaScene extends Phaser.Scene {
     if (this.isSwipeActive) {
       const deltaX = pointer.x - this.swipeStartX;
       if (Math.abs(deltaX) > 10) {
-        this.mangkuk.setScale(this.layoutConfig.bowlScale * 1.05);
+        this.mangkuk.setScale(0.6 * 1.05);
       }
     }
   }
@@ -1436,7 +1470,7 @@ export default class PapedaScene extends Phaser.Scene {
     }
     
     this.isSwipeActive = false;
-    this.mangkuk.setScale(this.layoutConfig.bowlScale);
+    this.mangkuk.setScale(0.6);
   }
   
   private handleStirSwipe() {
@@ -1452,19 +1486,22 @@ export default class PapedaScene extends Phaser.Scene {
     if (this.currentStirTexture === 'Aduk3') {
       this.mangkuk.setTexture('Aduk4');
       this.currentStirTexture = 'Aduk4';
+      this.mangkuk.setScale(0.6);
     } else if (this.currentStirTexture === 'Aduk4') {
       this.mangkuk.setTexture('Aduk5');
       this.currentStirTexture = 'Aduk5';
+      this.mangkuk.setScale(0.6);
     } else if (this.currentStirTexture === 'Aduk5') {
       this.mangkuk.setTexture('Aduk4');
       this.currentStirTexture = 'Aduk4';
+      this.mangkuk.setScale(0.6);
     }
-    
+  
     // Visual feedback for stirring motion
     this.tweens.add({
       targets: this.mangkuk,
-      scaleX: this.layoutConfig.bowlScale * 1.08,
-      scaleY: this.layoutConfig.bowlScale * 1.08,
+      scaleX: 0.6 * 1.08,
+      scaleY: 0.6 * 1.08,
       duration: 120,
       yoyo: true,
       ease: 'Power2'
@@ -1500,14 +1537,36 @@ export default class PapedaScene extends Phaser.Scene {
     this.mangkuk.setInteractive({ draggable: true });
     this.input.setDraggable(this.mangkuk);
     
-    // Return spoon to IngredientPanel
-    this.returnSpoonToPanel();
+    // Return spoon back to its original drag position
+    this.returnSpoonToDragStart();
     
     // Show completion feedback
     this.showPlacementSuccess(this.mangkuk.x, this.mangkuk.y, "15x Adukan Selesai!");
     
     // Move to Dialog 5
     this.nextStep();
+  }
+
+  // Tween the kept spoon back to its drag start position
+  private returnSpoonToDragStart() {
+    if (this.spoonItem) {
+      const targetX = this.spoonItem.getData('dragStartX') ?? this.spoonItem.x;
+      const targetY = this.spoonItem.getData('dragStartY') ?? this.spoonItem.y;
+      this.spoonItem.setVisible(true);
+      this.tweens.add({
+        targets: this.spoonItem,
+        x: targetX,
+        y: targetY,
+        alpha: 1,
+        scale: 0.15,
+        duration: 300,
+        ease: 'Back.easeOut',
+        onComplete: () => {
+          // Clear reference
+          this.spoonItem = null;
+        }
+      });
+    }
   }
   
   // Dialog 5: Complete strainer system - 6 second single-run animation
@@ -1642,10 +1701,10 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Auto-return to cooking area as Keras.png - fixed position in center of cooking area
     const fixedKerasX = 800; // Center of cooking area
-    const fixedKerasY = 550; // Center of cooking area
+    const fixedKerasY = 700; // Center of cooking area
     
     this.kerasItem = this.add.image(fixedKerasX, fixedKerasY, 'Keras')
-      .setScale(this.layoutConfig.bowlScale)
+      .setScale(0.5)
       .setDepth(10)
       .setData('isFixed', true)
       .setName('Keras');
@@ -1739,7 +1798,7 @@ export default class PapedaScene extends Phaser.Scene {
     // Center animation in CookingArea
     const centerX = this.kerasItem.x;
     const centerY = this.kerasItem.y;
-    const pourAnim = this.add.sprite(centerX, centerY, 'Air100ml1').setScale(0.2);
+    const pourAnim = this.add.sprite(centerX, centerY, 'Air100ml1').setScale(0.5);
     
     this.anims.create({
       key: 'pour_air100ml_anim',
@@ -1785,6 +1844,9 @@ export default class PapedaScene extends Phaser.Scene {
     
     // Store instruction text for updates
     this.kerasItem!.setData('instructionText', instructionText);
+    
+    // Ensure fixed larger scale during Step 7 stirring
+    this.kerasItem!.setScale(0.5);
   }
 
   private onStep7SwipeStart(pointer: Phaser.Input.Pointer) {
@@ -1815,7 +1877,7 @@ export default class PapedaScene extends Phaser.Scene {
     }
     
     this.isSwipeActive = false;
-    this.kerasItem!.setScale(this.layoutConfig.bowlScale);
+    this.kerasItem!.setScale(0.5);
   }
   
   private handleStep7StirSwipe() {
@@ -1838,8 +1900,8 @@ export default class PapedaScene extends Phaser.Scene {
     // Visual feedback
     this.tweens.add({
       targets: this.kerasItem,
-      scaleX: this.layoutConfig.bowlScale * 1.08,
-      scaleY: this.layoutConfig.bowlScale * 1.08,
+      scaleX: 0.5 * 1.08,
+      scaleY: 0.5 * 1.08,
       duration: 120,
       yoyo: true,
       ease: 'Power2'
@@ -1865,8 +1927,8 @@ export default class PapedaScene extends Phaser.Scene {
     this.kerasItem!.off('pointermove');
     this.kerasItem!.off('pointerup');
     
-    // Return spoon to panel
-    this.returnSpoonToPanel();
+    // Return spoon back to its original drag position
+    this.returnSpoonToDragStart();
     
     this.showPlacementSuccess(this.kerasItem!.x, this.kerasItem!.y, "15x Adukan Selesai!");
     this.nextStep();
@@ -2068,7 +2130,8 @@ export default class PapedaScene extends Phaser.Scene {
     this.kerasItem!.off('pointermove');
     this.kerasItem!.off('pointerup');
     
-    this.returnSpoonToPanel();
+    // Return spoon back to its original drag position after Step 9
+    this.returnSpoonToDragStart();
     
     this.showPlacementSuccess(this.kerasItem!.x, this.kerasItem!.y, "15x Adukan Selesai!");
     this.nextStep();
@@ -2077,6 +2140,9 @@ export default class PapedaScene extends Phaser.Scene {
   // Step 10: Air Panas animation
   private startAirPanasAnimation() {
     if (!this.kerasItem) return;
+    
+    // Ensure the spoon returns to its original drag position at the start of Step 10
+    this.returnSpoonToDragStart();
     
     this.kerasItem.setVisible(false);
     
@@ -2205,7 +2271,8 @@ export default class PapedaScene extends Phaser.Scene {
     // Make Hasil-Jadi draggable for final assembly
     this.input.setDraggable(this.kerasItem!);
     
-    this.returnSpoonToPanel();
+    // Return spoon back to its original drag position (consistent behavior)
+    this.returnSpoonToDragStart();
     
     this.showPlacementSuccess(this.kerasItem!.x, this.kerasItem!.y, "25x Adukan Selesai!");
     this.nextStep();

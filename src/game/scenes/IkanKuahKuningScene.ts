@@ -126,6 +126,12 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private isScrollbarDragging: boolean = false;
   private scrollbarDragStartY: number = 0;
   private contentStartY: number = 0;
+
+  // Mobile swipe scroll variables
+  private isSwipeScrolling: boolean = false;
+  private swipeStartY: number = 0;
+  private swipeStartScrollY: number = 0;
+
   private infoContent: string = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti ikan cakalang, tongkol, atau ikan kerapu yang dipotong-potong. Bumbu kuah kuning terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum kemudian ditambah air dan santan hingga mendidih. Ikan kemudian dimasukkan dan dimasak hingga matang sambil menyerap cita rasa kuah yang kaya rempah. Hidangan ini biasanya disajikan dengan nasi putih atau papeda, dan memberikan sensasi hangat serta menyegarkan dengan aroma rempah yang khas.`;
 
   // Layout configuration
@@ -446,49 +452,66 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private createStoveButton() {
-    // Create button background (rectangle)
-    const buttonWidth = 80;
-    const buttonHeight = 40;
-    const buttonX = this.kompor.x + 120; // Position to the right of stove
-    const buttonY = this.kompor.y + 60;  // Position below stove
+    // Create Image-based button like menu toggle button for better mobile compatibility
+    const buttonX = this.kompor.x + 120;
+    const buttonY = this.kompor.y + 60;
 
-    this.stoveButton = this.add.rectangle(buttonX, buttonY, buttonWidth, buttonHeight, 0x666666)
-      .setStrokeStyle(2, 0x333333)
-      .setInteractive();
+    // Create button container for better organization
+    const buttonContainer = this.add.container(buttonX, buttonY).setDepth(1000);
+
+    // Create button background using Graphics (as a fallback if images aren't available)
+    this.stoveButton = this.add.graphics();
+    this.stoveButton.fillStyle(this.isStoveOn ? 0x00aa00 : 0x666666);
+    this.stoveButton.fillRoundedRect(-60, -30, 120, 60, 8);
+    this.stoveButton.lineStyle(3, 0x333333);
+    this.stoveButton.strokeRoundedRect(-60, -30, 120, 60, 8);
+    this.stoveButton.setInteractive(new Phaser.Geom.Rectangle(-60, -30, 120, 60), Phaser.Geom.Rectangle.Contains);
+
+    buttonContainer.add(this.stoveButton);
 
     // Create button text
-    this.stoveButtonText = this.add.text(buttonX, buttonY, 'ON', {
-      fontSize: '14px',
+    this.stoveButtonText = this.add.text(0, 0, this.isStoveOn ? 'OFF' : 'ON', {
+      fontSize: '18px',
       color: '#ffffff',
-      fontFamily: 'Arial'
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    // Button click handler
+    buttonContainer.add(this.stoveButtonText);
+
+    // Simple click-only event handling (no hover effects)
+    this.stoveButton.setInteractive();
+    this.stoveButton.off('pointerover'); // Remove old listeners
+    this.stoveButton.off('pointerout');
+    this.stoveButton.off('pointerdown');
+    this.stoveButton.off('pointerup');
+
+    // Main action on pointerdown - simple click without hover
     this.stoveButton.on('pointerdown', () => {
-      console.log('=== BUTTON CLICKED ===');
-      console.log('Button clicked! Current stove state:', this.isStoveOn);
+      console.log('=== STOVE BUTTON CLICKED ===');
+      console.log('Current stove state:', this.isStoveOn);
+
+      // Toggle stove immediately
       this.toggleStove();
       this.updateButtonAppearance();
-      console.log('After toggle, new stove state:', this.isStoveOn);
-    });
 
-    // Button hover effects
-    this.stoveButton.on('pointerover', () => {
-      this.stoveButton?.setStrokeStyle(2, 0xffffff);
-    });
-
-    this.stoveButton.on('pointerout', () => {
-      this.stoveButton?.setStrokeStyle(2, 0x333333);
+      console.log('New stove state:', this.isStoveOn);
     });
   }
 
   private updateButtonAppearance() {
     if (this.stoveButton && this.stoveButtonText) {
+      // Update button graphics
+      this.stoveButton.clear();
+      this.stoveButton.fillStyle(this.isStoveOn ? 0x00aa00 : 0x666666);
+      this.stoveButton.fillRoundedRect(-60, -30, 120, 60, 8);
+      this.stoveButton.lineStyle(3, 0x333333);
+      this.stoveButton.strokeRoundedRect(-60, -30, 120, 60, 8);
+
+      // Update button text
       if (this.isStoveOn) {
-        this.stoveButton.setFillStyle(0x00aa00); // Green when on
         this.stoveButtonText.setText('OFF');
       } else {
-        this.stoveButton.setFillStyle(0x666666); // Gray when off
         this.stoveButtonText.setText('ON');
       }
     }
@@ -567,6 +590,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         this.handleScroll(deltaY);
       }
     });
+
+    // Setup swipe scrolling for mobile devices
+    this.setupSwipeScrolling(scrollableAreaX, scrollableAreaY, scrollableAreaWidth, scrollableAreaHeight);
   }
 
   private createIngredients() {
@@ -598,12 +624,17 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       { key: "Mangkuk", name: "Mangkuk", scale: 0.15 }
     ];
 
-    // Manual grid layout
+    // Manual grid layout - Larger UI items, left-shifted 2-column layout with closer horizontal spacing
     const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 6;
-    const startY = 100; // Adjusted startY for content container
-    const spacingX = panelWidth / 2;
-    const spacingY = 90;
+    const itemWidth = 160; // Increased item background width
+    const itemHeight = 110; // Increased item background height
+    const horizontalGap = 20; // Small gap between columns
+    const leftMargin = 30; // Left margin to shift items to the left
+    const startX = leftMargin + (itemWidth / 2); // Shift layout to the left
+    const topPadding = 100;
+    const startY = 20 + topPadding;
+    const spacingX = itemWidth + horizontalGap; // Close horizontal spacing
+    const spacingY = 120; // Increased vertical spacing for larger items
     const itemsPerRow = 2;
 
     let maxContentY = 0;
@@ -614,29 +645,29 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       const x = startX + (col * spacingX);
       const y = startY + (row * spacingY);
 
-      // Item background
+      // Item background - Larger size for better UI
       const itemBg = this.add.graphics();
       itemBg.fillStyle(0x000000, 0.25);
-      itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
-      itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       this.ingredientsContentContainer.add(itemBg); // Add to content container
 
-      // Item image
+      // Item image - Larger scale for better visibility
       const item = this.add.image(x, y, ingredient.key)
         .setInteractive({ draggable: true })
-        .setScale(ingredient.scale)
+        .setScale(ingredient.scale * 1.5) // Increased scale for bigger items
         .setName(ingredient.key)
-        .setData('originalScale', ingredient.scale)
+        .setData('originalScale', ingredient.scale * 1.5)
         .setData('ingredientType', ingredient.key);
 
       this.ingredientItems.push(item);
       this.input.setDraggable(item);
       this.ingredientsContentContainer.add(item); // Add to content container
 
-      // Item label
-      const label = this.add.text(x, y + 40, ingredient.name, {
-        fontSize: '14px',
+      // Item label - Larger font size
+      const label = this.add.text(x, y + 50, ingredient.name, {
+        fontSize: '18px', // Increased from 14px to 18px
         fontFamily: 'Chewy, cursive',
         color: '#FFE4B5',
         align: 'center',
@@ -651,13 +682,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
       item.on('pointerout', () => {
         // Always reset to normal state
-        item.setScale(ingredient.scale);
+        item.setScale(ingredient.scale * 1.5);
         label.setColor('#FFE4B5');
         itemBg.clear();
         itemBg.fillStyle(0x000000, 0.25);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
         itemBg.lineStyle(1, 0x8B4513, 0.4);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       });
       maxContentY = Math.max(maxContentY, y + 40); // Track the lowest point of content
     });
@@ -1621,6 +1652,57 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     }
   }
 
+  private setupSwipeScrolling(scrollableAreaX: number, scrollableAreaY: number, scrollableAreaWidth: number, scrollableAreaHeight: number) {
+    // Simple swipe scroll setup that doesn't interfere with dragging
+    const panelBounds = new Phaser.Geom.Rectangle(
+      this.ingredientsPanel.x + scrollableAreaX,
+      this.ingredientsPanel.y + scrollableAreaY,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    );
+
+    // Only enable swipe scrolling when touching empty areas (not on items)
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        return;
+      }
+
+      // Check if we clicked directly on an ingredient item
+      const gameObjectsUnderPointer = this.input.hitTestPointer(pointer);
+      const clickedIngredient = gameObjectsUnderPointer.find((obj: any) =>
+        this.ingredientItems.includes(obj)
+      );
+
+      // Only start swipe if we didn't click on an ingredient
+      if (!clickedIngredient) {
+        this.isSwipeScrolling = true;
+        this.swipeStartY = pointer.y;
+        this.swipeStartScrollY = this.ingredientsContentContainer.y;
+      }
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!this.isSwipeScrolling || !pointer.isDown) return;
+
+      const deltaY = this.swipeStartY - pointer.y;
+      const scrollSpeed = 1;
+      let newY = this.swipeStartScrollY - (deltaY * scrollSpeed);
+
+      const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 105;
+      const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+      newY = Math.max(-maxScroll, newY);
+      newY = Math.min(0, newY);
+
+      this.ingredientsContentContainer.y = newY;
+      this.updateScrollbar();
+    });
+
+    this.input.on('pointerup', () => {
+      this.isSwipeScrolling = false;
+    });
+  }
+
   private isValidIngredient(ingredientName: string): boolean {
     const allowedIngredients = this.ingredientOrder[this.cookingState];
     return allowedIngredients ? allowedIngredients.includes(ingredientName) : false;
@@ -2052,41 +2134,44 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   }
 
   private recreateItemInPanel(ingredientConfig: { key: string, name: string, scale: number }): void {
-    // Find an empty spot in the ingredients grid
-    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 6;
+    // Use new layout dimensions
+    const itemWidth = 160;
+    const itemHeight = 110;
+    const horizontalGap = 20;
+    const leftMargin = 30;
+    const startX = leftMargin + (itemWidth / 2);
     const startY = 100;
-    const spacingX = panelWidth / 2;
+    const spacingX = itemWidth + horizontalGap;
     const spacingY = 90;
     const itemsPerRow = 2;
-    
+
     // For simplicity, place at first position - could be improved to find actual empty spot
     const x = startX;
     const y = startY;
 
-    // Item background
+    // Item background with new dimensions
     const itemBg = this.add.graphics();
     itemBg.fillStyle(0x000000, 0.25);
-    itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+    itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
     itemBg.lineStyle(1, 0x8B4513, 0.4);
-    itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+    itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
     this.ingredientsContentContainer.add(itemBg);
 
-    // Item image
+    // Item image with increased scale
     const item = this.add.image(x, y, ingredientConfig.key)
       .setInteractive({ draggable: true })
-      .setScale(ingredientConfig.scale)
+      .setScale(ingredientConfig.scale * 1.5)
       .setName(ingredientConfig.key)
-      .setData('originalScale', ingredientConfig.scale)
+      .setData('originalScale', ingredientConfig.scale * 1.5)
       .setData('ingredientType', ingredientConfig.key);
 
     this.ingredientItems.push(item);
     this.input.setDraggable(item);
     this.ingredientsContentContainer.add(item);
 
-    // Item label
+    // Item label with increased font size
     const label = this.add.text(x, y + 40, ingredientConfig.name, {
-      fontSize: '14px',
+      fontSize: '18px',
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -2101,13 +2186,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
     item.on('pointerout', () => {
       // Always reset to normal state
-      item.setScale(ingredientConfig.scale);
+      item.setScale(ingredientConfig.scale * 1.5);
       label.setColor('#FFE4B5');
       itemBg.clear();
       itemBg.fillStyle(0x000000, 0.25);
-      itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
-      itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
     });
 
     console.log(`Recreated ${ingredientConfig.name} in ingredients panel`);

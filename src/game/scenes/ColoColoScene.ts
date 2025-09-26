@@ -1163,11 +1163,14 @@ export default class ColoColoScene extends Phaser.Scene {
         { key: "piringcolocolo", name: "Piring", scale: 0.25 }
     ];
 
-    // Manual grid layout
-    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const startX = panelWidth / 4;
+    // New mobile-friendly layout with larger items and better spacing
+    const itemWidth = 160;
+    const itemHeight = 110;
+    const horizontalGap = 20;
+    const leftMargin = 30;
+    const startX = leftMargin + (itemWidth / 2);
     const startY = 100;
-    const spacingX = panelWidth / 2;
+    const spacingX = itemWidth + horizontalGap;
     const spacingY = 90;
     const itemsPerRow = 2;
 
@@ -1179,28 +1182,28 @@ export default class ColoColoScene extends Phaser.Scene {
       const itemKey = `colo_${ingredient.key}`;
       const ingredientName = `ingredient_${ingredient.key.replace('bawangputih2', 'bawang_putih').replace('daunjeruk', 'daun_jeruk').replace('jeruknipis', 'jeruk_nipis').replace('piringcolocolo', 'piring')}`;
 
-      // Item background
+      // Item background with new larger dimensions
       const itemBg = this.add.graphics();
       itemBg.fillStyle(0x000000, 0.25);
-      itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
-      itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       this.ingredientsPanel.add(itemBg);
 
-      // Item image
+      // Item image with increased scale for mobile-friendly size
       const item = this.add.image(x, y, itemKey)
         .setInteractive()
-        .setScale(ingredient.scale)
+        .setScale(ingredient.scale * 1.5)
         .setName(ingredientName);
 
       this.ingredientItems.push(item);
       this.input.setDraggable(item);
       this.ingredientsPanel.add(item);
 
-      // Store original scale for reset
-      item.setData('originalScale', ingredient.scale);
+      // Store original scale for reset (with new multiplier)
+      item.setData('originalScale', ingredient.scale * 1.5);
 
-      // Item label
+      // Item label with larger font size
       const label = this.add.text(x, y + 40, ingredient.name, {
         fontSize: '18px',
         fontFamily: 'Chewy, cursive',
@@ -1210,25 +1213,25 @@ export default class ColoColoScene extends Phaser.Scene {
       }).setOrigin(0.5, 0.5);
       this.ingredientsPanel.add(label);
 
-      // Hover effects
+      // Hover effects with new dimensions
       item.on('pointerover', () => {
-        item.setScale(ingredient.scale * 1.15);
+        item.setScale(ingredient.scale * 1.5 * 1.15);
         label.setColor('#FFFFFF');
         itemBg.clear();
         itemBg.fillStyle(0xFFD700, 0.15);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
         itemBg.lineStyle(1, 0xFFD700, 0.6);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       });
 
       item.on('pointerout', () => {
-        item.setScale(ingredient.scale);
+        item.setScale(ingredient.scale * 1.5);
         label.setColor('#FFE4B5');
         itemBg.clear();
         itemBg.fillStyle(0x000000, 0.25);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
         itemBg.lineStyle(1, 0x8B4513, 0.4);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       });
     });
   }
