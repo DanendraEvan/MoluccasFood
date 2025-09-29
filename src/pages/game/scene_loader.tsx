@@ -1,8 +1,9 @@
-// pages/game.tsx - Improved with CSS-based Layout Control
+// pages/game.tsx - Improved with CSS-based Layout Control and Instruction Display
 import dynamic from "next/dynamic";
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import KitchenBackgroundWrapper, { DialogStep, useDialogSystem } from '@/components/KitchenBackgroundWrapper';
+import InstructionDisplay from '@/components/InstructionDisplay';
 
 // Scene configurations
 interface GameScene {
@@ -56,6 +57,7 @@ const GamePage: React.FC = () => {
   const [phaserLoaded, setPhaserLoaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Import dialog steps
   const { getDialogStepsForScene } = require('@/components/DialogSteps');
@@ -188,12 +190,16 @@ const GamePage: React.FC = () => {
           setPhaserLoaded(true);
           setLoadingProgress(100);
           setGameStatus('ready');
+          // Show instructions when ready
+          setShowInstructions(true);
         } catch (importError) {
           console.error('Error importing scene:', importError);
           setPhaserLoaded(false);
           setGameStatus('demo');
           setErrorMessage(`Scene ${scene} tidak ditemukan. Mode demo akan diaktifkan.`);
           setLoadingProgress(100);
+          // Still show instructions in demo mode
+          setShowInstructions(true);
         }
 
       } catch (error) {
@@ -202,6 +208,8 @@ const GamePage: React.FC = () => {
         setPhaserLoaded(false);
         setErrorMessage('Terjadi kesalahan saat memuat game. Mode demo akan diaktifkan.');
         setLoadingProgress(100);
+        // Still show instructions in demo mode
+        setShowInstructions(true);
       }
     };
 
@@ -397,6 +405,31 @@ const GamePage: React.FC = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <button
+            onClick={() => setShowInstructions(true)}
+            style={{
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '16px',
+              fontFamily: 'Chewy, cursive',
+              fontWeight: 'bold',
+              color: '#8B4513',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #FFA500, #FF8C00)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #FFD700, #FFA500)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            Lihat Petunjuk
+          </button>
           <button
             onClick={handleBackToMenu}
             style={{
@@ -626,12 +659,20 @@ const GamePage: React.FC = () => {
         }
       `}</style>
 
+      {/* Instruction Display */}
+      <InstructionDisplay
+        sceneName={scene as string}
+        onStartGame={handleStartGame}
+        isVisible={showInstructions && gameStatus === 'ready'}
+        onClose={() => setShowInstructions(false)}
+      />
+
       <KitchenBackgroundWrapper
         sceneTitle={currentScene?.displayName || 'Loading...'}
         sceneDescription={currentScene?.description || 'Memuat deskripsi game...'}
         backgroundColor={currentScene?.backgroundColor || 'transparent'}
         isGameActive={isGameActive}
-        onStartGame={handleStartGame}
+        onStartGame={() => setShowInstructions(true)}
         showStartButton={gameStatus === 'ready'}
         gameStatus={gameStatus}
         // Dialog system props

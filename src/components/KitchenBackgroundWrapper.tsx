@@ -689,14 +689,6 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
       {/* Game Start Screen */}
       {gameStatus === 'ready' && !isGameActive && <GameStartScreen />}
 
-      {/* Dialog System - Only show when game is active */}
-      {gameStatus === 'playing' && isGameActive && (
-        <>
-          <DialogPanel />
-          <DialogToggleButton />
-        </>
-      )}
-
       {/* Hint System - Only show when game is active and food type is provided */}
       {gameStatus === 'playing' && isGameActive && showHintButton && currentFoodInfo && (
         <>
