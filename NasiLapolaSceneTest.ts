@@ -93,12 +93,10 @@ export default class NasiLapolaScene extends Phaser.Scene {
   // Stove and timing state
   private isStoveOn: boolean = false;
   private stoveAnimTimer: Phaser.Time.TimerEvent | null = null;
-  private stoveButton: Phaser.GameObjects.Graphics | null = null;
+  private stoveButton: Phaser.GameObjects.Rectangle | null = null;
   private stoveButtonText: Phaser.GameObjects.Text | null = null;
   private cookCountdownTimer: Phaser.Time.TimerEvent | null = null;
   private cookCountdownText: Phaser.GameObjects.Text | null = null;
-  private stoveHintText: Phaser.GameObjects.Text | null = null;
-  private baskomKelapaHintText: Phaser.GameObjects.Text | null = null;
 
   // Step 3-8 working objects
   private baskomObj: Phaser.GameObjects.Image | null = null;
@@ -116,9 +114,9 @@ export default class NasiLapolaScene extends Phaser.Scene {
     0: { allowedItems: ['Panci', 'water', 'Kacang'], totalSubSteps: 3 }, // Step 1: Panci->Water->Kacang
     1: { allowedItems: ['PanciKacang'], totalSubSteps: 1 }, // Step 2: PanciKacang only
     2: { allowedItems: ['Baskom', 'Parut', 'Kelapa'], totalSubSteps: 3 }, // Step 3: Baskom->Parut->Kelapa
-    3: { allowedItems: ['PanciKosong2', 'BaskomKelapa', 'water', 'PanciSantan'], totalSubSteps: 4 }, // Step 4: PanciKosong2->BaskomKelapa->water->PanciSantan
+    3: { allowedItems: ['PanciSaring', 'BaskomKelapa', 'KukusKelapa'], totalSubSteps: 3 }, // Step 4: PanciSaring->BaskomKelapa->KukusKelapa
     4: { allowedItems: ['PanciAir2', 'Beras'], totalSubSteps: 2 }, // Step 5: PanciAir2->Beras
-    5: { allowedItems: ['Garam', 'PanciSantan2', 'PanciKacang'], totalSubSteps: 3 }, // Step 6: Garam->PanciSantan2->PanciKacang
+    5: { allowedItems: ['Garam', 'PanciKelapa', 'PanciKacang'], totalSubSteps: 3 }, // Step 6: Garam->PanciKelapa->PanciKacang
     6: { allowedItems: ['WajanNasiLapola', 'PanciSaring', 'WajanNasiLapola'], totalSubSteps: 3 }, // Step 7: WajanNasiLapola->PanciSaring->WajanNasiLapola
     7: { allowedItems: ['Piring', 'KukusNasi'], totalSubSteps: 2 } // Step 8: Piring->KukusNasi
   };
@@ -192,19 +190,19 @@ export default class NasiLapolaScene extends Phaser.Scene {
     },
     {
       id: 4,
-      text: "Step ke 4 Ambil Panci Kosong dari Menu dan taruh ke atas Kompor. Kemudian ambil Parutan Kelapa tadi dan masukkan ke dalam Panci Kosong. Sekarang kita peras santan dengan tap/klik 4 kali pada setiap tahap sampai menjadi PanciSantan. Nyalakan Kompor dan tunggu 30 detik sampai matang, lalu tempatkan ke Tempat Tiris.",
+      text: "Step ke 4 Taruh Panci baru dari Menu dan taruh ke atas Kompor. Kemudian Ambil Parutan Kelapa tadi dan masukkan ke panci, lanjut kita nyalakan Kompornya dengan Klik tuasnya. Tunggu beberapa saat sampai matang. Kukusan kelapa yang sudah matang dan tempatkan ke Tempat Tiris.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 5,
-      text: "Baik setelah Merebus kacang dan Memasak santan, mari kita masak berasnya. Ambil Panci Air di menu dan Taruh ke Kompor. Ambil Beras dari menu dan masukkan ke dalam Panci air diatas Kompor. Lanjut!! Kita aduk terus beras sampai masak setengah matang.",
+      text: "Baik setelah Merebus kacang dan Mengukus kelapa, mari kita masak berasnya. Ambil Panci berisi Air di menu dan Taruh ke Kompor. Ambil Beras dari menu dan masukkan ke dalam Panci air diatas Kompor. Lanjut!! Kita aduk terus beras sampai masak setengah matang.",
       character: "karakter5.png",
       isCompleted: false
     },
     {
       id: 6,
-      text: "Beras yang setengah matang mari kita tambahkan dengan bahan lainnya. Ambil Garam terlebih dahulu di Menu dan PanciSantan yang ada di Tempat Tiris. Sudah? Mari kita tambahkan Rebusan Kacang di Tempat Tiris dan Masukkan ke dalam Masakan Beras tadi. Aduk hingga merata, kemudian tunggu beberapa saat sampai matang.",
+      text: "Beras yang setengah matang mari kita tambahkan dengan bahan lainnya. Ambil Garam terlebih dahulu di Menu dan Kukusan kelapa yang ada di Tempat Tiris. Sudah? Mari kita tambahkan Rebusan Kacang di Tempat Tiris dan Masukkan ke dalam Masakan Beras tadi. Aduk hingga merata, kemudian tunggu beberapa saat sampai matang.",
       character: "karakter6.png",
       isCompleted: false
     },
@@ -249,15 +247,6 @@ export default class NasiLapolaScene extends Phaser.Scene {
     // Variasi & hasil proses
     this.load.image("PanciKacang", "/assets/foods/nasi_lapola/PanciKacang.png");
     this.load.image("PanciSaring", "/assets/foods/nasi_lapola/PanciSaring.png");
-    this.load.image("PanciKosong", "/assets/foods/nasi_lapola/PanciKosong.png");
-    this.load.image("PanciKosong2", "/assets/foods/nasi_lapola/PanciKosong2.png");
-    this.load.image("AirkeKelapa1", "/assets/foods/nasi_lapola/AirkeKelapa1.png");
-    this.load.image("AirkeKelapa2", "/assets/foods/nasi_lapola/AirkeKelapa2.png");
-    this.load.image("PerasSantan1", "/assets/foods/nasi_lapola/PerasSantan1.png");
-    this.load.image("PerasSantan2", "/assets/foods/nasi_lapola/PerasSantan2.png");
-    this.load.image("PerasSantan3", "/assets/foods/nasi_lapola/PerasSantan3.png");
-    this.load.image("PanciSantan", "/assets/foods/nasi_lapola/PanciSantan.png");
-    this.load.image("PanciSantan2", "/assets/foods/nasi_lapola/PanciSantan2.png");
     this.load.image("PanciKelapa", "/assets/foods/nasi_lapola/PanciKelapa.png");
     this.load.image("PanciBeras", "/assets/foods/nasi_lapola/PanciBeras.png");
     this.load.image("PanciBerasKelapa", "/assets/foods/nasi_lapola/PanciBerasKelapa.png");
@@ -580,7 +569,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
     // Prep zone to the right of stove for step 3 setup (baskom/parut/kelapa)
     this.prepRightZone = this.add.zone(
-      this.komporZone.x + 300, // Moved 40px further right (260 + 40 = 300)
+      this.komporZone.x + 260,
       this.komporZone.y,
       200,
       160
@@ -609,7 +598,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
     const stagingLabel = this.add.text(
       this.stagingZone.x,
       this.stagingZone.y,
-      "Tampa Tiris",
+      "Tempat Tiris",
       {
         fontSize: '28px',
         fontFamily: 'Chewy, cursive',
@@ -721,16 +710,16 @@ export default class NasiLapolaScene extends Phaser.Scene {
     this.ingredientsContentContainer.removeAll(true); // Clear previous items from the container
 
     const ingredients = [
-      { key: "Panci", name: "Panci Besar", scale: 0.12 },
-      { key: "water", name: "Aer", scale: 0.15 },
+      { key: "Panci", name: "Panci", scale: 0.12 },
+      { key: "water", name: "Air", scale: 0.15 },
       { key: "Kacang", name: "Kacang", scale: 0.2 },
-      { key: "Beras", name: "Baras", scale: 0.2 },
+      { key: "Beras", name: "Beras", scale: 0.2 },
       { key: "Garam", name: "Garam", scale: 0.2 },
-      { key: "Kelapa", name: "Santan kelapa", scale: 0.2 },
+      { key: "Kelapa", name: "Kelapa", scale: 0.2 },
       { key: "Parut", name: "Parutan", scale: 0.15 },
-      { key: "Baskom", name: "Loyang", scale: 0.15 },
-      { key: "PanciKosong2", name: "Panci Kosong", scale: 0.14 },
-      { key: "PanciSaring", name: "Panci tapis-tapis", scale: 0.14 },
+      { key: "Baskom", name: "Baskom", scale: 0.15 },
+      { key: "PanciSaring", name: "Panci Saring", scale: 0.14 },
+      { key: "PanciSaring", name: "Panci Saring", scale: 0.14 },
       // Remove spatula from panel per request
       { key: "PanciAir2", name: "Panci Air", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.15 }
@@ -780,9 +769,9 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
       // Item label - Larger font size
       const label = this.add.text(x, y + 50, ingredient.name, {
-        fontSize: '22px', // Increased from 18px to 22px
+        fontSize: '18px', // Increased from 14px to 18px
         fontFamily: 'Chewy, cursive',
-        color: '#FFFF00', // Changed to bright yellow color
+        color: '#FFE4B5',
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
@@ -796,7 +785,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
       item.on('pointerout', () => {
         // Always reset to normal state with new larger sizes
         item.setScale(ingredient.scale * 1.5); // Use increased scale
-        label.setColor('#FFFF00');
+        label.setColor('#FFE4B5');
         itemBg.clear();
         itemBg.fillStyle(0x000000, 0.25);
         itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
@@ -828,7 +817,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
     // Update panel title position and text
     this.panelTitle.setText("BAHAN & ALAT");
     this.panelTitle.setStyle({
-      fontSize: '28px',
+      fontSize: '14px',
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -839,7 +828,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
     // Update menu toggle button position and interactivity
     this.menuToggleButton.setPosition(30, 30);
-    this.menuToggleButton.setScale(0.12); // Increased from 0.05 to 0.12 for better mobile accessibility
+    this.menuToggleButton.setScale(0.05);
     this.menuToggleButton.setInteractive();
     this.menuToggleButton.off('pointerover'); // Remove old listeners
     this.menuToggleButton.off('pointerout');
@@ -966,48 +955,27 @@ export default class NasiLapolaScene extends Phaser.Scene {
     const validation = this.stepValidation[this.currentStep];
     if (!validation) return false;
 
-    // Special case for step 2: only allow dragging cooked PanciKacang from stove to staging
+    // Special case for step 2: allow dragging cooked pot from stove to staging
     if (this.currentStep === 1 && this.panciMasak && this.statePanciMasak === 'kacang_matang') {
-      // Only allow dragging the cooked PanciKacang, not other items from IngredientPanel
-      if (itemName === 'PanciKacang' || (this.panciMasak && this.panciMasak.name === itemName)) {
-        return true;
-      }
-      return false; // Block other items from being dragged in step 2
-    }
-
-    // Special case for step 4: allow dragging cooked santan from stove to staging
-    if (this.currentStep === 3 && this.panciSaringStep4 && this.statePanciSaringStep4 === 'santan_matang') {
-      // Allow dragging the cooked santan pot regardless of itemName for step 4
+      // Allow dragging the cooked pot regardless of itemName for step 2
       return true;
     }
 
-    // Special case for step 4: allow dragging PanciSantan when cooked
-    if (this.currentStep === 3 && itemName === 'PanciSantan' && this.statePanciSaringStep4 === 'santan_matang') {
+    // Special case for step 4: allow dragging cooked coconut from stove to staging
+    if (this.currentStep === 3 && this.panciSaringStep4 && this.statePanciSaringStep4 === 'kelapa_matang') {
+      // Allow dragging the cooked coconut pot regardless of itemName for step 4
       return true;
     }
 
-    // Special case for step 4: specific substep validation for PanciKosong2, BaskomKelapa, water, and PanciSantan
-    if (this.currentStep === 3) {
-      // Sub-step 0: Only allow PanciKosong2
-      if (this.currentSubStep === 0 && itemName === 'PanciKosong2') {
-        return true;
-      }
-      // Sub-step 1: Only allow BaskomKelapa if PanciKosong is already placed
-      if (this.currentSubStep === 1 && itemName === 'BaskomKelapa' && this.panciSaringStep4) {
-        return true;
-      }
-      // Sub-step 2: Only allow water when PerasSantan1 needs water
-      if (this.currentSubStep === 2 && itemName === 'water' && this.statePanciSaringStep4 === 'peras_santan_1_need_water') {
-        return true;
-      }
-      // Sub-step 3: Only allow PanciSantan when cooked (handled above)
-      return false;
+    // Special case for step 4: allow dragging KukusKelapa when cooked
+    if (this.currentStep === 3 && itemName === 'KukusKelapa' && this.statePanciSaringStep4 === 'kelapa_matang') {
+      return true;
     }
 
     // Special case for step 6: allow dragging staging items at appropriate substeps
     if (this.currentStep === 5) {
-      // Allow PanciSantan2 at substep 1
-      if (this.currentSubStep === 1 && itemName === 'PanciSantan2') {
+      // Allow PanciKelapa (KukusKelapa) at substep 1
+      if (this.currentSubStep === 1 && itemName === 'PanciKelapa') {
         return true;
       }
       // Allow PanciKacang at substep 2
@@ -1293,25 +1261,13 @@ export default class NasiLapolaScene extends Phaser.Scene {
         });
       }
       else if (this.panciMasak && this.currentStep === 0 && this.currentSubStep === 1 && droppedKey === "water" && this.statePanciMasak === "empty" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
-        // Store original position for return
-        const originalX = gameObject.getData('dragStartX') || gameObject.x;
-        const originalY = gameObject.getData('dragStartY') || gameObject.y;
-
-        // Hide water object during animation
-        gameObject.setVisible(false);
-        gameObject.disableInteractive();
-
-        // Execute pour animation without destroying the water object
-        this.executePourAnimationWithReturn(gameObject, ["TuangAir1", "TuangAir2", "TuangAir3", "TuangAir4"], 6000, () => {
+        this.executePourAnimation(gameObject, ["TuangAir1", "TuangAir2", "TuangAir3", "TuangAir4"], 6000, () => {
           if (this.panciMasak) {
             this.panciMasak.setTexture("PanciAir");
             this.panciMasak.setScale(0.48); // Adjust scale for PanciAir texture
             this.statePanciMasak = "air";
             this.nextSubStep(); // Move to sub-step 2 (kacang)
           }
-
-          // Return water to ingredients panel after animation
-          this.returnWaterToPanel(gameObject, originalX, originalY);
         }, this.panciMasak);
       }
       else if (this.panciMasak && this.currentStep === 0 && this.currentSubStep === 2 && droppedKey === "Kacang" && this.statePanciMasak === "air" && Phaser.Geom.Rectangle.Contains(this.panciMasak.getBounds(), pointer.x, pointer.y)) {
@@ -1351,18 +1307,10 @@ export default class NasiLapolaScene extends Phaser.Scene {
         // Return PanciKacang to kompor position
         this.returnToOriginalPosition(gameObject);
       }
-      // STEP 4: Handle invalid drop of cooked PanciSantan (not to staging area)
-      else if (this.currentStep === 3 && this.currentSubStep === 3 && gameObject === this.panciSaringStep4 && this.statePanciSaringStep4 === 'santan_matang' && dropZone !== this.stagingZone) {
-        console.log('PanciSantan dropped to invalid location - returning to kompor position');
-        // Return PanciSantan to kompor position
-        this.returnToOriginalPosition(gameObject);
-      }
-      // STEP 4: Handle forcing drag during cooking (shake screen)
-      else if (this.currentStep === 3 && gameObject === this.panciSaringStep4 && this.statePanciSaringStep4 === 'santan_mentah') {
-        console.log('User tried to drag PanciSantan during cooking - shake screen');
-        // Screen shake effect
-        this.cameras.main.shake(300, 0.02, true);
-        // Return to original position
+      // STEP 4: Handle invalid drop of cooked KukusKelapa (not to staging area)
+      else if (this.currentStep === 3 && this.currentSubStep === 2 && gameObject === this.panciSaringStep4 && this.statePanciSaringStep4 === 'kelapa_matang' && dropZone !== this.stagingZone) {
+        console.log('KukusKelapa dropped to invalid location - returning to kompor position');
+        // Return KukusKelapa to kompor position
         this.returnToOriginalPosition(gameObject);
       }
       // STEP 3: Grating workflow (Baskom->Parut->Kelapa sequence)
@@ -1396,14 +1344,14 @@ export default class NasiLapolaScene extends Phaser.Scene {
           // nextSubStep will be called from initGratingMechanic when grating is complete
         });
       }
-      // STEP 4: Memasak Santan (PanciKosong2->PanciKosong->BaskomKelapa->PerasSantan sequence)
-      else if (dropZone === this.komporZone && this.currentStep === 3 && this.currentSubStep === 0 && droppedKey === "PanciKosong2" && !this.panciSaringStep4) {
-        console.log('PanciKosong2 placed on stove for step 4, transforming to PanciKosong');
+      // STEP 4: Steaming Coconut (PanciSaring->BaskomKelapa->KukusKelapa sequence)
+      else if (dropZone === this.komporZone && this.currentStep === 3 && this.currentSubStep === 0 && droppedKey === "PanciSaring" && !this.panciSaringStep4) {
+        console.log('PanciSaring placed on stove for step 4');
         this.executeSuccessfulDrop(gameObject, () => {
-          this.panciSaringStep4 = this.add.image(dropZone.x - 15, dropZone.y - 190, 'PanciKosong')
+          this.panciSaringStep4 = this.add.image(dropZone.x - 15, dropZone.y - 60, 'PanciSaring')
             .setScale(this.layoutConfig.potScale)
             .setInteractive()
-            .setName('PanciKosong')
+            .setName('PanciSaring')
             .setData('originalScale', this.layoutConfig.potScale);
           this.input.setDraggable(this.panciSaringStep4);
           this.statePanciSaringStep4 = 'empty';
@@ -1417,82 +1365,57 @@ export default class NasiLapolaScene extends Phaser.Scene {
         console.log('- statePanciSaringStep4:', this.statePanciSaringStep4);
 
         if (this.panciSaringStep4 && this.statePanciSaringStep4 === 'empty' && Phaser.Geom.Rectangle.Contains(this.panciSaringStep4.getBounds(), pointer.x, pointer.y)) {
-          console.log('BaskomKelapa dropped successfully on PanciKosong!');
+          console.log('BaskomKelapa dropped successfully on PanciSaring!');
+          // Execute pour animation dengan BaskomKelapa menuang ke PanciSaring
+        this.executePourAnimation(gameObject, ["KelapaMasuk1","KelapaMasuk2","KelapaMasuk3"], 6000, () => {
+          if (this.panciSaringStep4) {
+            // Setelah animasi selesai, panciSaring berubah menjadi KukusKelapa
+            this.panciSaringStep4.setTexture('KukusKelapa');
+            this.panciSaringStep4.setName('KukusKelapa');
+            this.statePanciSaringStep4 = 'kelapa_mentah';
+            this.panciSaringStep4.disableInteractive(); // Disable dragging selama memasak
 
-          // Remove the dropped BaskomKelapa object
-          gameObject.destroy();
-
-          // Change texture to PerasSantan1 but DON'T start pressing mechanic yet
-          this.panciSaringStep4.setTexture('PerasSantan1');
-          this.panciSaringStep4.setScale(this.layoutConfig.potScale); // Ensure consistent scale from the start
-          this.panciSaringStep4.setName('PerasSantan1');
-          this.statePanciSaringStep4 = 'peras_santan_1_need_water';
-
-          // Show hint text for adding water
-          this.showBaskomKelapaHint();
-
-          // Move to sub-step 2 (water requirement) - pressing will be sub-step 3
-          this.nextSubStep();
+            // Cek apakah kompor sudah menyala untuk memulai countdown
+            if (this.isStoveOn) {
+              // Mulai countdown 30 detik untuk mengukus kelapa
+              this.startCookCountdown(30, () => {
+                if (this.panciSaringStep4) {
+                  this.statePanciSaringStep4 = 'kelapa_matang';
+                  // Ensure pot is draggable again after cook
+                  this.panciSaringStep4.setInteractive();
+                  this.input.setDraggable(this.panciSaringStep4);
+                  // Store current position as drag start for return mechanism
+                  this.panciSaringStep4.setData('dragStartX', this.panciSaringStep4.x);
+                  this.panciSaringStep4.setData('dragStartY', this.panciSaringStep4.y);
+                  this.nextSubStep(); // Move to sub-step 2 (KukusKelapa)
+                }
+              });
+            } else {
+              this.nextSubStep(); // Move to sub-step 2 immediately if stove not on
+            }
+          }
+        }, this.panciSaringStep4);
         } else {
           console.log('BaskomKelapa drop failed - conditions not met');
           this.executeInvalidDrop(gameObject);
         }
       }
-      // STEP 4: Sub-step 2 - Add water to PerasSantan1 before pressing
-      else if (this.currentStep === 3 && this.currentSubStep === 2 && droppedKey === 'water' && this.panciSaringStep4 && this.statePanciSaringStep4 === 'peras_santan_1_need_water') {
-        console.log('Water drop attempt on PerasSantan1:');
-        console.log('- panciSaringStep4 exists:', !!this.panciSaringStep4);
-        console.log('- currentStep:', this.currentStep, 'currentSubStep:', this.currentSubStep);
-        console.log('- statePanciSaringStep4:', this.statePanciSaringStep4);
-
-        if (Phaser.Geom.Rectangle.Contains(this.panciSaringStep4.getBounds(), pointer.x, pointer.y)) {
-          console.log('Water dropped successfully on PerasSantan1!');
-
-          // Store original position for return
-          const originalX = gameObject.getData('dragStartX') || gameObject.x;
-          const originalY = gameObject.getData('dragStartY') || gameObject.y;
-
-          // Hide the BaskomKelapa hint text since water is being added
-          if (this.baskomKelapaHintText) {
-            this.baskomKelapaHintText.destroy();
-            this.baskomKelapaHintText = null;
-          }
-
-          // Hide water object during animation
-          gameObject.setVisible(false);
-          gameObject.disableInteractive();
-
-          // Execute AirkeKelapa animation (2 frames, 2 seconds each = 4 seconds total)
-          this.executeAirkeKelapaAnimation(() => {
-            // After animation, start pressing mechanism
-            this.statePanciSaringStep4 = 'peras_santan_1_with_water';
-            this.initPressingMechanic(this.panciSaringStep4);
-            this.nextSubStep(); // Move to sub-step 3 (pressing)
-
-            // Return water to ingredients panel
-            this.returnWaterToPanel(gameObject, originalX, originalY);
-          });
-        } else {
-          console.log('Water drop failed - not on PerasSantan1');
-          this.executeInvalidDrop(gameObject);
-        }
-      }
-      // STEP 4: Allow moving PanciSantan to staging when ready (now sub-step 3)
-      else if (dropZone === this.stagingZone && this.currentStep === 3 && this.currentSubStep === 3 && this.panciSaringStep4 && this.statePanciSaringStep4 === 'santan_matang') {
-        console.log('PanciSantan drop to staging area - conditions met!');
-        // Position PanciSantan on the right side of staging area
-        const panciSantanX = dropZone.x + 30;
-        const panciSantanY = dropZone.y - 15;
-        this.executeSuccessfulMove(this.panciSaringStep4, panciSantanX, panciSantanY);
-        // Create PanciSantan2 reference for step 6
-        this.panciKukus = this.add.image(panciSantanX, panciSantanY, 'PanciSantan2').setScale(0.25).setInteractive().setName('PanciSantan2');
+      // STEP 4: Turn on stove (5 clicks), countdown 30s, then allow moving KukusKelapa to staging (KukusKelapa only)
+      else if (dropZone === this.stagingZone && this.currentStep === 3 && this.currentSubStep === 2 && this.panciSaringStep4 && this.statePanciSaringStep4 === 'kelapa_matang') {
+        console.log('KukusKelapa drop to staging area - conditions met!');
+        // Position KukusKelapa on the right side of staging area
+        const panciKukusX = dropZone.x + 30; // Move left 5px
+        const panciKukusY = dropZone.y - 15; // Move down 5px
+        this.executeSuccessfulMove(this.panciSaringStep4, panciKukusX, panciKukusY);
+        // Create PanciKelapa reference for step 6 (keep the KukusKelapa visual)
+        this.panciKukus = this.add.image(panciKukusX, panciKukusY, 'KukusKelapa').setScale(0.25).setInteractive().setName('PanciKelapa');
         // Disable dragging initially - only allow when it's time to use
         this.panciKukus.disableInteractive();
         // Save original position for return mechanism
-        this.panciKukusOriginalX = panciSantanX;
-        this.panciKukusOriginalY = panciSantanY;
-        console.log('PanciSantan created in staging area at:', dropZone.x, dropZone.y);
-        // Remove the old cooking pot
+        this.panciKukusOriginalX = panciKukusX;
+        this.panciKukusOriginalY = panciKukusY;
+        console.log('PanciKelapa created in staging area at:', dropZone.x, dropZone.y);
+        // Remove the old steaming pot
         if (this.panciSaringStep4) {
           this.panciSaringStep4.destroy();
           this.panciSaringStep4 = null;
@@ -1549,8 +1472,8 @@ export default class NasiLapolaScene extends Phaser.Scene {
       else if (this.currentStep === 5 && droppedKey === 'Garam') {
         this.executeInvalidDrop(gameObject);
       }
-      // Sub-step 1: Add PanciSantan2 to NasiGaram
-      else if (this.panciMasak && this.currentStep === 5 && this.currentSubStep === 1 && gameObject.name === 'PanciSantan2' && this.panciMasak.texture.key === 'NasiGaram') {
+      // Sub-step 1: Add PanciKelapa (KukusKelapa) to NasiGaram
+      else if (this.panciMasak && this.currentStep === 5 && this.currentSubStep === 1 && gameObject.name === 'PanciKelapa' && this.panciMasak.texture.key === 'NasiGaram') {
         const bounds = this.panciMasak.getBounds();
         const hitArea = new Phaser.Geom.Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
         hitArea.width += 20;
@@ -1558,25 +1481,24 @@ export default class NasiLapolaScene extends Phaser.Scene {
         hitArea.x -= 10;
         hitArea.y -= 10;
         if (Phaser.Geom.Rectangle.Contains(hitArea, pointer.x, pointer.y)) {
-          // Direct texture change without animation
-          this.executeSuccessfulDrop(gameObject, () => {
-            if (this.panciMasak) {
-              this.panciMasak.setTexture('NasiKelapa');
-              // Move NasiKelapa up 10px, right 5px
-              this.panciMasak.setPosition(this.panciMasak.x + 5, this.panciMasak.y - 10);
-              this.nextSubStep(); // Move to sub-step 2 (PanciKacang)
-            }
-            if (this.panciKukus) {
-              this.panciKukus.destroy();
-              this.panciKukus = null;
-            }
-          });
+        this.executePourAnimation(gameObject, ["TuangKelapa1","TuangKelapa2","TuangKelapa3"], 6000, () => {
+          if (this.panciMasak) {
+            this.panciMasak.setTexture('NasiKelapa');
+            // Move NasiKelapa up 10px, right 5px
+            this.panciMasak.setPosition(this.panciMasak.x + 5, this.panciMasak.y - 10);
+            this.nextSubStep(); // Move to sub-step 2 (PanciKacang)
+          }
+          if (this.panciKukus) {
+            this.panciKukus.destroy();
+            this.panciKukus = null;
+          }
+        }, this.panciMasak);
         }
       }
-      // Handle invalid PanciSantan2 drop - return to staging area with camera shake
-      else if (this.currentStep === 5 && gameObject.name === 'PanciSantan2') {
+      // Handle invalid PanciKelapa drop - return to staging area with camera shake
+      else if (this.currentStep === 5 && gameObject.name === 'PanciKelapa') {
         if (this.currentSubStep !== 1) {
-          console.log(`PanciSantan2 dropped at wrong time (substep ${this.currentSubStep}) - should be substep 1`);
+          console.log(`PanciKukus dropped at wrong time (substep ${this.currentSubStep}) - should be substep 1`);
         }
         this.executeInvalidDrop(gameObject);
       }
@@ -1879,111 +1801,6 @@ export default class NasiLapolaScene extends Phaser.Scene {
     });
   }
 
-  private executePourAnimationWithReturn(gameObject: Phaser.GameObjects.Image, frames: string[], durationMs: number, onDone: () => void, targetToHide?: Phaser.GameObjects.Image) {
-    // Keep the water object but hide it during animation (don't destroy it)
-
-    // Temporary sprite to show pour frames near pot
-    const anchor = targetToHide ?? this.panciMasak;
-    let targetX = anchor ? anchor.x - 20 : this.cameras.main.centerX;
-    let targetY = anchor ? anchor.y - 120 : this.cameras.main.centerY;
-
-    if (frames[0] && frames[0].includes('TuangAir')) {
-      targetX += 85; // Move right 10px
-      targetY -= 50; // Move up 20px
-    }
-
-    // Scale pour frames
-    let animationScale = 0.62; // Size for TuangAir animations
-    const temp = this.add.image(targetX, targetY, frames[0]).setScale(animationScale);
-
-    // Hide target pot during pour animation if provided
-    if (targetToHide) targetToHide.setVisible(false);
-
-    let idx = 0;
-    const frameTimer = this.time.addEvent({
-      delay: Math.max(100, Math.floor(durationMs / frames.length)),
-      loop: true,
-      callback: () => {
-        temp.setTexture(frames[idx % frames.length]);
-        idx++;
-      }
-    });
-
-    this.time.delayedCall(durationMs, () => {
-      frameTimer.remove(false);
-      temp.destroy();
-      if (targetToHide) targetToHide.setVisible(true);
-      onDone();
-      this.showSuccessFeedback();
-    });
-  }
-
-  private returnWaterToPanel(gameObject: Phaser.GameObjects.Image, originalX: number, originalY: number) {
-    // Return water to its original position in ingredients panel with animation
-    this.tweens.add({
-      targets: gameObject,
-      x: originalX,
-      y: originalY,
-      duration: 400,
-      ease: 'Back.easeOut',
-      onComplete: () => {
-        // Make water visible and interactive again
-        gameObject.setVisible(true);
-        gameObject.setInteractive({ draggable: true });
-
-        // Add it back to ingredients container if it exists
-        if (this.ingredientsContentContainer) {
-          this.ingredientsContentContainer.add(gameObject);
-        }
-      }
-    });
-  }
-
-  private executeAirkeKelapaAnimation(onDone: () => void) {
-    // Hide PerasSantan1 during animation
-    if (this.panciSaringStep4) {
-      this.panciSaringStep4.setVisible(false);
-    }
-
-    // Position animation exactly at PerasSantan1 position
-    const anchor = this.panciSaringStep4;
-    const targetX = anchor ? anchor.x : this.cameras.main.centerX;
-    const targetY = anchor ? anchor.y : this.cameras.main.centerY;
-
-    // Scale animation same as PerasSantan1 scale
-    const animationScale = anchor ? anchor.scale : this.layoutConfig.potScale;
-    const temp = this.add.image(targetX, targetY, 'AirkeKelapa1').setScale(animationScale);
-
-    let currentFrame = 0;
-    const frames = ['AirkeKelapa1', 'AirkeKelapa2'];
-
-    // Each frame shows for 2 seconds (2000ms)
-    const frameTimer = this.time.addEvent({
-      delay: 2000,
-      loop: true,
-      callback: () => {
-        currentFrame++;
-        if (currentFrame < frames.length) {
-          temp.setTexture(frames[currentFrame]);
-        }
-      }
-    });
-
-    // Total animation duration: 4 seconds (2 frames × 2 seconds each)
-    this.time.delayedCall(4000, () => {
-      frameTimer.remove(false);
-      temp.destroy();
-
-      // Show PerasSantan1 again after animation
-      if (this.panciSaringStep4) {
-        this.panciSaringStep4.setVisible(true);
-      }
-
-      onDone();
-      this.showSuccessFeedback();
-    });
-  }
-
   private createStoveButton() {
     // Create Image-based button like menu toggle button for better mobile compatibility
     const buttonX = this.kompor.x + 120;
@@ -2027,13 +1844,9 @@ export default class NasiLapolaScene extends Phaser.Scene {
       // Toggle stove immediately
       this.toggleStove();
       this.updateButtonAppearance();
-      this.updateStoveHintVisibility();
 
       console.log('New stove state:', this.isStoveOn);
     });
-
-    // Create hint text
-    this.createStoveHint();
   }
 
   private updateButtonAppearance() {
@@ -2050,47 +1863,6 @@ export default class NasiLapolaScene extends Phaser.Scene {
         this.stoveButtonText.setText('OFF');
       } else {
         this.stoveButtonText.setText('ON');
-      }
-    }
-  }
-
-  private createStoveHint() {
-    // Create hint text positioned below the stove button
-    const hintX = this.kompor.x + 120; // Same X as button (centered)
-    const hintY = this.kompor.y + 60 + 65; // Below the button (button Y + button height/2 + margin)
-
-    this.stoveHintText = this.add.text(hintX, hintY, 'Nyalakan kompor dengan swipe ke bawah', {
-      fontSize: '22px',
-      color: '#FFFFFF',
-      fontFamily: 'Arial',
-      fontStyle: 'bold',
-      backgroundColor: '#2C2C2C',
-      padding: { x: 12, y: 8 },
-      stroke: '#FFD700',
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(1002);
-
-    // Initially show the hint based on stove state
-    this.updateStoveHintVisibility();
-  }
-
-  private updateStoveHintVisibility() {
-    if (this.stoveHintText) {
-      // Always show hint but change text based on stove state
-      this.stoveHintText.setVisible(true);
-
-      if (this.isStoveOn) {
-        this.stoveHintText.setText('Matikan kompor dengan swipe bawah');
-        this.stoveHintText.setStyle({
-          backgroundColor: '#8B0000', // Dark red for OFF action
-          color: '#FFFFFF'
-        });
-      } else {
-        this.stoveHintText.setText('Nyalakan kompor dengan swipe ke bawah');
-        this.stoveHintText.setStyle({
-          backgroundColor: '#2C2C2C', // Dark gray for ON action
-          color: '#FFFFFF'
-        });
       }
     }
   }
@@ -2138,11 +1910,11 @@ export default class NasiLapolaScene extends Phaser.Scene {
           }
         });
       }
-      // If step 4 and santan baru masuk panci, start 30s countdown for cooking santan
-      if (this.currentStep === 3 && this.panciSaringStep4 && this.statePanciSaringStep4 === 'santan_mentah') {
+      // If step 4 and kelapa baru masuk panci saring baru, start 30s countdown for steaming coconut
+      if (this.currentStep === 3 && this.panciSaringStep4 && this.statePanciSaringStep4 === 'kelapa_mentah') {
         this.startCookCountdown(30, () => {
           if (this.panciSaringStep4) {
-            this.statePanciSaringStep4 = 'santan_matang';
+            this.statePanciSaringStep4 = 'kelapa_matang';
             // Ensure pot is draggable again after cook
             this.panciSaringStep4.setInteractive();
             this.input.setDraggable(this.panciSaringStep4);
@@ -2162,31 +1934,6 @@ export default class NasiLapolaScene extends Phaser.Scene {
         this.kompor.setTexture('Kompor');
       }
     }
-
-    // Update hint visibility after toggle
-    this.updateStoveHintVisibility();
-  }
-
-  private showBaskomKelapaHint() {
-    // Hide existing hint if any
-    if (this.baskomKelapaHintText) {
-      this.baskomKelapaHintText.destroy();
-    }
-
-    // Position hint text near the dropped BaskomKelapa (above the Kompor area)
-    const hintX = this.kompor.x + 350;
-    const hintY = this.kompor.y - 100; // Above the kompor area
-
-    this.baskomKelapaHintText = this.add.text(hintX, hintY, 'Tambahkan air kedalam Baskom Parutan Kelapa', {
-      fontSize: '22px',
-      color: '#FFFFFF',
-      fontFamily: 'Arial',
-      fontStyle: 'bold',
-      backgroundColor: '#2C2C2C',
-      padding: { x: 12, y: 8 },
-      stroke: '#FFD700',
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(1002);
   }
 
   private startCookCountdown(seconds: number, onDone: () => void) {
@@ -2381,89 +2128,6 @@ export default class NasiLapolaScene extends Phaser.Scene {
       finish();
       originalOnDone();
     };
-  }
-
-  private initPressingMechanic(target: Phaser.GameObjects.Image) {
-    let pressCount = 0;
-    let currentStage = 1;
-
-    console.log('initPressingMechanic: Setting up pressing for target:', target.name);
-
-    // Ensure target is interactive and disable dragging during pressing
-    target.setInteractive();
-    target.disableInteractive(); // Temporarily disable to clear existing handlers
-    target.setInteractive(); // Re-enable with fresh state
-    this.input.setDraggable(target, false); // Disable dragging during pressing
-
-    const onPointerDown = () => {
-      pressCount++;
-      console.log(`Press ${pressCount}/4 for stage ${currentStage}`);
-
-      // Visual feedback - slight scale animation using absolute values to prevent accumulation
-      const originalScale = this.layoutConfig.potScale; // Use consistent pot scale from layout config
-      this.tweens.add({
-        targets: target,
-        scaleX: originalScale * 1.1,
-        scaleY: originalScale * 1.1,
-        duration: 100,
-        yoyo: true,
-        ease: 'Back.easeOut',
-        onComplete: () => {
-          // Ensure scale returns to exactly the original value
-          target.setScale(originalScale);
-        }
-      });
-
-      if (pressCount >= 4) {
-        pressCount = 0;
-        currentStage++;
-
-        if (currentStage === 2) {
-          target.setTexture('PerasSantan2');
-          target.setScale(originalScale); // Maintain consistent scale
-          target.setName('PerasSantan2');
-          this.statePanciSaringStep4 = 'peras_santan_2';
-          console.log('Advanced to PerasSantan2');
-        } else if (currentStage === 3) {
-          target.setTexture('PerasSantan3');
-          target.setScale(originalScale); // Maintain consistent scale
-          target.setName('PerasSantan3');
-          this.statePanciSaringStep4 = 'peras_santan_3';
-          console.log('Advanced to PerasSantan3');
-        } else if (currentStage === 4) {
-          target.setTexture('PanciSantan');
-          target.setScale(originalScale); // Maintain consistent scale
-          target.setName('PanciSantan');
-          this.statePanciSaringStep4 = 'santan_mentah';
-          console.log('Advanced to PanciSantan - ready for cooking');
-
-          // Remove click handler before disabling
-          target.off('pointerdown', onPointerDown);
-          target.disableInteractive(); // Disable during cooking
-
-          // Check if stove is on to start countdown
-          if (this.isStoveOn) {
-            this.startCookCountdown(30, () => {
-              if (this.panciSaringStep4) {
-                this.statePanciSaringStep4 = 'santan_matang';
-                // Enable dragging again after cooking
-                this.panciSaringStep4.setInteractive();
-                this.input.setDraggable(this.panciSaringStep4);
-                // Store current position for drag mechanism
-                this.panciSaringStep4.setData('dragStartX', this.panciSaringStep4.x);
-                this.panciSaringStep4.setData('dragStartY', this.panciSaringStep4.y);
-              }
-            });
-          }
-          return;
-        }
-      }
-    };
-
-    // Clear any existing event handlers and add new one
-    target.off('pointerdown');
-    target.on('pointerdown', onPointerDown);
-    console.log('Pressing mechanic initialized for:', target.name);
   }
 
   private startGenericCountdown(seconds: number, onDone: () => void) {
@@ -2962,19 +2626,19 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
   private findIngredientConfig(itemName: string) {
     const ingredients = [
-      { key: "Panci", name: "Panci Besar", scale: 0.12 },
-      { key: "water", name: "Aer", scale: 0.15 },
+      { key: "Panci", name: "Panci", scale: 0.12 },
+      { key: "water", name: "Air", scale: 0.15 },
       { key: "Kacang", name: "Kacang", scale: 0.2 },
-      { key: "Beras", name: "Baras", scale: 0.2 },
+      { key: "Beras", name: "Beras", scale: 0.2 },
       { key: "Garam", name: "Garam", scale: 0.2 },
       { key: "Gula", name: "Gula", scale: 0.2 },
-      { key: "Kelapa", name: "Santan kelapa", scale: 0.2 },
+      { key: "Kelapa", name: "Kelapa", scale: 0.2 },
       { key: "Parut", name: "Parut", scale: 0.15 },
-      { key: "Baskom", name: "Loyang", scale: 0.15 },
+      { key: "Baskom", name: "Baskom", scale: 0.15 },
       { key: "Saring", name: "Saring", scale: 0.15 },
-      { key: "PanciKosong", name: "Panci Kosong", scale: 0.14 },
-      { key: "PanciSaring", name: "Panci tapis-tapis", scale: 0.14 },
-      { key: "PanciAir2", name: "Panci Air", scale: 0.12 },
+      { key: "KukusKelapa", name: "Kukus Kelapa", scale: 0.15 },
+      { key: "PanciSaring", name: "Panci Saring", scale: 0.14 },
+      { key: "PanciAir2", name: "Panci Air 2", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.15 }
     ];
 
@@ -3018,9 +2682,9 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
     // Create label with same larger font as main layout
     const label = this.add.text(x, y + 50, ingredientConfig.name, {
-      fontSize: '22px', // Increased from 18px to 22px
+      fontSize: '18px', // Same larger font size as main layout
       fontFamily: 'Chewy, cursive',
-      color: '#FFD700', // Changed to gold color
+      color: '#FFE4B5',
       align: 'center',
       fontStyle: 'bold'
     }).setOrigin(0.5, 0.5);

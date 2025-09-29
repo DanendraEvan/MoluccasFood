@@ -19,8 +19,8 @@ type WajanState =
   | "empty"
   | "kemangi"
   | "kacangpanjang"
-  | "sawi"
-  | "tauge"
+  | "kangkung"
+  | "timun"
   | "cabeBawangMerah"
   | "daging"
   | "minyak"
@@ -71,11 +71,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   private baskomState: BaskomState = "empty";
   private stirringTimer: Phaser.Time.TimerEvent | null = null;
 
-  // Swipe mechanic state
-  private isMengaduk = false;
-  private swipeCount = 0;
-  private lastSwipeDirection: 'left' | 'right' | null = null;
-  private pointerStartX = 0;
+
   private swipeHintText: Phaser.GameObjects.Text | null = null;
 
   // Tracking variables
@@ -140,7 +136,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   private gameSteps: GameStep[] = [
     {
       id: 1,
-      text: "Halo! Mari kita buat Kohu-Kohu. Pertama, ambil Kelapa dari panel bahan di sebelah kanan, lalu seret dan letakkan di atas baskom di tengah.",
+      text: "Halo! Mari kita buat Kohu-Kohu. Pertama, ambil Kalapa dari panel bahan di sebelah kanan, lalu seret dan letakkan di atas baskom di tengah.",
       character: "karakter1.png",
       isCompleted: false
     },
@@ -152,13 +148,13 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     },
     {
       id: 3,
-      text: "Saatnya menyangrai kelapa. Ambil Spatula dari panel kanan, lalu seret ke atas teflon untuk mulai mengaduk. Geser ke kiri dan kanan berulang kali ya!",
+      text: "Saatnya menyangrai kelapa. Ambil Bila-Bila dari panel kanan, lalu seret ke atas teflon untuk mulai mengaduk. Geser ke kiri dan kanan berulang kali ya!",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 4,
-      text: "Sip, kelapa sangrai sudah jadi! Sekarang, kita siapkan sayurannya. Ambil Kemangi dari panel kanan dan masukkan ke dalam wajan di sebelah kiri.",
+      text: "Sip, kelapa sangrai sudah jadi! Sekarang, kita siapkan sayurannya. Ambil Kumangi dari panel kanan dan masukkan ke dalam wajan di sebelah kiri.",
       character: "karakter3.png",
       isCompleted: false
     },
@@ -170,25 +166,25 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     },
     {
       id: 6,
-      text: "Sekarang, ambil Sawi dan masukkan ke dalam wajan.",
+      text: "Sekarang, ambil Kangkung dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 7,
-      text: "Terakhir, ambil Tauge dan masukkan ke dalam wajan.",
+      text: "Terakhir, ambil Timun dan masukkan ke dalam wajan.",
       character: "karakter3.png",
       isCompleted: false
     },
     {
       id: 8,
-      text: "Biar makin lezat, ayo tambahkan bumbu! Ambil Cabai dan Bawang Merah, lalu masukkan ke wajan. Setelah itu, ambil Ikan Cakalang dan masukkan juga ke wajan ya.",
+      text: "Biar makin lezat, ayo tambahkan bumbu! Ambil Cili dan Bawang Merah, lalu masukkan ke wajan. Setelah itu, ambil Ikang Cakalang dan masukkan juga ke wajan ya.",
       character: "karakter4.png",
       isCompleted: false
     },
     {
       id: 9,
-      text: "Hampir selesai! Ambil Minyak Ikan dari panel kanan dan tuangkan ke dalam wajan untuk rasa yang lebih mantap.",
+      text: "Hampir selesai! Ambil Minya Ikang dari panel kanan dan tuangkan ke dalam wajan untuk rasa yang lebih mantap.",
       character: "karakter5.png",
       isCompleted: false
     },
@@ -206,7 +202,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     },
     {
       id: 12,
-      text: "Luar biasa! Sekarang, ambil Spatula dan seret ke wajan untuk mengangkat sayuran. Lalu, bawa sayuran itu ke atas piring.",
+      text: "Luar biasa! Sekarang, ambil Bila-Bila dan seret ke wajan untuk mengangkat sayuran. Lalu, bawa sayuran itu ke atas piring.",
       character: "karakter6.png",
       isCompleted: false
     },
@@ -240,8 +236,8 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
 
     // Ingredients
     this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
-    this.load.image("Sawi", "/assets/foods/kohu_kohu/Sawi.png");
-    this.load.image("Tauge", "/assets/foods/kohu_kohu/Tauge.png");
+    this.load.image("Kangkung", "/assets/foods/kohu_kohu/Kangkung.png");
+    this.load.image("Timun", "/assets/foods/kohu_kohu/Timun.png");
     this.load.image("KacangPanjang", "/assets/foods/kohu_kohu/KacangPanjang.png");
     this.load.image("Kemangi", "/assets/foods/kohu_kohu/Kemangi.png");
     this.load.image("Cabe", "/assets/foods/kohu_kohu/Cabe.png");
@@ -259,8 +255,8 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     this.load.image("SepatuladanSayur", "/assets/foods/kohu_kohu/SepatuladanSayur.png");
     this.load.image("KohuKohu", "/assets/foods/kohu_kohu/KohuKohu.png");
     this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.png");
-    this.load.image("tambahanSawi", "/assets/foods/kohu_kohu/tambahanSawi.png");
-    this.load.image("tambahanTauge", "/assets/foods/kohu_kohu/tambahanTauge.png");
+    this.load.image("tambahanKangkung", "/assets/foods/kohu_kohu/tambahanKangkung.png");
+    this.load.image("tambahanTimun", "/assets/foods/kohu_kohu/tambahanTimun.png");
     this.load.image("tambahanKacangPanjang", "/assets/foods/kohu_kohu/tambahanKacangPanjang.png");
     this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.png");
     this.load.image("tambahanDaging", "/assets/foods/kohu_kohu/TambahanDaging.png");
@@ -503,16 +499,16 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     this.ingredientItems = [];
 
     const ingredients = [
-      { key: "Kelapa", name: "Kelapa", scale: 0.2 },
-      { key: "Kemangi", name: "Kemangi", scale: 0.18 },
-      { key: "Sawi", name: "Sawi", scale: 0.15 },
-      { key: "Tauge", name: "Tauge", scale: 0.18 },
+      { key: "Kelapa", name: "Kalapa", scale: 0.2 },
+      { key: "Kemangi", name: "Kumangi", scale: 0.18 },
+      { key: "Kangkung", name: "Kangkung", scale: 0.15 },
+      { key: "Timun", name: "Timun", scale: 0.18 },
       { key: "KacangPanjang", name: "Kacang Panjang", scale: 0.15 },
-      { key: "Cabe", name: "Cabai", scale: 0.2 },
+      { key: "Cabe", name: "Cili", scale: 0.2 },
       { key: "BawangMerah", name: "Bawang Merah", scale: 0.16 },
-      { key: "Daging", name: "Ikan Cakalang", scale: 0.18 },
-      { key: "MinyakIkan", name: "Minyak Ikan", scale: 0.16 },
-      { key: "Sepatula", name: "Spatula", scale: 0.12 },
+      { key: "Daging", name: "Ikang Cakalang", scale: 0.18 },
+      { key: "MinyakIkan", name: "Minya Ikang", scale: 0.16 },
+      { key: "Sepatula", name: "Bila-Bila", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.17 }
     ];
 
@@ -963,15 +959,12 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
         // Set initial state for stirring
         this.setVesselTexture(this.Teflon, "Aduk1");
         this.bowlState = "aduk";
-        this.isMengaduk = true;
-        this.swipeCount = 0;
-        this.lastSwipeDirection = null;
 
-        // Show swipe hint
-        this.showSwipeHint();
+        // Show tap hint
+        this.showTapHint();
 
-        // Activate swipe handler
-        this.handleMengaduk();
+        // Activate tap handler
+        this.handleTapping();
       }
       // Step 4: Add kemangi to wajan
       else if (dropZone === this.wajanZone && this.wajanState === "empty" && droppedKey === "Kemangi" && this.currentStep === 3) {
@@ -989,19 +982,19 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
           this.nextStep();
         });
       }
-      // Step 6: Add sawi to wajan
-      else if (dropZone === this.wajanZone && this.wajanState === "kacangpanjang" && droppedKey === "Sawi" && this.currentStep === 5) {
+      // Step 6: Add kangkung to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "kacangpanjang" && droppedKey === "Kangkung" && this.currentStep === 5) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, "tambahanSawi");
-          this.wajanState = "sawi";
+          this.setVesselTexture(this.Wajan, "tambahanKangkung");
+          this.wajanState = "kangkung";
           this.nextStep();
         });
       }
-      // Step 7: Add tauge to wajan
-      else if (dropZone === this.wajanZone && this.wajanState === "sawi" && droppedKey === "Tauge" && this.currentStep === 6) {
+      // Step 7: Add timun to wajan
+      else if (dropZone === this.wajanZone && this.wajanState === "kangkung" && droppedKey === "Timun" && this.currentStep === 6) {
         this.executeSuccessfulDrop(gameObject, () => {
-          this.setVesselTexture(this.Wajan, "tambahanTauge");
-          this.wajanState = "tauge";
+          this.setVesselTexture(this.Wajan, "tambahanTimun");
+          this.wajanState = "timun";
           this.nextStep();
         });
       }
@@ -1113,85 +1106,74 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     });
   }
 
-  private handleMengaduk() {
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.isMengaduk) {
-        this.pointerStartX = pointer.x;
-      }
-    });
+  private handleTapping() {
+    this.Teflon.setInteractive(); // Make the Teflon clickable
+    let tapCount = 0;
+    const requiredTaps = 8; // Let's make it 8 taps
 
-    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (this.isMengaduk) {
-        const swipeDistance = pointer.x - this.pointerStartX;
+    const tapHandler = () => {
+      tapCount++;
+      
+      // Alternate texture for visual feedback
+      const newTexture = (tapCount % 2 === 0) ? "Aduk1" : "Aduk2";
+      this.setVesselTexture(this.Teflon, newTexture);
 
-        if (swipeDistance < -50 && this.lastSwipeDirection !== 'left') { // Swipe left
-          this.swipeCount++;
-          this.lastSwipeDirection = 'left';
-          this.setVesselTexture(this.Teflon, "Aduk2");
-        } else if (swipeDistance > 50 && this.lastSwipeDirection !== 'right') { // Swipe right
-          this.swipeCount++;
-          this.lastSwipeDirection = 'right';
-          this.setVesselTexture(this.Teflon, "Aduk1");
+      // Add a little visual pop on tap
+      this.tweens.add({
+        targets: this.Teflon,
+        scale: this.Teflon.getData('initialScale') * 1.05,
+        duration: 80,
+        yoyo: true,
+        ease: 'Power2'
+      });
+
+      if (tapCount >= requiredTaps) {
+        this.Teflon.off('pointerdown', tapHandler); // Remove listener
+        
+        // Hide the hint
+        if (this.swipeHintText) {
+          this.tweens.killTweensOf(this.swipeHintText); // Stop pulsing
+          this.swipeHintText.destroy();
+          this.swipeHintText = null;
         }
-
-        if (this.swipeCount >= 6) {
-          this.isMengaduk = false;
-          this.input.off('pointerdown');
-          this.input.off('pointerup');
-
-          // Hide the hint
-          if (this.swipeHintText) {
-            const arrows = this.swipeHintText.getData('arrows');
-            if (arrows) {
-              arrows.forEach((arrow: Phaser.GameObjects.Text) => arrow.destroy());
-            }
-            this.swipeHintText.destroy();
-            this.swipeHintText = null;
-          }
-          
-          this.setVesselTexture(this.Teflon, "Sangrai");
-          this.bowlState = "sangrai";
-          this.Teflon.setInteractive();
-          this.input.setDraggable(this.Teflon);
-          this.nextStep();
-          this.showSuccessFeedback();
-        }
+        
+        this.setVesselTexture(this.Teflon, "Sangrai");
+        this.bowlState = "sangrai";
+        this.Teflon.setInteractive(); // It needs to be interactive for the next step
+        this.input.setDraggable(this.Teflon);
+        this.nextStep();
+        this.showSuccessFeedback();
       }
-    });
+    };
+
+    this.Teflon.on('pointerdown', tapHandler);
   }
 
-  private showSwipeHint() {
-    if (this.swipeHintText) {
+  private showTapHint() {
+    if (this.swipeHintText) { // Re-use the class property for the hint text
       this.swipeHintText.destroy();
     }
     this.swipeHintText = this.add.text(
       this.Teflon.x, 
       this.Teflon.y - 100, 
-      'Geser ke Kiri & Kanan untuk Mengaduk!', 
+      'Tap/Klik pada Teflon untuk Mengaduk!', 
       {
         fontSize: '24px',
         fontFamily: 'Chewy, cursive',
         color: '#ffffff',
         backgroundColor: 'rgba(0,0,0,0.5)',
         padding: { x: 10, y: 5 },
-        // borderRadius: 8
       }
     ).setOrigin(0.5);
 
-    // Add arrows for more clarity
-    const leftArrow = this.add.text(this.swipeHintText.x - 220, this.swipeHintText.y, '⟷', { fontSize: '32px', color: '#ffffff' });
-    const rightArrow = this.add.text(this.swipeHintText.x + 220, this.swipeHintText.y, '⟷', { fontSize: '32px', color: '#ffffff' });
-
+    // Add a pulsing animation to the hint text itself
     this.tweens.add({
-        targets: [leftArrow, rightArrow],
-        alpha: 0.5,
+        targets: this.swipeHintText,
+        alpha: 0.7,
         yoyo: true,
         repeat: -1,
-        duration: 500
+        duration: 700
     });
-
-    // Store arrows to be destroyed later
-    this.swipeHintText.setData('arrows', [leftArrow, rightArrow]);
   }
 
   // Helper methods for better code organization
