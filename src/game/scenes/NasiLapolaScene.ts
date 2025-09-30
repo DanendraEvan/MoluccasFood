@@ -1466,7 +1466,9 @@ export default class NasiLapolaScene extends Phaser.Scene {
           this.executeAirkeKelapaAnimation(() => {
             // After animation, start pressing mechanism
             this.statePanciSaringStep4 = 'peras_santan_1_with_water';
-            this.initPressingMechanic(this.panciSaringStep4);
+            if (this.panciSaringStep4) {
+              this.initPressingMechanic(this.panciSaringStep4);
+            }
             this.nextSubStep(); // Move to sub-step 3 (pressing)
 
             // Return water to ingredients panel

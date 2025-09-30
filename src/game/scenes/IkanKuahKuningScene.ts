@@ -56,6 +56,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private cobek!: Phaser.GameObjects.Image;
 
   // Mengulek state (now handled by initMengulekMechanic function)
+  private isMengulek: boolean = false;
+  private pointerStartX: number = 0;
+  private mengulekPhase: number = 0;
+  private lastSwipeDirection: 'left' | 'right' | null = null;
+  private swipeCount: number = 0;
 
   // Wajan state
   private wajan: Phaser.GameObjects.Image | null = null;
@@ -117,6 +122,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private scrollableArea!: Phaser.GameObjects.Zone;
   private scrollContentHeight: number = 0;
   private draggedItemOriginalParent: Phaser.GameObjects.Container | null = null;
+  private mengulekPointerDownListener: Function | null = null;
+  private mengulekPointerUpListener: Function | null = null;
   private draggedItemOriginalX: number = 0;
   private draggedItemOriginalY: number = 0;
   private itemBeingReturned: boolean = false;
@@ -372,7 +379,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         }
 
         // Check if click is on the wajan
-        const wajanBounds = this.wajan.getBounds();
+        const wajanBounds = this.wajan!.getBounds();
         if (Phaser.Geom.Rectangle.Contains(wajanBounds, pointer.x, pointer.y)) {
           if (!this.isStoveOn) {
             // Shake screen and show hint
@@ -1087,7 +1094,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         
         // Create Wajan with smooth animation
         this.wajan = this.add.image(targetX, targetY, 'Wajan').setScale(0);
-        this.wajan.setInteractive({ dropZone: true });
+        this.wajan!.setInteractive({ dropZone: true });
         
         // Animate Wajan appearance
         this.tweens.add({
@@ -1113,7 +1120,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         gameObject.destroy();
 
         // Hide the original wajan
-        this.wajan.destroy();
+        this.wajan!.destroy();
         this.wajan = null;
 
         // Create BumbuHalusWajan on the kompor (stove position) - match step 3 Wajan position
@@ -1161,13 +1168,13 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           tuangMinyakAnim.destroy();
 
           // Destroy BumbuHalusWajan and create AdukBumbu1 at same position
-          const bumbuPosition = { x: this.bumbuHalusWajan.x, y: this.bumbuHalusWajan.y };
-          this.bumbuHalusWajan.destroy();
+          const bumbuPosition = { x: this.bumbuHalusWajan!.x, y: this.bumbuHalusWajan!.y };
+          this.bumbuHalusWajan!.destroy();
           this.bumbuHalusWajan = null;
 
           // Create wajan with AdukBumbu1 texture for stirring
           this.wajan = this.add.image(bumbuPosition.x, bumbuPosition.y, 'AdukBumbu1').setScale(0.8);
-          this.wajan.setInteractive({ dropZone: true });
+          this.wajan!.setInteractive({ dropZone: true });
 
           this.cookingState = 'mengaduk_bumbu_need_stove';
           // Check if stove is already on to start stirring immediately
@@ -1208,17 +1215,17 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         // Create the separate, draggable finished dish on top of the wajan
         console.log('Mangkuk placed, creating draggable dish.');
         if (this.wajan) {
-            const dishX = this.wajan.x;
-            const dishY = this.wajan.y;
+            const dishX = this.wajan!.x;
+            const dishY = this.wajan!.y;
             this.finishedDish = this.add.image(dishX, dishY, 'IkanKuahKuningJadi')
-                .setScale(this.wajan.scale)
+                .setScale(this.wajan!.scale)
                 .setName('IkanKuahKuningJadi')
                 .setInteractive({ draggable: true });
             this.input.setDraggable(this.finishedDish);
             this.finishedDish.setDepth(100);
             
             // Hide the underlying wajan texture to prevent "duplicate" visual
-            this.wajan.setVisible(false);
+            this.wajan!.setVisible(false);
         }
       } else if (this.mangkuk && dropZone === this.mangkuk && this.cookingState === 'mangkuk_placed' && gameObject.name === 'IkanKuahKuningJadi') {
         console.log('IkanKuahKuningJadi successfully dropped on Mangkuk!');
@@ -1236,7 +1243,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         this.mangkuk = null;
         // The wajan is already invisible and can be nulled too
         if (this.wajan) {
-            this.wajan.destroy();
+            this.wajan!.destroy();
             this.wajan = null;
         }
 
@@ -1250,25 +1257,25 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           // ... (existing cases)
           case 'mendidih':
             if (gameObject.name === 'Tomat') {
-              this.wajan.setTexture('TambahTomat');
+              this.wajan!.setTexture('TambahTomat');
               this.cookingState = 'tomat_added';
               gameObject.destroy();
             }
             break;
           case 'tomat_added':
             if (gameObject.name === 'Garam') {
-              this.wajan.setTexture('TambahGaram');
+              this.wajan!.setTexture('TambahGaram');
               this.cookingState = 'garam_added';
               gameObject.destroy();
-              this.time.delayedCall(2000, () => this.wajan.setTexture('TambahTomat'));
+              this.time.delayedCall(2000, () => this.wajan!.setTexture('TambahTomat'));
             }
             break;
           case 'garam_added':
             if (gameObject.name === 'Gula') {
-              this.wajan.setTexture('TambahGula');
+              this.wajan!.setTexture('TambahGula');
               this.cookingState = 'gula_added';
               gameObject.destroy();
-              this.time.delayedCall(2000, () => this.wajan.setTexture('TambahTomat'));
+              this.time.delayedCall(2000, () => this.wajan!.setTexture('TambahTomat'));
             }
             break;
           case 'gula_added':
@@ -1280,15 +1287,15 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
             break;
           case 'daun_bawang_added':
             if (gameObject.name === 'Asam') {
-              this.wajan.setTexture('TambahAsam');
+              this.wajan!.setTexture('TambahAsam');
               this.cookingState = 'asam_added';
               gameObject.destroy();
               this.time.delayedCall(2000, () => {
-                this.wajan.setTexture('AdukFinishing1');
+                this.wajan!.setTexture('AdukFinishing1');
                 this.cookingState = 'mengaduk_finishing';
                 // Use tap/click stirring mechanism instead of swipe
-                this.initStirMechanic(this.wajan, ['AdukFinishing1', 'AdukFinishing2'], 15, () => {
-                  this.wajan.setTexture('IkanKuahKuningJadi'); // Set texture to finished dish
+                this.initStirMechanic(this.wajan!, ['AdukFinishing1', 'AdukFinishing2'], 15, () => {
+                  this.wajan!.setTexture('IkanKuahKuningJadi'); // Set texture to finished dish
 
                   // Start a 30-second countdown before the dish is considered "matang"
                   this.startCountdown(30, () => {
@@ -1304,30 +1311,30 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         switch (this.cookingState) {
           case 'bumbu_matang':
             if (gameObject.name === 'DaunSalam') {
-              this.wajan.setTexture('TambahDaunSalam');
+              this.wajan!.setTexture('TambahDaunSalam');
               this.cookingState = 'daun_salam_added';
               gameObject.destroy();
             }
             break;
           case 'daun_salam_added':
             if (gameObject.name === 'Sereh') {
-              this.wajan.setTexture('TambahSereh');
+              this.wajan!.setTexture('TambahSereh');
               this.cookingState = 'sereh_added';
               gameObject.destroy();
             }
             break;
           case 'sereh_added':
             if (gameObject.name === 'Lengkuas') {
-              this.wajan.setTexture('TambahLengkuas');
+              this.wajan!.setTexture('TambahLengkuas');
               this.cookingState = 'lengkuas_added';
               gameObject.destroy();
               // Short delay before starting stirring
               this.time.delayedCall(1000, () => {
-                this.wajan.setTexture('AdukBumbuStep4-1');
+                this.wajan!.setTexture('AdukBumbuStep4-1');
                 this.cookingState = 'mengaduk_aromatics';
                 // Use tap/click stirring mechanism instead of swipe
-                this.initStirMechanic(this.wajan, ['AdukBumbuStep4-1', 'AdukBumbuStep4-2'], 15, () => {
-                  this.wajan.setTexture('BumbuStep4-2');
+                this.initStirMechanic(this.wajan!, ['AdukBumbuStep4-1', 'AdukBumbuStep4-2'], 15, () => {
+                  this.wajan!.setTexture('BumbuStep4-2');
                   this.cookingState = 'aromatics_done';
                   this.nextStep();
                 });
@@ -1336,36 +1343,36 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
             break;
           case 'aromatics_done':
             if (gameObject.name === 'IrisanJahe') {
-              this.wajan.setTexture('TambahJahe');
+              this.wajan!.setTexture('TambahJahe');
               this.cookingState = 'jahe_added';
               gameObject.destroy();
             }
             break;
           case 'jahe_added':
             if (gameObject.name === 'DaunJeruk') {
-              this.wajan.setTexture('TambahDaun');
+              this.wajan!.setTexture('TambahDaun');
               this.cookingState = 'daun_jeruk_added';
               gameObject.destroy();
             }
             break;
           case 'daun_jeruk_added':
             if (gameObject.name === 'PotonganIkan') {
-              this.wajan.setTexture('TambahIkan');
+              this.wajan!.setTexture('TambahIkan');
               this.cookingState = 'ikan_added';
               gameObject.destroy();
             }
             break;
           case 'ikan_added':
             if (gameObject.name === 'Air') {
-              this.wajan.setTexture('TambahAir');
+              this.wajan!.setTexture('TambahAir');
               this.cookingState = 'air_added';
               gameObject.destroy();
               this.time.delayedCall(3000, () => {
-                this.wajan.setTexture('AdukAir2');
+                this.wajan!.setTexture('AdukAir2');
                 this.cookingState = 'mengaduk_air';
                 // Use tap/click stirring mechanism instead of swipe
-                this.initStirMechanic(this.wajan, ['AdukAir1', 'AdukAir2'], 15, () => {
-                  this.wajan.setTexture('TambahAir2');
+                this.initStirMechanic(this.wajan!, ['AdukAir1', 'AdukAir2'], 15, () => {
+                  this.wajan!.setTexture('TambahAir2');
                   this.cookingState = 'mendidih';
                   this.startCountdown(20);
                 });
@@ -1377,25 +1384,25 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         switch (this.cookingState) {
           case 'bumbu_matang':
             if (gameObject.name === 'DaunSalam') {
-              this.wajan.setTexture('TambahDaunSalam');
+              this.wajan!.setTexture('TambahDaunSalam');
               this.cookingState = 'daun_salam_added';
               gameObject.destroy();
             }
             break;
           case 'daun_salam_added':
             if (gameObject.name === 'Sereh') {
-              this.wajan.setTexture('TambahSereh');
+              this.wajan!.setTexture('TambahSereh');
               this.cookingState = 'sereh_added';
               gameObject.destroy();
             }
             break;
           case 'sereh_added':
             if (gameObject.name === 'Lengkuas') {
-              this.wajan.setTexture('AdukBumbuStep4-1');
+              this.wajan!.setTexture('AdukBumbuStep4-1');
               this.cookingState = 'mengaduk_aromatics';
               // Use tap/click stirring mechanism instead of swipe
-              this.initStirMechanic(this.wajan, ['AdukBumbuStep4-1', 'AdukBumbuStep4-2'], 15, () => {
-                this.wajan.setTexture('BumbuStep4-2');
+              this.initStirMechanic(this.wajan!, ['AdukBumbuStep4-1', 'AdukBumbuStep4-2'], 15, () => {
+                this.wajan!.setTexture('BumbuStep4-2');
                 this.cookingState = 'aromatics_done';
                 this.nextStep();
               });
@@ -1468,7 +1475,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
           gameObject.destroy();
           this.finishedDish = null;
           if (this.wajan) {
-              this.wajan.setVisible(true);
+              this.wajan!.setVisible(true);
           }
           return; // Exit to prevent panel return logic
       }
@@ -1660,8 +1667,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   private startAdukBumbuMechanic() {
     this.cookingState = 'mengaduk_bumbu';
     // Use tap/click stirring mechanism instead of swipe
-    this.initStirMechanic(this.wajan, ['AdukBumbu1', 'AdukBumbu2'], 15, () => {
-      this.wajan.setTexture('BumbuHalusWajan');
+    this.initStirMechanic(this.wajan!, ['AdukBumbu1', 'AdukBumbu2'], 15, () => {
+      this.wajan!.setTexture('BumbuHalusWajan');
       this.cookingState = 'bumbu_matang';
       this.nextStep();
     });
@@ -1695,7 +1702,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Disable all drag and drop during countdown
     this.disableAllDragDrop();
 
-    this.countdownText = this.add.text(this.wajan.x, this.wajan.y - 150, ``, {
+    this.countdownText = this.add.text(this.wajan!.x, this.wajan!.y - 150, ``, {
       fontSize: '32px',
       fontFamily: 'Chewy, cursive',
       color: '#ffffff',
@@ -1742,10 +1749,10 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     }
 
     // Disable drag for wajan if it exists but keep it fully visible
-    if (this.wajan && this.wajan.scene) {
+    if (this.wajan && this.wajan!.scene) {
       this.input.setDraggable(this.wajan, false);
       // Keep wajan at full opacity (alpha 1) to prevent transparency issues
-      this.wajan.setAlpha(1);
+      this.wajan!.setAlpha(1);
     }
   }
 
@@ -1765,9 +1772,9 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     }
 
     // Re-enable drag for wajan if it exists and should be draggable
-    if (this.wajan && this.wajan.scene && this.cookingState === 'matang') {
+    if (this.wajan && this.wajan!.scene && this.cookingState === 'matang') {
       this.input.setDraggable(this.wajan, true);
-      this.wajan.setAlpha(1);
+      this.wajan!.setAlpha(1);
     }
   }
 
@@ -1872,10 +1879,6 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     return allowedIngredients ? allowedIngredients.includes(ingredientName) : false;
   }
 
-  private shakeScreen() {
-    this.cameras.main.shake(300, 0.01);
-  }
-
   private returnItemToOriginalPosition(gameObject: Phaser.GameObjects.Image) {
     // Stop all tweens on the object to prevent conflicts
     this.tweens.killTweensOf(gameObject);
@@ -1921,10 +1924,6 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
 
 
-
-  private showSuccessPopup() {
-    this.showCompletionCelebration();
-  }
 
   private showCompletionCelebration() {
     this.time.delayedCall(1000, () => {
@@ -2227,15 +2226,15 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     
     // Check if dragging BumbuHalus over Wajan ONLY
     if (gameObject.name === 'BumbuHalus' && this.cookingState === 'wajan_placed' && this.wajan) {
-      const wajanBounds = this.wajan.getBounds();
+      const wajanBounds = this.wajan!.getBounds();
       const isOverWajan = Phaser.Geom.Rectangle.Contains(wajanBounds, pointer.worldX, pointer.worldY);
 
       if (isOverWajan) {
         // No visual highlight when dragging over wajan
-        this.wajan.clearTint();
+        this.wajan!.clearTint();
         gameObject.setTint(0xFFFFAA); // Default yellow tint
       } else {
-        this.wajan.clearTint();
+        this.wajan!.clearTint();
         gameObject.setTint(0xFF6666); // Red tint to indicate invalid drop everywhere else
       }
     }
@@ -2286,7 +2285,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Clear tints from drop zones
     if (this.kompor) this.kompor.clearTint();
     if (this.cobek) this.cobek.clearTint();
-    if (this.wajan) this.wajan.clearTint();
+    if (this.wajan) this.wajan!.clearTint();
   }
 
   private findIngredientConfig(itemName: string) {
@@ -2557,6 +2556,17 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Add the listeners
     this.input.on('pointerdown', this.mengulekPointerDownListener);
     this.input.on('pointerup', this.mengulekPointerUpListener);
+  }
+
+  private cleanupMengulekListeners() {
+    if (this.mengulekPointerDownListener) {
+      this.input.off('pointerdown', this.mengulekPointerDownListener as any);
+      this.mengulekPointerDownListener = null;
+    }
+    if (this.mengulekPointerUpListener) {
+      this.input.off('pointerup', this.mengulekPointerUpListener as any);
+      this.mengulekPointerUpListener = null;
+    }
   }
 
   private toggleStove() {

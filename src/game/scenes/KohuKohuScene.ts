@@ -48,8 +48,8 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   private useReactDialog: boolean = true; // Flag to use React dialog instead of Phaser dialog (ALWAYS true now)
 
   // Responsive system
-  private responsiveLayout!: ResponsiveLayout;
-  private originalIngredientsPanelConfig: any = null;
+  public responsiveLayout!: ResponsiveLayout;
+  public originalLayoutConfig: any = null;
   // Definisikan semua objek game
   private Teflon!: Phaser.GameObjects.Image;
   private Wajan!: Phaser.GameObjects.Image;
@@ -81,7 +81,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   private finalPlate: Phaser.GameObjects.Image | null = null;
 
   // UI Components
-  private ingredientsPanel!: Phaser.GameObjects.Container;
+  public ingredientsPanel!: Phaser.GameObjects.Container;
   // NOTE: dialogPanel removed - using React dialog system only
   private menuToggleButton!: Phaser.GameObjects.Image;
   // NOTE: characterImage and stepText removed - using React dialog system only
@@ -89,11 +89,25 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   private currentStep = 0;
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
-  private panelTitle!: Phaser.GameObjects.Text;
+  public panelTitle!: Phaser.GameObjects.Text;
+  private ingredientsContentContainer!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
+  private scrollableArea!: Phaser.GameObjects.Zone;
+  private scrollContentHeight: number = 0;
+  private ingredientsContentMask: Phaser.Display.Masks.GeometryMask | null = null;
+  private scrollbarThumb!: Phaser.GameObjects.Graphics;
+  private isScrollbarDragging: boolean = false;
+  private scrollbarDragStartY: number = 0;
+  private contentStartY: number = 0;
+
+  // Mobile swipe scroll variables
+  private isSwipeScrolling: boolean = false;
+  private swipeStartY: number = 0;
+  private swipeStartScrollY: number = 0;
   private infoContent: string = `Kohu-kohu adalah salad segar dari Maluku! Makanan ini dibuat dari sayuran mentah seperti kacang panjang, tauge, dan kemangi. Bumbunya spesial, yaitu kelapa parut yang disangrai dan dicampur dengan bumbu lain seperti cabai dan bawang. Rasanya segar, gurih, dan sedikit pedas. Enak sekali dimakan bersama nasi!`;
 
   // Layout configuration
-  private layoutConfig = {
+  public layoutConfig = {
     // Header bar
     headerHeight: 60,
     
@@ -318,7 +332,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     ResponsiveMixin.exposeDialogConfigToReact(this);
 
     // Save original config
-    this.originalIngredientsPanelConfig = { ...this.layoutConfig };
+    this.originalLayoutConfig = { ...this.layoutConfig };
   }
 
   private updateResponsiveLayout() {
@@ -346,6 +360,9 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     // Update cooking area bounds
     this.layoutConfig.cookingAreaRight = gameWidth - this.layoutConfig.ingredientsPanelWidth - 40;
     this.layoutConfig.cookingAreaBottom = gameHeight - 180; // Account for React dialog panel
+
+    // Update mask position after layout changes
+    this.updateMaskPosition();
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
@@ -388,6 +405,21 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     }
 
     this.ingredientsPanel.setPosition(targetX, targetY);
+
+    // Update mask position when panel moves
+    this.updateMaskPosition();
+  }
+
+  private updateMaskPosition() {
+    if (this.ingredientsContentMask && this.ingredientsContentMask.geometryMask) {
+      const maskGraphics = this.ingredientsContentMask.geometryMask as Phaser.GameObjects.Graphics;
+      const scrollableAreaX = 12;
+      const scrollableAreaY = 60;
+
+      // Simply update mask position to follow panel (size is already correct)
+      maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+      maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+    }
   }
 
   private createCookingArea() {
@@ -472,7 +504,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   }
 
   private createIngredientsPanel() {
-    // Create ingredients panel container
+    // Create ingredients panel container (main container for the whole panel)
     this.ingredientsPanel = this.add.container(
       this.layoutConfig.ingredientsPanelX,
       this.layoutConfig.ingredientsPanelY
@@ -490,13 +522,74 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     this.menuToggleButton = this.add.image(0, 0, "menu_normal");
     this.ingredientsPanel.add(this.menuToggleButton);
 
+    // Create a scrollable area (zone) for ingredients
+    const scrollableAreaX = 12; // Relative to ingredientsPanel - matches border and rounded corner
+    const scrollableAreaY = 60; // Below header area
+    const scrollableAreaWidth = this.layoutConfig.ingredientsPanelWidth - 36; // Panel width minus left(12) + right(12) + scrollbar(12)
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - scrollableAreaY - 12; // Remaining height with bottom padding matching border
+
+    this.scrollableArea = this.add.zone(
+      scrollableAreaX + scrollableAreaWidth / 2,
+      scrollableAreaY + scrollableAreaHeight / 2,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    ).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(this.scrollableArea);
+
+    // Create a container for the actual ingredient items
+    // Position container at scrollable area since we now have proper padding in content
+    this.ingredientsContentContainer = this.add.container(scrollableAreaX, scrollableAreaY);
+    this.ingredientsPanel.add(this.ingredientsContentContainer);
+
+    // Set up a clipping mask for the ingredients content
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillRect(0, 0, scrollableAreaWidth, scrollableAreaHeight); // Define mask in local coordinates
+    this.ingredientsContentMask = maskGraphics.createGeometryMask(); // Store the mask object
+
+    // Position the maskGraphics to align with the scrollable area in world coordinates
+    maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+    maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+
+    // Apply mask but allow dragging outside of it
+    this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+
+    // Create scrollbar background
+    this.scrollbar = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbar);
+
+    // Create scrollbar thumb (draggable part)
+    this.scrollbarThumb = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbarThumb);
+
     this.createIngredients();
+
+    // Enable mouse wheel scrolling
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[], deltaX: number, deltaY: number, deltaZ: number) => {
+      // Check if the mouse pointer is within the ingredients panel's scrollable area
+      const panelBounds = new Phaser.Geom.Rectangle(
+        this.ingredientsPanel.x + scrollableAreaX,
+        this.ingredientsPanel.y + scrollableAreaY,
+        scrollableAreaWidth,
+        scrollableAreaHeight
+      );
+
+      if (Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        this.handleScroll(deltaY);
+      }
+    });
+
+    // Add mobile-friendly swipe scroll mechanism after ingredients are created
+    this.setupSwipeScrolling(scrollableAreaX, scrollableAreaY, scrollableAreaWidth, scrollableAreaHeight);
+
+    // Initial mask position update
+    this.updateMaskPosition();
   }
 
   private createIngredients() {
     // Destroy existing ingredient items to prevent duplicates
     this.ingredientItems.forEach(item => item.destroy());
     this.ingredientItems = [];
+    this.ingredientsContentContainer.removeAll(true); // Clear previous items from the container
 
     const ingredients = [
       { key: "Kelapa", name: "Kalapa", scale: 0.2 },
@@ -512,16 +605,19 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
       { key: "Piring", name: "Piring", scale: 0.17 }
     ];
 
-    // New mobile-friendly layout with larger items and better spacing
+    // Mobile-friendly layout with larger items and better spacing
     const itemWidth = 160;
     const itemHeight = 110;
     const horizontalGap = 20;
     const leftMargin = 30;
     const startX = leftMargin + (itemWidth / 2);
-    const startY = 100;
+    const topPadding = 100;
+    const startY = 20 + topPadding;
     const spacingX = itemWidth + horizontalGap;
-    const spacingY = 90;
+    const spacingY = 120; // Slightly increased vertical spacing for larger items
     const itemsPerRow = 2;
+
+    let maxContentY = 0;
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
@@ -529,58 +625,58 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
       const x = startX + (col * spacingX);
       const y = startY + (row * spacingY);
 
-      // Item background with new larger dimensions
+      // Item background - Larger size for better UI
       const itemBg = this.add.graphics();
       itemBg.fillStyle(0x000000, 0.25);
       itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
       itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
-      this.ingredientsPanel.add(itemBg);
+      this.ingredientsContentContainer.add(itemBg); // Add to content container
 
-      // Item image with increased scale for mobile-friendly size
+      // Item image - Larger scale for better visibility
       const item = this.add.image(x, y, ingredient.key)
-        .setInteractive()
-        .setScale(ingredient.scale * 1.5)
-        .setName(ingredient.key);
+        .setInteractive() // Simple interactive setup
+        .setScale(ingredient.scale * 1.5) // Increased scale for bigger items
+        .setName(ingredient.key)
+        .setData('originalScale', ingredient.scale * 1.5) // Store the increased scale
+        .setData('ingredientType', ingredient.key);
 
       this.ingredientItems.push(item);
-      this.input.setDraggable(item);
-      this.ingredientsPanel.add(item);
+      this.input.setDraggable(item); // Simple draggable setup
+      this.ingredientsContentContainer.add(item); // Add to content container
 
-      // Store original scale for reset (with new multiplier)
-      item.setData('originalScale', ingredient.scale * 1.5);
-
-      // Item label with larger font size
-      const label = this.add.text(x, y + 40, ingredient.name, {
-        fontSize: '18px',
+      // Item label - Larger font size
+      const label = this.add.text(x, y + 50, ingredient.name, {
+        fontSize: '22px', // Increased from 18px to 22px
         fontFamily: 'Chewy, cursive',
-        color: '#FFFFFF',
+        color: '#FFFF00', // Changed to bright yellow color
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
-      this.ingredientsPanel.add(label);
+      this.ingredientsContentContainer.add(label); // Add to content container
 
-      // Hover effects with new dimensions
+      // Hover effects completely disabled
       item.on('pointerover', () => {
-        item.setScale(ingredient.scale * 1.5 * 1.15);
-        label.setColor('#FFFFFF');
-        itemBg.clear();
-        itemBg.fillStyle(0xFFD700, 0.15);
-        itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
-        itemBg.lineStyle(1, 0xFFD700, 0.6);
-        itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
+        // No hover effects
       });
 
       item.on('pointerout', () => {
-        item.setScale(ingredient.scale * 1.5);
-        label.setColor('#FFE4B5');
+        // Always reset to normal state with new larger sizes
+        item.setScale(ingredient.scale * 1.5); // Use increased scale
+        label.setColor('#FFFF00');
         itemBg.clear();
         itemBg.fillStyle(0x000000, 0.25);
         itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
         itemBg.lineStyle(1, 0x8B4513, 0.4);
         itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       });
+
+      maxContentY = Math.max(maxContentY, y + 40); // Track the lowest point of content
     });
+
+    const bottomPadding = 15; // Space kosong di bawah konten
+    this.scrollContentHeight = maxContentY + bottomPadding; // Calculate total content height with bottom padding
+    this.updateScrollbar(); // Initial update of scrollbar
   }
 
   // NOTE: createDialogPanel removed - using React dialog system only
@@ -615,7 +711,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
 
     // Update menu toggle button
     this.menuToggleButton.setPosition(30, 30);
-    this.menuToggleButton.setScale(0.05);
+    this.menuToggleButton.setScale(0.12); // Increased from 0.05 to 0.12 for better mobile accessibility
     this.menuToggleButton.setInteractive();
     this.menuToggleButton.off('pointerover');
     this.menuToggleButton.off('pointerout');
@@ -634,15 +730,18 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     this.menuToggleButton.on('pointerup', () => {
       this.menuToggleButton.setTexture("menu_hover");
     });
+
+    this.updateScrollbar(); // Update scrollbar visuals
+    this.updateMaskPosition(); // Update mask position
   }
 
   private toggleIngredientsPanel() {
     this.isIngredientsPanelOpen = !this.isIngredientsPanelOpen;
-    
+
     // Animate panel visibility
     const targetAlpha = this.isIngredientsPanelOpen ? 1 : 0.3;
-    const targetX = this.isIngredientsPanelOpen ? 
-      this.layoutConfig.ingredientsPanelX : 
+    const targetX = this.isIngredientsPanelOpen ?
+      this.layoutConfig.ingredientsPanelX :
       this.cameras.main.width - 50;
 
     this.tweens.add({
@@ -650,7 +749,11 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
       alpha: targetAlpha,
       x: targetX,
       duration: 300,
-      ease: 'Power2'
+      ease: 'Power2',
+      onUpdate: () => {
+        // Update mask position during animation
+        this.updateMaskPosition();
+      }
     });
 
     // Hide/show ingredients
@@ -698,9 +801,41 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
 
   private initDragAndDrop() {
     this.input.on("dragstart", (pointer: any, gameObject: any) => {
-      // Store original position
-      gameObject.setData('dragStartX', gameObject.x);
-      gameObject.setData('dragStartY', gameObject.y);
+      // Store original position (convert to world coordinates if from panel)
+      const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+      const isFromPanel = this.ingredientsContentContainer.getAll().includes(gameObject);
+
+      if (isFromPanel) {
+        // Store original parent and local position
+        gameObject.setData('originalParent', this.ingredientsContentContainer);
+        gameObject.setData('dragStartX', gameObject.x);
+        gameObject.setData('dragStartY', gameObject.y);
+
+        // Convert to world coordinates
+        const worldX = worldPos.tx + gameObject.x;
+        const worldY = worldPos.ty + gameObject.y;
+
+        // Calculate offset between pointer and item center
+        const offsetX = pointer.x - worldX;
+        const offsetY = pointer.y - worldY;
+        gameObject.setData('dragOffsetX', offsetX);
+        gameObject.setData('dragOffsetY', offsetY);
+
+        // Remove from container and add to scene at world position
+        this.ingredientsContentContainer.remove(gameObject, false);
+
+        // Set position to follow pointer with offset
+        gameObject.setPosition(pointer.x - offsetX, pointer.y - offsetY);
+      } else {
+        gameObject.setData('dragStartX', gameObject.x);
+        gameObject.setData('dragStartY', gameObject.y);
+
+        // Calculate offset for non-panel items too
+        const offsetX = pointer.x - gameObject.x;
+        const offsetY = pointer.y - gameObject.y;
+        gameObject.setData('dragOffsetX', offsetX);
+        gameObject.setData('dragOffsetY', offsetY);
+      }
 
       // Store original scale if not already set
       if (!gameObject.getData('originalScale')) {
@@ -739,14 +874,18 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     });
 
     this.input.on("drag", (pointer: any, gameObject: any, dragX: any, dragY: any) => {
-      gameObject.x = dragX;
-      gameObject.y = dragY;
+      // Use the stored offset to maintain proper drag position
+      const offsetX = gameObject.getData('dragOffsetX') || 0;
+      const offsetY = gameObject.getData('dragOffsetY') || 0;
+
+      gameObject.x = pointer.x - offsetX;
+      gameObject.y = pointer.y - offsetY;
 
       // Special handling for baskom drag area
       const baskomImage = gameObject.getData('baskomImage');
       if (baskomImage) {
-        baskomImage.x = dragX;
-        baskomImage.y = dragY;
+        baskomImage.x = pointer.x - offsetX;
+        baskomImage.y = pointer.y - offsetY;
         baskomImage.setTint(0xFFFFAA);
       } else {
         gameObject.setTint(0xFFFFAA);
@@ -802,23 +941,58 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
         gameObject.clearTint();
 
         if (!dropped) {
-          // Restore original scale based on object type
-          let originalScale = gameObject.getData('originalScale') || 0.2;
+          const originalParent = gameObject.getData('originalParent');
+          const dragStartX = gameObject.getData('dragStartX');
+          const dragStartY = gameObject.getData('dragStartY');
 
-                   // Special handling for spatula to maintain consistent size
-           if (gameObject.name === 'Sepatula') {
-             originalScale = 0.15; // Consistent spatula size
-           }
+          // If item was from panel, return it to panel
+          if (originalParent === this.ingredientsContentContainer) {
+            // Convert back to local coordinates
+            const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+            const localX = dragStartX;
+            const localY = dragStartY;
 
-          gameObject.setScale(originalScale);
+            // Restore original scale based on object type
+            let originalScale = gameObject.getData('originalScale') || 0.2;
 
-          this.tweens.add({
-            targets: gameObject,
-            x: gameObject.getData('dragStartX'),
-            y: gameObject.getData('dragStartY'),
-            duration: 400,
-            ease: 'Back.easeOut'
-          });
+            // Special handling for spatula to maintain consistent size
+            if (gameObject.name === 'Sepatula') {
+              originalScale = 0.15; // Consistent spatula size
+            }
+
+            gameObject.setScale(originalScale);
+
+            this.tweens.add({
+              targets: gameObject,
+              x: worldPos.tx + localX,
+              y: worldPos.ty + localY,
+              duration: 400,
+              ease: 'Back.easeOut',
+              onComplete: () => {
+                // Add back to container at original local position
+                gameObject.setPosition(localX, localY);
+                this.ingredientsContentContainer.add(gameObject);
+              }
+            });
+          } else {
+            // Not from panel, just restore position
+            let originalScale = gameObject.getData('originalScale') || 0.2;
+
+            // Special handling for spatula to maintain consistent size
+            if (gameObject.name === 'Sepatula') {
+              originalScale = 0.15; // Consistent spatula size
+            }
+
+            gameObject.setScale(originalScale);
+
+            this.tweens.add({
+              targets: gameObject,
+              x: dragStartX,
+              y: dragStartY,
+              duration: 400,
+              ease: 'Back.easeOut'
+            });
+          }
         }
       }
     });
@@ -1377,6 +1551,144 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
 
   update() {
     // Update method can be used for any continuous game logic if needed
+  }
+
+  private handleScroll(deltaY: number) {
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+    const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+    const scrollSpeed = 0.5;
+    let newY = this.ingredientsContentContainer.y - (deltaY * scrollSpeed);
+
+    newY = Math.max(-maxScroll, newY);
+    newY = Math.min(0, newY);
+
+    this.ingredientsContentContainer.y = newY;
+    this.updateScrollbar();
+  }
+
+  private setupSwipeScrolling(scrollableAreaX: number, scrollableAreaY: number, scrollableAreaWidth: number, scrollableAreaHeight: number) {
+    // Simple swipe scroll setup that doesn't interfere with dragging
+    const panelBounds = new Phaser.Geom.Rectangle(
+      this.ingredientsPanel.x + scrollableAreaX,
+      this.ingredientsPanel.y + scrollableAreaY,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    );
+
+    // Only enable swipe scrolling when touching empty areas (not on items)
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        return;
+      }
+
+      // Check if we clicked directly on an ingredient item
+      const gameObjectsUnderPointer = this.input.hitTestPointer(pointer);
+      const clickedIngredient = gameObjectsUnderPointer.find((obj: any) =>
+        this.ingredientItems.includes(obj)
+      );
+
+      // Only start swipe if we didn't click on an ingredient
+      if (!clickedIngredient) {
+        this.isSwipeScrolling = true;
+        this.swipeStartY = pointer.y;
+        this.swipeStartScrollY = this.ingredientsContentContainer.y;
+      }
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!this.isSwipeScrolling || !pointer.isDown) return;
+
+      const deltaY = this.swipeStartY - pointer.y;
+      const scrollSpeed = 1;
+      let newY = this.swipeStartScrollY - (deltaY * scrollSpeed);
+
+      const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+      const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+      newY = Math.max(-maxScroll, newY);
+      newY = Math.min(0, newY);
+
+      this.ingredientsContentContainer.y = newY;
+      this.updateScrollbar();
+    });
+
+    this.input.on('pointerup', () => {
+      this.isSwipeScrolling = false;
+    });
+  }
+
+  private updateScrollbar() {
+    this.scrollbar.clear();
+    this.scrollbarThumb.clear();
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+    const scrollbarWidth = 12;
+    const scrollbarX = this.layoutConfig.ingredientsPanelWidth - scrollbarWidth - 12; // Position to the right with proper padding
+    const scrollbarYOffset = 60;
+
+    if (this.scrollContentHeight > scrollableAreaHeight) {
+      // Draw scrollbar track (background)
+      this.scrollbar.fillStyle(0x4A3428, 0.6);
+      this.scrollbar.fillRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+      this.scrollbar.lineStyle(1, 0x8B4513, 0.8);
+      this.scrollbar.strokeRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+
+      // Calculate scrollbar thumb height based on content and visible area
+      const thumbHeight = Math.max(20, (scrollableAreaHeight / this.scrollContentHeight) * scrollableAreaHeight);
+
+      // Calculate scrollbar thumb position based on content container's scroll
+      const maxScroll = this.scrollContentHeight - scrollableAreaHeight;
+      const scrollPercentage = maxScroll > 0 ? Math.abs(this.ingredientsContentContainer.y) / maxScroll : 0;
+      const thumbY = scrollbarYOffset + (scrollableAreaHeight - thumbHeight) * scrollPercentage;
+
+      // Draw scrollbar thumb (draggable part)
+      this.scrollbarThumb.fillStyle(0x8B4513, 0.9);
+      this.scrollbarThumb.fillRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+      this.scrollbarThumb.lineStyle(1, 0xFFD700, 0.6);
+      this.scrollbarThumb.strokeRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+
+      // Make scrollbar thumb interactive for dragging
+      this.scrollbarThumb.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(scrollbarX, thumbY, scrollbarWidth, thumbHeight),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains
+      });
+      this.input.setDraggable(this.scrollbarThumb);
+
+      // Handle scrollbar thumb dragging
+      this.scrollbarThumb.off('dragstart');
+      this.scrollbarThumb.off('drag');
+      this.scrollbarThumb.off('dragend');
+
+      this.scrollbarThumb.on('dragstart', () => {
+        this.isScrollbarDragging = true;
+        this.scrollbarDragStartY = thumbY;
+        this.contentStartY = this.ingredientsContentContainer.y;
+      });
+
+      this.scrollbarThumb.on('drag', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+        if (this.isScrollbarDragging) {
+          const deltaY = dragY - this.scrollbarDragStartY;
+          const scrollRatio = deltaY / (scrollableAreaHeight - thumbHeight);
+          const newContentY = this.contentStartY - (scrollRatio * maxScroll);
+
+          // Clamp content position
+          this.ingredientsContentContainer.y = Phaser.Math.Clamp(newContentY, -maxScroll, 0);
+          this.updateScrollbar();
+        }
+      });
+
+      this.scrollbarThumb.on('dragend', () => {
+        this.isScrollbarDragging = false;
+      });
+
+    } else {
+      // If content is not scrollable, hide scrollbar
+      this.scrollbar.setVisible(false);
+      this.scrollbarThumb.setVisible(false);
+      this.scrollbar.disableInteractive();
+      this.scrollbarThumb.disableInteractive();
+    }
   }
 
   private setVesselTexture(vessel: Phaser.GameObjects.Image, textureKey: string) {

@@ -27,12 +27,26 @@ export default class ColoColoScene extends Phaser.Scene {
   private isIngredientsPanelOpen = true;
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
+  private ingredientsContentContainer!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
+  private scrollableArea!: Phaser.GameObjects.Zone;
+  private scrollContentHeight: number = 0;
+  private ingredientsContentMask: Phaser.Display.Masks.GeometryMask | null = null;
+  private scrollbarThumb!: Phaser.GameObjects.Graphics;
+  private isScrollbarDragging: boolean = false;
+  private scrollbarDragStartY: number = 0;
+  private contentStartY: number = 0;
+
+  // Mobile swipe scroll variables
+  private isSwipeScrolling: boolean = false;
+  private swipeStartY: number = 0;
+  private swipeStartScrollY: number = 0;
   private layoutConfig = {
     headerHeight: 60,
-    ingredientsPanelWidth: 375,
+    ingredientsPanelWidth: 400,
     ingredientsPanelX: 0,
     ingredientsPanelY: 300,
-    ingredientsPanelHeight: 450,
+    ingredientsPanelHeight: 550,
     cookingAreaRight: 290,
     dialogPanelHeight: 180,
   };
@@ -118,22 +132,75 @@ export default class ColoColoScene extends Phaser.Scene {
 
   private setupInputHandlers() {
     this.input.on('dragstart', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
-      gameObject.setData({ dragStartX: gameObject.x, dragStartY: gameObject.y });
+      const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+      const isFromPanel = this.ingredientsContentContainer.getAll().includes(gameObject);
+
+      if (isFromPanel) {
+        gameObject.setData('originalParent', this.ingredientsContentContainer);
+        gameObject.setData('dragStartX', gameObject.x);
+        gameObject.setData('dragStartY', gameObject.y);
+
+        const worldX = worldPos.tx + gameObject.x;
+        const worldY = worldPos.ty + gameObject.y;
+
+        const offsetX = pointer.x - worldX;
+        const offsetY = pointer.y - worldY;
+        gameObject.setData('dragOffsetX', offsetX);
+        gameObject.setData('dragOffsetY', offsetY);
+
+        this.ingredientsContentContainer.remove(gameObject, false);
+        gameObject.setPosition(pointer.x - offsetX, pointer.y - offsetY);
+      } else {
+        gameObject.setData({ dragStartX: gameObject.x, dragStartY: gameObject.y });
+        const offsetX = pointer.x - gameObject.x;
+        const offsetY = pointer.y - gameObject.y;
+        gameObject.setData('dragOffsetX', offsetX);
+        gameObject.setData('dragOffsetY', offsetY);
+      }
+
       this.children.bringToTop(gameObject);
       this.lastSlicePosition = { x: pointer.x, y: pointer.y };
     });
+
     this.input.on('drag', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
-      gameObject.x = dragX;
-      gameObject.y = dragY;
+      const offsetX = gameObject.getData('dragOffsetX') || 0;
+      const offsetY = gameObject.getData('dragOffsetY') || 0;
+
+      gameObject.x = pointer.x - offsetX;
+      gameObject.y = pointer.y - offsetY;
       this.handleSlicing(pointer, gameObject);
     });
+
     this.input.on('dragend', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
-      if (!dropped) this.resetIngredientPosition(gameObject);
+      if (!dropped) {
+        const originalParent = gameObject.getData('originalParent');
+        const dragStartX = gameObject.getData('dragStartX');
+        const dragStartY = gameObject.getData('dragStartY');
+
+        if (originalParent === this.ingredientsContentContainer) {
+          const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+          this.tweens.add({
+            targets: gameObject,
+            x: worldPos.tx + dragStartX,
+            y: worldPos.ty + dragStartY,
+            duration: 400,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+              gameObject.setPosition(dragStartX, dragStartY);
+              this.ingredientsContentContainer.add(gameObject);
+            }
+          });
+        } else {
+          this.resetIngredientPosition(gameObject);
+        }
+      }
       if (gameObject.name === 'telenan' && this.telenanDraggable) this.handleTelenanPour();
     });
+
     this.input.on('drop', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Image) => {
       this.handleDrop(gameObject, dropZone);
     });
+
     this.gameObjects.telenan.on('pointerdown', () => this.handleTelenanClick());
     this.gameObjects.mangkuk.on('pointerdown', () => this.handleMangkukClick());
   }
@@ -423,85 +490,158 @@ export default class ColoColoScene extends Phaser.Scene {
     this.ingredientsPanel.add(this.panelTitle);
     this.menuToggleButton = this.add.image(0, 0, "menu_normal");
     this.ingredientsPanel.add(this.menuToggleButton);
+
+    const scrollableAreaX = 12;
+    const scrollableAreaY = 60;
+    const scrollableAreaWidth = this.layoutConfig.ingredientsPanelWidth - 36;
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - scrollableAreaY - 12;
+
+    this.scrollableArea = this.add.zone(
+      scrollableAreaX + scrollableAreaWidth / 2,
+      scrollableAreaY + scrollableAreaHeight / 2,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    ).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(this.scrollableArea);
+
+    this.ingredientsContentContainer = this.add.container(scrollableAreaX, scrollableAreaY);
+    this.ingredientsPanel.add(this.ingredientsContentContainer);
+
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillRect(0, 0, scrollableAreaWidth, scrollableAreaHeight);
+    this.ingredientsContentMask = maskGraphics.createGeometryMask();
+
+    maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+    maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+
+    this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+
+    this.scrollbar = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbar);
+
+    this.scrollbarThumb = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbarThumb);
+
     this.createIngredients();
+
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[], deltaX: number, deltaY: number, deltaZ: number) => {
+      const panelBounds = new Phaser.Geom.Rectangle(
+        this.ingredientsPanel.x + scrollableAreaX,
+        this.ingredientsPanel.y + scrollableAreaY,
+        scrollableAreaWidth,
+        scrollableAreaHeight
+      );
+
+      if (Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        this.handleScroll(deltaY);
+      }
+    });
+
+    this.setupSwipeScrolling(scrollableAreaX, scrollableAreaY, scrollableAreaWidth, scrollableAreaHeight);
+    this.updateMaskPosition();
   }
 
   private createIngredients() {
     this.ingredientItems.forEach(item => item.destroy());
     this.ingredientItems = [];
+    this.ingredientsContentContainer.removeAll(true);
+
     const ingredients = [
-        { key: "cabai", name: "Cili", scale: 0.25 }, 
-        { key: "bawangputih2", name: "Bawang Putih", scale: 0.25 }, 
+        { key: "cabai", name: "Cili", scale: 0.25 },
+        { key: "bawangputih2", name: "Bawang Putih", scale: 0.25 },
         { key: "daunjeruk", name: "Daong Lemon", scale: 0.25 },
-        { key: "jeruknipis", name: "Lemon Cina", scale: 0.25 }, 
-        { key: "kecap", name: "Kecap", scale: 0.25 }, 
+        { key: "jeruknipis", name: "Lemon Cina", scale: 0.25 },
+        { key: "kecap", name: "Kecap", scale: 0.25 },
         { key: "sendok", name: "Sendok", scale: 0.25 },
-        { key: "pisau", name: "Piso", scale: 0.25 }, 
+        { key: "pisau", name: "Piso", scale: 0.25 },
         { key: "piringcolocolo", name: "Mangko", scale: 0.25 }
     ];
+
+    const itemWidth = 160;
+    const itemHeight = 110;
+    const horizontalGap = 20;
+    const leftMargin = 30;
+    const startX = leftMargin + (itemWidth / 2);
+    const topPadding = 100;
+    const startY = 20 + topPadding;
+    const spacingX = itemWidth + horizontalGap;
+    const spacingY = 120;
     const itemsPerRow = 2;
-    const horizontalPadding = 40;
-    const verticalPadding = 20;
-    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const panelHeight = this.layoutConfig.ingredientsPanelHeight;
-    const titleAreaHeight = 80;
-    const availableWidth = panelWidth - horizontalPadding;
-    const spacingX = availableWidth / itemsPerRow;
-    const startX = (horizontalPadding / 2) + (spacingX / 2);
-    const numRows = Math.ceil(ingredients.length / itemsPerRow);
-    const availableHeight = panelHeight - titleAreaHeight - verticalPadding;
-    const spacingY = availableHeight / numRows;
-    const startY = titleAreaHeight + (verticalPadding / 2) + (spacingY / 2);
+
+    let maxContentY = 0;
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
       const col = i % itemsPerRow;
       const x = startX + (col * spacingX);
       const y = startY + (row * spacingY);
-      const itemKey = `colo_${ingredient.key}`;
-      const ingredientName = `ingredient_${ingredient.key}`;
-      
+
       const itemBg = this.add.graphics();
       itemBg.fillStyle(0x000000, 0.25);
-      itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
-      itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-      this.ingredientsPanel.add(itemBg);
+      itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
+      this.ingredientsContentContainer.add(itemBg);
 
-      const item = this.add.image(x, y, itemKey).setInteractive().setScale(ingredient.scale).setName(ingredientName);
+      const itemKey = `colo_${ingredient.key}`;
+      const ingredientName = `ingredient_${ingredient.key}`;
+
+      const item = this.add.image(x, y, itemKey)
+        .setInteractive()
+        .setScale(ingredient.scale * 1.5)
+        .setName(ingredientName)
+        .setData('originalScale', ingredient.scale * 1.5)
+        .setData('ingredientType', ingredient.key);
+
       this.ingredientItems.push(item);
       this.input.setDraggable(item);
-      this.ingredientsPanel.add(item);
+      this.ingredientsContentContainer.add(item);
 
-      const label = this.add.text(x, y + 40, ingredient.name, { fontSize: '18px', fontFamily: 'Chewy, cursive', color: '#FFFFFF', align: 'center', fontStyle: 'bold' }).setOrigin(0.5, 0.5);
-      this.ingredientsPanel.add(label);
+      const label = this.add.text(x, y + 50, ingredient.name, {
+        fontSize: '22px',
+        fontFamily: 'Chewy, cursive',
+        color: '#FFFF00',
+        align: 'center',
+        fontStyle: 'bold'
+      }).setOrigin(0.5, 0.5);
+      this.ingredientsContentContainer.add(label);
 
-      item.on('pointerover', () => {
-        item.setScale(ingredient.scale * 1.15);
-        label.setColor('#FFFFFF');
-        itemBg.clear();
-        itemBg.fillStyle(0xFFD700, 0.15);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-        itemBg.lineStyle(1, 0xFFD700, 0.6);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-      });
+      item.on('pointerover', () => {});
 
       item.on('pointerout', () => {
-        item.setScale(ingredient.scale);
-        label.setColor('#FFE4B5');
+        item.setScale(ingredient.scale * 1.5);
+        label.setColor('#FFFF00');
         itemBg.clear();
         itemBg.fillStyle(0x000000, 0.25);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
         itemBg.lineStyle(1, 0x8B4513, 0.4);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       });
+
+      maxContentY = Math.max(maxContentY, y + 40);
     });
+
+    const bottomPadding = 15;
+    this.scrollContentHeight = maxContentY + bottomPadding;
+    this.updateScrollbar();
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
     const { width, height } = this.cameras.main;
     const { ingredientsPanelWidth, ingredientsPanelHeight } = this.layoutConfig;
     this.ingredientsPanel.setPosition(x !== undefined ? x : width - ingredientsPanelWidth - (padding || 0), y !== undefined ? y : height - ingredientsPanelHeight - (padding || 0));
+    this.updateMaskPosition();
+  }
+
+  private updateMaskPosition() {
+    if (this.ingredientsContentMask && this.ingredientsContentMask.geometryMask) {
+      const maskGraphics = this.ingredientsContentMask.geometryMask as Phaser.GameObjects.Graphics;
+      const scrollableAreaX = 12;
+      const scrollableAreaY = 60;
+
+      maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+      maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+    }
   }
 
   private updateIngredientsPanelVisuals() {
@@ -510,8 +650,8 @@ export default class ColoColoScene extends Phaser.Scene {
     this.panelBg.fillStyle(0x2A1810, 0.95).fillRoundedRect(0, 0, ingredientsPanelWidth, ingredientsPanelHeight, 20);
     this.panelBg.lineStyle(2, 0x8B4513, 0.8).strokeRoundedRect(0, 0, ingredientsPanelWidth, ingredientsPanelHeight, 20);
     this.panelBg.fillStyle(0x4A3428, 0.9).fillRoundedRect(10, 10, ingredientsPanelWidth - 20, 40, 8);
-    this.panelTitle.setText("BAHAN & ALAT").setStyle({ fontSize: '24px', fontFamily: 'Chewy, cursive', color: '#FFE4B5', align: 'center', fontStyle: 'bold' }).setPosition(ingredientsPanelWidth/2, 30).setOrigin(0.5, 0.5);
-    this.menuToggleButton.setPosition(30, 30).setScale(0.05).setInteractive()
+    this.panelTitle.setText("BAHAN & ALAT").setStyle({ fontSize: '28px', fontFamily: 'Chewy, cursive', color: '#FFE4B5', align: 'center', fontStyle: 'bold' }).setPosition(ingredientsPanelWidth/2, 30).setOrigin(0.5, 0.5);
+    this.menuToggleButton.setPosition(30, 30).setScale(0.12).setInteractive()
       .on('pointerover', () => this.menuToggleButton.setTexture("menu_hover"))
       .on('pointerout', () => this.menuToggleButton.setTexture("menu_normal"))
       .on('pointerdown', () => {
@@ -519,12 +659,149 @@ export default class ColoColoScene extends Phaser.Scene {
         this.toggleIngredientsPanel();
       })
       .on('pointerup', () => this.menuToggleButton.setTexture("menu_hover"));
+    this.updateScrollbar();
+    this.updateMaskPosition();
   }
-  
+
   private toggleIngredientsPanel() {
     this.isIngredientsPanelOpen = !this.isIngredientsPanelOpen;
     const targetX = this.isIngredientsPanelOpen ? this.layoutConfig.ingredientsPanelX : this.cameras.main.width - 50;
-    this.tweens.add({ targets: this.ingredientsPanel, alpha: this.isIngredientsPanelOpen ? 1 : 0.3, x: targetX, duration: 300, ease: 'Power2' });
+    this.tweens.add({
+      targets: this.ingredientsPanel,
+      alpha: this.isIngredientsPanelOpen ? 1 : 0.3,
+      x: targetX,
+      duration: 300,
+      ease: 'Power2',
+      onUpdate: () => {
+        this.updateMaskPosition();
+      }
+    });
+  }
+
+  private handleScroll(deltaY: number) {
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+    const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+    const scrollSpeed = 0.5;
+    let newY = this.ingredientsContentContainer.y - (deltaY * scrollSpeed);
+
+    newY = Math.max(-maxScroll, newY);
+    newY = Math.min(0, newY);
+
+    this.ingredientsContentContainer.y = newY;
+    this.updateScrollbar();
+  }
+
+  private setupSwipeScrolling(scrollableAreaX: number, scrollableAreaY: number, scrollableAreaWidth: number, scrollableAreaHeight: number) {
+    const panelBounds = new Phaser.Geom.Rectangle(
+      this.ingredientsPanel.x + scrollableAreaX,
+      this.ingredientsPanel.y + scrollableAreaY,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    );
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        return;
+      }
+
+      const gameObjectsUnderPointer = this.input.hitTestPointer(pointer);
+      const clickedIngredient = gameObjectsUnderPointer.find((obj: any) =>
+        this.ingredientItems.includes(obj)
+      );
+
+      if (!clickedIngredient) {
+        this.isSwipeScrolling = true;
+        this.swipeStartY = pointer.y;
+        this.swipeStartScrollY = this.ingredientsContentContainer.y;
+      }
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!this.isSwipeScrolling || !pointer.isDown) return;
+
+      const deltaY = this.swipeStartY - pointer.y;
+      const scrollSpeed = 1;
+      let newY = this.swipeStartScrollY - (deltaY * scrollSpeed);
+
+      const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+      const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+      newY = Math.max(-maxScroll, newY);
+      newY = Math.min(0, newY);
+
+      this.ingredientsContentContainer.y = newY;
+      this.updateScrollbar();
+    });
+
+    this.input.on('pointerup', () => {
+      this.isSwipeScrolling = false;
+    });
+  }
+
+  private updateScrollbar() {
+    this.scrollbar.clear();
+    this.scrollbarThumb.clear();
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+    const scrollbarWidth = 12;
+    const scrollbarX = this.layoutConfig.ingredientsPanelWidth - scrollbarWidth - 12;
+    const scrollbarYOffset = 60;
+
+    if (this.scrollContentHeight > scrollableAreaHeight) {
+      this.scrollbar.fillStyle(0x4A3428, 0.6);
+      this.scrollbar.fillRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+      this.scrollbar.lineStyle(1, 0x8B4513, 0.8);
+      this.scrollbar.strokeRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+
+      const thumbHeight = Math.max(20, (scrollableAreaHeight / this.scrollContentHeight) * scrollableAreaHeight);
+
+      const maxScroll = this.scrollContentHeight - scrollableAreaHeight;
+      const scrollPercentage = maxScroll > 0 ? Math.abs(this.ingredientsContentContainer.y) / maxScroll : 0;
+      const thumbY = scrollbarYOffset + (scrollableAreaHeight - thumbHeight) * scrollPercentage;
+
+      this.scrollbarThumb.fillStyle(0x8B4513, 0.9);
+      this.scrollbarThumb.fillRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+      this.scrollbarThumb.lineStyle(1, 0xFFD700, 0.6);
+      this.scrollbarThumb.strokeRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+
+      this.scrollbarThumb.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(scrollbarX, thumbY, scrollbarWidth, thumbHeight),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains
+      });
+      this.input.setDraggable(this.scrollbarThumb);
+
+      this.scrollbarThumb.off('dragstart');
+      this.scrollbarThumb.off('drag');
+      this.scrollbarThumb.off('dragend');
+
+      this.scrollbarThumb.on('dragstart', () => {
+        this.isScrollbarDragging = true;
+        this.scrollbarDragStartY = thumbY;
+        this.contentStartY = this.ingredientsContentContainer.y;
+      });
+
+      this.scrollbarThumb.on('drag', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+        if (this.isScrollbarDragging) {
+          const deltaY = dragY - this.scrollbarDragStartY;
+          const scrollRatio = deltaY / (scrollableAreaHeight - thumbHeight);
+          const newContentY = this.contentStartY - (scrollRatio * maxScroll);
+
+          this.ingredientsContentContainer.y = Phaser.Math.Clamp(newContentY, -maxScroll, 0);
+          this.updateScrollbar();
+        }
+      });
+
+      this.scrollbarThumb.on('dragend', () => {
+        this.isScrollbarDragging = false;
+      });
+
+    } else {
+      this.scrollbar.setVisible(false);
+      this.scrollbarThumb.setVisible(false);
+      this.scrollbar.disableInteractive();
+      this.scrollbarThumb.disableInteractive();
+    }
   }
 
   private showCompletionCelebration() {

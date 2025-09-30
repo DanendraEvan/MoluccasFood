@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(timeout 180 npm run build)",
+      "Bash(timeout 240 npm run build)",
+      "Bash(npx tsc:*)",
+      "Bash(awk:*)",
+      "Read(//d//**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

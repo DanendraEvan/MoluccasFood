@@ -93,7 +93,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
   // Stove and timing state
   private isStoveOn: boolean = false;
   private stoveAnimTimer: Phaser.Time.TimerEvent | null = null;
-  private stoveButton: Phaser.GameObjects.Rectangle | null = null;
+  private stoveButton: Phaser.GameObjects.Graphics | null = null;
   private stoveButtonText: Phaser.GameObjects.Text | null = null;
   private cookCountdownTimer: Phaser.Time.TimerEvent | null = null;
   private cookCountdownText: Phaser.GameObjects.Text | null = null;

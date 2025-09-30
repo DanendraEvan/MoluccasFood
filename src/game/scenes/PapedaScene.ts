@@ -48,7 +48,6 @@ export default class PapedaScene extends Phaser.Scene {
   // --> STATE MANAGEMENT BARU UNTUK LOGIKA GAME
   private isBowlPlaced: boolean = false;
   private isWaterAdded: boolean = false;
-  private flourDropZone: Phaser.GameObjects.Zone;
   private dropZoneGraphics: Phaser.GameObjects.Graphics | null = null;
   private stagingAreaGraphics: Phaser.GameObjects.Graphics | null = null;
 
@@ -63,6 +62,20 @@ export default class PapedaScene extends Phaser.Scene {
   private ingredientItems: Phaser.GameObjects.Image[] = [];
   private panelBg!: Phaser.GameObjects.Graphics;
   private panelTitle!: Phaser.GameObjects.Text;
+  private ingredientsContentContainer!: Phaser.GameObjects.Container;
+  private scrollbar!: Phaser.GameObjects.Graphics;
+  private scrollableArea!: Phaser.GameObjects.Zone;
+  private scrollContentHeight: number = 0;
+  private ingredientsContentMask: Phaser.Display.Masks.GeometryMask | null = null;
+  private scrollbarThumb!: Phaser.GameObjects.Graphics;
+  private isScrollbarDragging: boolean = false;
+  private scrollbarDragStartY: number = 0;
+  private contentStartY: number = 0;
+
+  // Mobile swipe scroll variables
+  private isSwipeScrolling: boolean = false;
+  private swipeStartYScroll: number = 0;
+  private swipeStartScrollYPos: number = 0;
   // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
   private infoContent: string = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
 
@@ -70,12 +83,12 @@ export default class PapedaScene extends Phaser.Scene {
   private layoutConfig = {
     // Header bar
     headerHeight: 60,
-    
+
     // Ingredients panel
-    ingredientsPanelWidth: 375,
+    ingredientsPanelWidth: 400,
     ingredientsPanelX: 0, // Will be calculated
     ingredientsPanelY: 300, // Turun 150px lagi dari 755 ke 905
-    ingredientsPanelHeight: 600,
+    ingredientsPanelHeight: 550,
     
     // Cooking area
     cookingAreaLeft: 20,
@@ -314,7 +327,7 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private createIngredientsPanel() {
-    // Create ingredients panel container
+    // Create ingredients panel container (main container for the whole panel)
     this.ingredientsPanel = this.add.container(
       this.layoutConfig.ingredientsPanelX,
       this.layoutConfig.ingredientsPanelY
@@ -332,48 +345,101 @@ export default class PapedaScene extends Phaser.Scene {
     this.menuToggleButton = this.add.image(0, 0, "menu_normal");
     this.ingredientsPanel.add(this.menuToggleButton);
 
+    // Create a scrollable area (zone) for ingredients
+    const scrollableAreaX = 12; // Relative to ingredientsPanel - matches border and rounded corner
+    const scrollableAreaY = 60; // Below header area
+    const scrollableAreaWidth = this.layoutConfig.ingredientsPanelWidth - 36; // Panel width minus left(12) + right(12) + scrollbar(12)
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - scrollableAreaY - 12; // Remaining height with bottom padding matching border
+
+    this.scrollableArea = this.add.zone(
+      scrollableAreaX + scrollableAreaWidth / 2,
+      scrollableAreaY + scrollableAreaHeight / 2,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    ).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(this.scrollableArea);
+
+    // Create a container for the actual ingredient items
+    // Position container at scrollable area since we now have proper padding in content
+    this.ingredientsContentContainer = this.add.container(scrollableAreaX, scrollableAreaY);
+    this.ingredientsPanel.add(this.ingredientsContentContainer);
+
+    // Set up a clipping mask for the ingredients content
+    const maskGraphics = this.make.graphics();
+    maskGraphics.fillRect(0, 0, scrollableAreaWidth, scrollableAreaHeight); // Define mask in local coordinates
+    this.ingredientsContentMask = maskGraphics.createGeometryMask(); // Store the mask object
+
+    // Position the maskGraphics to align with the scrollable area in world coordinates
+    maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+    maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+
+    // Apply mask but allow dragging outside of it
+    this.ingredientsContentContainer.setMask(this.ingredientsContentMask);
+
+    // Create scrollbar background
+    this.scrollbar = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbar);
+
+    // Create scrollbar thumb (draggable part)
+    this.scrollbarThumb = this.add.graphics();
+    this.ingredientsPanel.add(this.scrollbarThumb);
+
     this.createIngredients();
+
+    // Enable mouse wheel scrolling
+    this.input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: Phaser.GameObjects.GameObject[], deltaX: number, deltaY: number, deltaZ: number) => {
+      // Check if the mouse pointer is within the ingredients panel's scrollable area
+      const panelBounds = new Phaser.Geom.Rectangle(
+        this.ingredientsPanel.x + scrollableAreaX,
+        this.ingredientsPanel.y + scrollableAreaY,
+        scrollableAreaWidth,
+        scrollableAreaHeight
+      );
+
+      if (Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        this.handleScroll(deltaY);
+      }
+    });
+
+    // Add mobile-friendly swipe scroll mechanism after ingredients are created
+    this.setupSwipeScrolling(scrollableAreaX, scrollableAreaY, scrollableAreaWidth, scrollableAreaHeight);
+
+    // Initial mask position update
+    this.updateMaskPosition();
   }
 
   private createIngredients() {
     // Destroy existing ingredient items to prevent duplicates
     this.ingredientItems.forEach(item => item.destroy());
     this.ingredientItems = [];
+    this.ingredientsContentContainer.removeAll(true); // Clear previous items from the container
 
-   const ingredients = [
-  { key: "Mangkuk", name: "Mangko", scale: 0.15 },
-  { key: "Mangkuk", name: "Mangko", scale: 0.15 },
-  { key: "SaguManta", name: "Sagu Manta", scale: 0.12 },
-  { key: "Water", name: "Aer 200ml", scale: 0.2 },
-  { key: "Spoon", name: "Sendok", scale: 0.15 },
-  { key: "Saring", name: "Saringan", scale: 0.15 },
-  { key: "Air100ml", name: "Aer 100ml", scale: 0.12 },
-  { key: "Nipis", name: "Jeruk Nipis", scale: 0.2 },
-  { key: "AirPanas", name: "Aer Panas", scale: 0.12 },
-  { key: "SebelumPapeda", name: "Ikan Kuah Kuning", scale: 0.08 },
-];
+    const ingredients = [
+      { key: "Mangkuk", name: "Mangko", scale: 0.15 },
+      { key: "Mangkuk", name: "Mangko", scale: 0.15 },
+      { key: "SaguManta", name: "Sagu Manta", scale: 0.12 },
+      { key: "Water", name: "Aer 200ml", scale: 0.2 },
+      { key: "Spoon", name: "Sendok", scale: 0.15 },
+      { key: "Saring", name: "Saringan", scale: 0.15 },
+      { key: "Air100ml", name: "Aer 100ml", scale: 0.12 },
+      { key: "Nipis", name: "Jeruk Nipis", scale: 0.2 },
+      { key: "AirPanas", name: "Aer Panas", scale: 0.12 },
+      { key: "SebelumPapeda", name: "Ikan Kuah Kuning", scale: 0.08 },
+    ];
 
-
-    // --- PENGATURAN LAYOUT GRID ---
+    // Mobile-friendly layout with larger items and better spacing
+    const itemWidth = 160;
+    const itemHeight = 110;
+    const horizontalGap = 20;
+    const leftMargin = 30;
+    const startX = leftMargin + (itemWidth / 2);
+    const topPadding = 100;
+    const startY = 20 + topPadding;
+    const spacingX = itemWidth + horizontalGap;
+    const spacingY = 120; // Slightly increased vertical spacing for larger items
     const itemsPerRow = 2;
-    const horizontalPadding = 40; // Jarak total dari tepi kiri & kanan panel
-    const verticalPadding = 20;   // Jarak total dari tepi atas & bawah (di bawah judul)
 
-    // --- Perhitungan Otomatis ---
-    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
-    const panelHeight = this.layoutConfig.ingredientsPanelHeight;
-    const titleAreaHeight = 80; // Area untuk judul "ALAT DAN BAHAN"
-
-    // Perhitungan Horizontal
-    const availableWidth = panelWidth - horizontalPadding;
-    const spacingX = availableWidth / itemsPerRow;
-    const startX = (horizontalPadding / 2) + (spacingX / 2);
-
-    // Perhitungan Vertikal
-    const numRows = Math.ceil(ingredients.length / itemsPerRow);
-    const availableHeight = panelHeight - titleAreaHeight - verticalPadding;
-    const spacingY = availableHeight / numRows;
-    const startY = titleAreaHeight + (verticalPadding / 2) + (spacingY / 2);
+    let maxContentY = 0;
 
     ingredients.forEach((ingredient, i) => {
       const row = Math.floor(i / itemsPerRow);
@@ -381,55 +447,58 @@ export default class PapedaScene extends Phaser.Scene {
       const x = startX + (col * spacingX);
       const y = startY + (row * spacingY);
 
-      // Item background
+      // Item background - Larger size for better UI
       const itemBg = this.add.graphics();
       itemBg.fillStyle(0x000000, 0.25);
-      itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+      itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       itemBg.lineStyle(1, 0x8B4513, 0.4);
-      itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-      this.ingredientsPanel.add(itemBg);
+      itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
+      this.ingredientsContentContainer.add(itemBg); // Add to content container
 
-      // Item image
+      // Item image - Larger scale for better visibility
       const item = this.add.image(x, y, ingredient.key)
-        .setInteractive()
-        .setScale(ingredient.scale)
-        .setName(ingredient.key);
+        .setInteractive() // Simple interactive setup
+        .setScale(ingredient.scale * 1.5) // Increased scale for bigger items
+        .setName(ingredient.key)
+        .setData('originalScale', ingredient.scale * 1.5) // Store the increased scale
+        .setData('ingredientType', ingredient.key);
 
       this.ingredientItems.push(item);
-      this.input.setDraggable(item);
-      this.ingredientsPanel.add(item);
+      this.input.setDraggable(item); // Simple draggable setup
+      this.ingredientsContentContainer.add(item); // Add to content container
 
-      // Item label
-      const label = this.add.text(x, y + 40, ingredient.name, {
-        fontSize: '18px',
+      // Item label - Larger font size
+      const label = this.add.text(x, y + 50, ingredient.name, {
+        fontSize: '22px', // Increased from 18px to 22px
         fontFamily: 'Chewy, cursive',
-        color: '#FFFFFF',
+        color: '#FFFF00', // Changed to bright yellow color
         align: 'center',
         fontStyle: 'bold'
       }).setOrigin(0.5, 0.5);
-      this.ingredientsPanel.add(label);
+      this.ingredientsContentContainer.add(label); // Add to content container
 
-      // Hover effects
+      // Hover effects completely disabled
       item.on('pointerover', () => {
-        item.setScale(ingredient.scale * 1.15);
-        label.setColor('#FFFFFF');
-        itemBg.clear();
-        itemBg.fillStyle(0xFFD700, 0.15);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
-        itemBg.lineStyle(1, 0xFFD700, 0.6);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        // No hover effects
       });
 
       item.on('pointerout', () => {
-        item.setScale(ingredient.scale);
-        label.setColor('#FFE4B5');
+        // Always reset to normal state with new larger sizes
+        item.setScale(ingredient.scale * 1.5); // Use increased scale
+        label.setColor('#FFFF00');
         itemBg.clear();
         itemBg.fillStyle(0x000000, 0.25);
-        itemBg.fillRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.fillRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
         itemBg.lineStyle(1, 0x8B4513, 0.4);
-        itemBg.strokeRoundedRect(x - 55, y - 37.5, 110, 75, 12);
+        itemBg.strokeRoundedRect(x - (itemWidth/2), y - (itemHeight/2), itemWidth, itemHeight, 12);
       });
+
+      maxContentY = Math.max(maxContentY, y + 40); // Track the lowest point of content
     });
+
+    const bottomPadding = 15; // Space kosong di bawah konten
+    this.scrollContentHeight = maxContentY + bottomPadding; // Calculate total content height with bottom padding
+    this.updateScrollbar(); // Initial update of scrollbar
   }
 
   // NOTE: createDialogPanel removed - using React dialog system only
@@ -449,7 +518,7 @@ export default class PapedaScene extends Phaser.Scene {
     // Update panel title
     this.panelTitle.setText("BAHAN & ALAT");
     this.panelTitle.setStyle({
-      fontSize: '24px',
+      fontSize: '28px',
       fontFamily: 'Chewy, cursive',
       color: '#FFE4B5',
       align: 'center',
@@ -460,9 +529,12 @@ export default class PapedaScene extends Phaser.Scene {
 
     // Update menu toggle button
     this.menuToggleButton.setPosition(30, 30);
-    this.menuToggleButton.setScale(0.05);
+    this.menuToggleButton.setScale(0.12); // Increased from 0.05 to 0.12 for better mobile accessibility
     this.menuToggleButton.setInteractive();
     this.setupMenuToggleEvents();
+
+    this.updateScrollbar(); // Update scrollbar visuals
+    this.updateMaskPosition(); // Update mask position
   }
 
   private setupIngredientsPanelLayout(hAlign?: string, vAlign?: string, padding?: number, x?: number, y?: number) {
@@ -505,6 +577,21 @@ export default class PapedaScene extends Phaser.Scene {
     }
 
     this.ingredientsPanel.setPosition(targetX, targetY);
+
+    // Update mask position when panel moves
+    this.updateMaskPosition();
+  }
+
+  private updateMaskPosition() {
+    if (this.ingredientsContentMask && this.ingredientsContentMask.geometryMask) {
+      const maskGraphics = this.ingredientsContentMask.geometryMask as Phaser.GameObjects.Graphics;
+      const scrollableAreaX = 12;
+      const scrollableAreaY = 60;
+
+      // Simply update mask position to follow panel (size is already correct)
+      maskGraphics.x = this.ingredientsPanel.x + scrollableAreaX;
+      maskGraphics.y = this.ingredientsPanel.y + scrollableAreaY;
+    }
   }
 
   private setupMenuToggleEvents() {
@@ -530,10 +617,10 @@ export default class PapedaScene extends Phaser.Scene {
 
   private toggleIngredientsPanel() {
     this.isIngredientsPanelOpen = !this.isIngredientsPanelOpen;
-    
+
     const targetAlpha = this.isIngredientsPanelOpen ? 1 : 0.3;
-    const targetX = this.isIngredientsPanelOpen ? 
-      this.layoutConfig.ingredientsPanelX : 
+    const targetX = this.isIngredientsPanelOpen ?
+      this.layoutConfig.ingredientsPanelX :
       this.cameras.main.width - 50;
 
     this.tweens.add({
@@ -541,13 +628,155 @@ export default class PapedaScene extends Phaser.Scene {
       alpha: targetAlpha,
       x: targetX,
       duration: 300,
-      ease: 'Power2'
+      ease: 'Power2',
+      onUpdate: () => {
+        // Update mask position during animation
+        this.updateMaskPosition();
+      }
     });
 
     this.ingredientItems.forEach(item => {
       item.setVisible(this.isIngredientsPanelOpen);
       item.setActive(this.isIngredientsPanelOpen);
     });
+  }
+
+  private handleScroll(deltaY: number) {
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+    const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+    const scrollSpeed = 0.5;
+    let newY = this.ingredientsContentContainer.y - (deltaY * scrollSpeed);
+
+    newY = Math.max(-maxScroll, newY);
+    newY = Math.min(0, newY);
+
+    this.ingredientsContentContainer.y = newY;
+    this.updateScrollbar();
+  }
+
+  private setupSwipeScrolling(scrollableAreaX: number, scrollableAreaY: number, scrollableAreaWidth: number, scrollableAreaHeight: number) {
+    // Simple swipe scroll setup that doesn't interfere with dragging
+    const panelBounds = new Phaser.Geom.Rectangle(
+      this.ingredientsPanel.x + scrollableAreaX,
+      this.ingredientsPanel.y + scrollableAreaY,
+      scrollableAreaWidth,
+      scrollableAreaHeight
+    );
+
+    // Only enable swipe scrolling when touching empty areas (not on items)
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!Phaser.Geom.Rectangle.Contains(panelBounds, pointer.x, pointer.y)) {
+        return;
+      }
+
+      // Check if we clicked directly on an ingredient item
+      const gameObjectsUnderPointer = this.input.hitTestPointer(pointer);
+      const clickedIngredient = gameObjectsUnderPointer.find((obj: any) =>
+        this.ingredientItems.includes(obj)
+      );
+
+      // Only start swipe if we didn't click on an ingredient
+      if (!clickedIngredient) {
+        this.isSwipeScrolling = true;
+        this.swipeStartYScroll = pointer.y;
+        this.swipeStartScrollYPos = this.ingredientsContentContainer.y;
+      }
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!this.isSwipeScrolling || !pointer.isDown) return;
+
+      const deltaY = this.swipeStartYScroll - pointer.y;
+      const scrollSpeed = 1;
+      let newY = this.swipeStartScrollYPos - (deltaY * scrollSpeed);
+
+      const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+      const maxScroll = Math.max(0, this.scrollContentHeight - scrollableAreaHeight);
+
+      newY = Math.max(-maxScroll, newY);
+      newY = Math.min(0, newY);
+
+      this.ingredientsContentContainer.y = newY;
+      this.updateScrollbar();
+    });
+
+    this.input.on('pointerup', () => {
+      this.isSwipeScrolling = false;
+    });
+  }
+
+  private updateScrollbar() {
+    this.scrollbar.clear();
+    this.scrollbarThumb.clear();
+
+    const scrollableAreaHeight = this.layoutConfig.ingredientsPanelHeight - 60 - 12;
+    const scrollbarWidth = 12;
+    const scrollbarX = this.layoutConfig.ingredientsPanelWidth - scrollbarWidth - 12;
+    const scrollbarYOffset = 60;
+
+    if (this.scrollContentHeight > scrollableAreaHeight) {
+      // Draw scrollbar track (background)
+      this.scrollbar.fillStyle(0x4A3428, 0.6);
+      this.scrollbar.fillRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+      this.scrollbar.lineStyle(1, 0x8B4513, 0.8);
+      this.scrollbar.strokeRoundedRect(scrollbarX, scrollbarYOffset, scrollbarWidth, scrollableAreaHeight, 6);
+
+      // Calculate scrollbar thumb height based on content and visible area
+      const thumbHeight = Math.max(20, (scrollableAreaHeight / this.scrollContentHeight) * scrollableAreaHeight);
+
+      // Calculate scrollbar thumb position based on content container's scroll
+      const maxScroll = this.scrollContentHeight - scrollableAreaHeight;
+      const scrollPercentage = maxScroll > 0 ? Math.abs(this.ingredientsContentContainer.y) / maxScroll : 0;
+      const thumbY = scrollbarYOffset + (scrollableAreaHeight - thumbHeight) * scrollPercentage;
+
+      // Draw scrollbar thumb (draggable part)
+      this.scrollbarThumb.fillStyle(0x8B4513, 0.9);
+      this.scrollbarThumb.fillRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+      this.scrollbarThumb.lineStyle(1, 0xFFD700, 0.6);
+      this.scrollbarThumb.strokeRoundedRect(scrollbarX + 1, thumbY, scrollbarWidth - 2, thumbHeight, 5);
+
+      // Make scrollbar thumb interactive for dragging
+      this.scrollbarThumb.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(scrollbarX, thumbY, scrollbarWidth, thumbHeight),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains
+      });
+      this.input.setDraggable(this.scrollbarThumb);
+
+      // Handle scrollbar thumb dragging
+      this.scrollbarThumb.off('dragstart');
+      this.scrollbarThumb.off('drag');
+      this.scrollbarThumb.off('dragend');
+
+      this.scrollbarThumb.on('dragstart', () => {
+        this.isScrollbarDragging = true;
+        this.scrollbarDragStartY = thumbY;
+        this.contentStartY = this.ingredientsContentContainer.y;
+      });
+
+      this.scrollbarThumb.on('drag', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+        if (this.isScrollbarDragging) {
+          const deltaY = dragY - this.scrollbarDragStartY;
+          const scrollRatio = deltaY / (scrollableAreaHeight - thumbHeight);
+          const newContentY = this.contentStartY - (scrollRatio * maxScroll);
+
+          // Clamp content position
+          this.ingredientsContentContainer.y = Phaser.Math.Clamp(newContentY, -maxScroll, 0);
+          this.updateScrollbar();
+        }
+      });
+
+      this.scrollbarThumb.on('dragend', () => {
+        this.isScrollbarDragging = false;
+      });
+
+    } else {
+      // If content is not scrollable, hide scrollbar
+      this.scrollbar.setVisible(false);
+      this.scrollbarThumb.setVisible(false);
+      this.scrollbar.disableInteractive();
+      this.scrollbarThumb.disableInteractive();
+    }
   }
 
   // NOTE: updateStepDisplay removed - using React dialog system only
@@ -594,21 +823,85 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private initDragAndDrop() {
-    this.input.on('drag', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
-      gameObject.x = dragX;
-      gameObject.y = dragY;
+    this.input.on('dragstart', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
+      // Store original position (convert to world coordinates if from panel)
+      const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+      const isFromPanel = this.ingredientsContentContainer.getAll().includes(gameObject);
+
+      if (isFromPanel) {
+        // Store original parent and local position
+        gameObject.setData('originalParent', this.ingredientsContentContainer);
+        gameObject.setData('dragStartX', gameObject.x);
+        gameObject.setData('dragStartY', gameObject.y);
+
+        // Convert to world coordinates
+        const worldX = worldPos.tx + gameObject.x;
+        const worldY = worldPos.ty + gameObject.y;
+
+        // Calculate offset between pointer and item center
+        const offsetX = pointer.x - worldX;
+        const offsetY = pointer.y - worldY;
+        gameObject.setData('dragOffsetX', offsetX);
+        gameObject.setData('dragOffsetY', offsetY);
+
+        // Remove from container and add to scene at world position
+        this.ingredientsContentContainer.remove(gameObject, false);
+
+        // Set position to follow pointer with offset
+        gameObject.setPosition(pointer.x - offsetX, pointer.y - offsetY);
+      } else {
+        gameObject.setData('dragStartX', gameObject.x);
+        gameObject.setData('dragStartY', gameObject.y);
+
+        // Calculate offset for non-panel items too
+        const offsetX = pointer.x - gameObject.x;
+        const offsetY = pointer.y - gameObject.y;
+        gameObject.setData('dragOffsetX', offsetX);
+        gameObject.setData('dragOffsetY', offsetY);
+      }
+
+      this.children.bringToTop(gameObject);
     });
 
-    this.input.on('dragstart', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image) => {
-      this.children.bringToTop(gameObject);
-      gameObject.setData('dragStartX', gameObject.x);
-      gameObject.setData('dragStartY', gameObject.y);
+    this.input.on('drag', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dragX: number, dragY: number) => {
+      // Use the stored offset to maintain proper drag position
+      const offsetX = gameObject.getData('dragOffsetX') || 0;
+      const offsetY = gameObject.getData('dragOffsetY') || 0;
+
+      gameObject.x = pointer.x - offsetX;
+      gameObject.y = pointer.y - offsetY;
     });
 
     this.input.on('dragend', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
       if (!dropped) {
-        gameObject.x = gameObject.getData('dragStartX');
-        gameObject.y = gameObject.getData('dragStartY');
+        const originalParent = gameObject.getData('originalParent');
+        const dragStartX = gameObject.getData('dragStartX');
+        const dragStartY = gameObject.getData('dragStartY');
+
+        // If item was from panel, return it to panel
+        if (originalParent === this.ingredientsContentContainer) {
+          // Convert back to local coordinates
+          const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+          const localX = dragStartX;
+          const localY = dragStartY;
+
+          this.tweens.add({
+            targets: gameObject,
+            x: worldPos.tx + localX,
+            y: worldPos.ty + localY,
+            duration: 400,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+              // Add back to container at original local position
+              gameObject.setPosition(localX, localY);
+              this.ingredientsContentContainer.add(gameObject);
+            }
+          });
+        } else {
+          // Not from panel, just restore position
+          gameObject.x = dragStartX;
+          gameObject.y = dragStartY;
+        }
       }
       // Clear all highlights
       this.clearDropZoneHighlight();
@@ -675,7 +968,9 @@ export default class PapedaScene extends Phaser.Scene {
         if (droppedItemKey === 'Water' && dropZone === this.dropZone) {
             this.executeSuccessfulDrop(gameObject, () => {
                 // Hide DenganTepung during animation
-                this.mangkuk.setVisible(false);
+                if (this.mangkuk) {
+                  this.mangkuk.setVisible(false);
+                }
                 
                 // Center animation on the bowl
                 const gameHeight = this.cameras.main.height;
@@ -698,8 +993,10 @@ export default class PapedaScene extends Phaser.Scene {
                 // Complete after 7 seconds
                 this.time.delayedCall(7000, () => {
                     pourWaterAnim.destroy();
-                    this.mangkuk.setVisible(true);
-                    this.mangkuk.setTexture('HasilAduk1').setScale(0.6);
+                    if (this.mangkuk) {
+                      this.mangkuk.setVisible(true);
+                      this.mangkuk.setTexture('HasilAduk1').setScale(0.6);
+                    }
                     this.isWaterAdded = true;
                     this.nextStep();
                 });
@@ -1015,16 +1312,18 @@ export default class PapedaScene extends Phaser.Scene {
     this.stirringTimer = this.time.addEvent({
       delay: 250,
       callback: () => {
-        if (isTexture1) {
-          this.mangkuk.setTexture(texture2);
-          this.mangkuk.setScale(this.layoutConfig.bowlScale);
-        } else {
-          this.mangkuk.setTexture(texture1);
-          this.mangkuk.setScale(this.layoutConfig.bowlScale);
+        if (this.mangkuk) {
+          if (isTexture1) {
+            this.mangkuk.setTexture(texture2);
+            this.mangkuk.setScale(this.layoutConfig.bowlScale);
+          } else {
+            this.mangkuk.setTexture(texture1);
+            this.mangkuk.setScale(this.layoutConfig.bowlScale);
+          }
+          isTexture1 = !isTexture1;
+
+          this.createSteamEffect(this.mangkuk.x, this.mangkuk.y - 50);
         }
-        isTexture1 = !isTexture1;
-        
-        this.createSteamEffect(this.mangkuk.x, this.mangkuk.y - 50);
       },
       loop: true
     });
@@ -1034,8 +1333,10 @@ export default class PapedaScene extends Phaser.Scene {
         this.stirringTimer.destroy();
         this.stirringTimer = null;
       }
-      this.mangkuk.setTexture(finalTexture);
-      this.mangkuk.setScale(this.layoutConfig.bowlScale);
+      if (this.mangkuk) {
+        this.mangkuk.setTexture(finalTexture);
+        this.mangkuk.setScale(this.layoutConfig.bowlScale);
+      }
       callback();
     });
   }
@@ -1244,23 +1545,25 @@ export default class PapedaScene extends Phaser.Scene {
 
   // Dialog 4: Interactive stirring mechanism with tap-based interactions
   private startInteractiveStirring() {
+    if (!this.mangkuk) return;
+
     this.isStirring = true;
     this.stirCount = 0;
     this.currentStirTexture = 'Aduk3';
-    
+
     // Add tap instruction text
-    const instructionText = this.add.text(this.mangkuk.x, this.mangkuk.y - 100, 
+    const instructionText = this.add.text(this.mangkuk.x, this.mangkuk.y - 100,
       `Tap untuk mengaduk! (${this.stirCount}/${this.maxStirCount})`, {
       fontSize: '20px',
       fontFamily: 'Chewy, cursive',
       color: '#FFD700',
       fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(100);
-    
+
     // Make bowl interactive for tap-based stirring
     this.mangkuk.setInteractive();
     this.mangkuk.on('pointerdown', this.onTapStir, this);
-    
+
     // Store instruction text for updates
     this.mangkuk.setData('instructionText', instructionText);
 
@@ -1273,14 +1576,16 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private handleStirSwipe() {
+    if (!this.mangkuk) return;
+
     this.stirCount++;
     const instructionText = this.mangkuk.getData('instructionText') as Phaser.GameObjects.Text;
-    
+
     // Update instruction text
     if (instructionText) {
       instructionText.setText(`Tap untuk mengaduk! (${this.stirCount}/${this.maxStirCount})`);
     }
-    
+
     // Cycle through stirring textures: Aduk3 -> Aduk4 -> Aduk5 -> Aduk4 -> repeat
     if (this.currentStirTexture === 'Aduk3') {
       this.mangkuk.setTexture('Aduk4');
@@ -1311,33 +1616,35 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private completeStirringProcess(instructionText: Phaser.GameObjects.Text) {
+    if (!this.mangkuk) return;
+
     this.isStirring = false;
-    
+
     // Remove instruction text
     if (instructionText) {
       instructionText.destroy();
     }
-    
+
     // Return the spoon to its original position
     if (this.spoonItem) {
       this.returnSpoonToDragStart();
     }
-    
+
     // Change to final mixed texture - DenganTepung.png
     this.mangkuk.setTexture('DenganTepung').setScale(0.6);
     this.mangkuk.setName('DenganTepung');
-    
+
     // Keep it fixed in CookingArea but make it draggable for next step
     this.mangkuk.setData('isFixed', false); // Allow dragging for strainer step
-    
+
     // Remove old event listeners first
     this.mangkuk.off('pointerdown');
     this.mangkuk.off('pointermove');
     this.mangkuk.off('pointerup');
-    
+
     // Make it properly draggable using the input system
     this.mangkuk.setInteractive({ draggable: true });
-    this.input.setDraggable(this.mangkuk!);
+    this.input.setDraggable(this.mangkuk);
     
     // Return spoon back to its original drag position
     this.returnSpoonToDragStart();
@@ -1371,27 +1678,6 @@ export default class PapedaScene extends Phaser.Scene {
     }
   }
 
-  private returnSpoonToPanel() {
-    if (this.spoonItem) {
-      const originalX = this.spoonItem.getData('dragStartX');
-      const originalY = this.spoonItem.getData('dragStartY');
-
-      this.spoonItem.setVisible(true);
-      this.tweens.add({
-        targets: this.spoonItem,
-        x: originalX,
-        y: originalY,
-        alpha: 1,
-        scale: 0.15, // Reset scale to original
-        duration: 300,
-        ease: 'Back.easeOut',
-        onComplete: () => {
-          this.spoonItem = null;
-        }
-      });
-    }
-  }
-  
   // Dialog 5: Complete strainer system - 6 second single-run animation
   private startStrainerAnimation() {
     // Single-run animation: SaringKosong2 -> Saring1 -> Saring2 (6 seconds total)
