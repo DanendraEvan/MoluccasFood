@@ -558,6 +558,19 @@ export default class NasiLapolaScene extends Phaser.Scene {
     this.komporZone = this.add.zone(0, 0, 160, 140).setRectangleDropZone(160, 140);
     this.komporZone.name = "kompor";
 
+    // Add click handler to kompor for easy toggle
+    this.kompor.on('pointerdown', () => {
+      console.log('=== KOMPOR CLICKED ===');
+      console.log('Current stove state:', this.isStoveOn);
+
+      // Toggle stove immediately
+      this.toggleStove();
+      this.updateButtonAppearance();
+      this.updateStoveHintVisibility();
+
+      console.log('New stove state:', this.isStoveOn);
+    });
+
     // Atur posisi kompor secara manual dengan koordinat (x, y).
     // Anda bisa mengubah angka-angka di bawah ini untuk memindahkan kompor.
     // Format: setStoveCoordinates(kiriX, kiriY, kananX, kananY)
@@ -730,7 +743,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
       { key: "Parut", name: "Parutan", scale: 0.15 },
       { key: "Baskom", name: "Loyang", scale: 0.15 },
       { key: "PanciKosong2", name: "Panci Kosong", scale: 0.14 },
-      { key: "PanciSaring", name: "Panci tapis-tapis", scale: 0.14 },
+      { key: "PanciSaring", name: "Panci Kukus", scale: 0.14 },
       // Remove spatula from panel per request
       { key: "PanciAir2", name: "Panci Air", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.15 }
@@ -2061,7 +2074,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
     const hintX = this.kompor.x + 120; // Same X as button (centered)
     const hintY = this.kompor.y + 60 + 65; // Below the button (button Y + button height/2 + margin)
 
-    this.stoveHintText = this.add.text(hintX, hintY, 'Nyalakan kompor dengan swipe ke bawah', {
+    this.stoveHintText = this.add.text(hintX, hintY, 'Klik tombol atau kompor untuk menyalakan', {
       fontSize: '22px',
       color: '#FFFFFF',
       fontFamily: 'Arial',
@@ -2082,13 +2095,13 @@ export default class NasiLapolaScene extends Phaser.Scene {
       this.stoveHintText.setVisible(true);
 
       if (this.isStoveOn) {
-        this.stoveHintText.setText('Matikan kompor dengan swipe bawah');
+        this.stoveHintText.setText('Klik tombol atau kompor untuk mematikan');
         this.stoveHintText.setStyle({
           backgroundColor: '#8B0000', // Dark red for OFF action
           color: '#FFFFFF'
         });
       } else {
-        this.stoveHintText.setText('Nyalakan kompor dengan swipe ke bawah');
+        this.stoveHintText.setText('Klik tombol atau kompor untuk menyalakan');
         this.stoveHintText.setStyle({
           backgroundColor: '#2C2C2C', // Dark gray for ON action
           color: '#FFFFFF'
@@ -2975,7 +2988,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
       { key: "Baskom", name: "Loyang", scale: 0.15 },
       { key: "Saring", name: "Saring", scale: 0.15 },
       { key: "PanciKosong", name: "Panci Kosong", scale: 0.14 },
-      { key: "PanciSaring", name: "Panci tapis-tapis", scale: 0.14 },
+      { key: "PanciSaring", name: "Panci Kukus", scale: 0.14 },
       { key: "PanciAir2", name: "Panci Air", scale: 0.12 },
       { key: "Piring", name: "Piring", scale: 0.15 }
     ];
