@@ -35,7 +35,7 @@ export default class ColoColoScene extends Phaser.Scene {
   private scrollbarThumb!: Phaser.GameObjects.Graphics;
   private isScrollbarDragging: boolean = false;
   private scrollbarDragStartY: number = 0;
-  private contentStartY: number = 0;
+  private instructionText: Phaser.GameObjects.Text | null = null;
 
   // Mobile swipe scroll variables
   private isSwipeScrolling: boolean = false;
@@ -52,10 +52,10 @@ export default class ColoColoScene extends Phaser.Scene {
   };
 
   private readonly gameSteps: GameStep[] = [
-    { id: 0, text: "Saatnya menambahkan kecap. Seret dan letakkan kecap ke dalam mangkok.", character: "karakter3.png", isCompleted: false },
-    { id: 1, text: "Mari kita mulai! Pertama, letakkan cili di atas talenan.", character: "karakter1.png", isCompleted: false },
-    { id: 2, text: "Ambil piso lalu gesekkan pada cili untuk memotongnya.", character: "karakter1.png", isCompleted: false },
-    { id: 3, text: "Bagus! Seret talenan berisi cili ke area mangkok untuk memindahkannya.", character: "karakter2.png", isCompleted: false },
+    { id: 0, text: "Mari kita mulai! Pertama, letakkan cili di atas talenan.", character: "karakter1.png", isCompleted: false },
+    { id: 1, text: "Ambil piso lalu gesekkan pada cili untuk memotongnya.", character: "karakter1.png", isCompleted: false },
+    { id: 2, text: "Bagus! Seret talenan berisi cili ke area mangkok untuk memindahkannya.", character: "karakter2.png", isCompleted: false },
+    { id: 3, text: "Saatnya menambahkan kecap. Seret dan letakkan kecap ke dalam mangkok.", character: "karakter3.png", isCompleted: false },
     { id: 4, text: "Sekarang, letakkan bawang putih di talenan yang kosong.", character: "karakter2.png", isCompleted: false },
     { id: 5, text: "Sama seperti cili, potong bawang putih hingga halus.", character: "karakter2.png", isCompleted: false },
     { id: 6, text: "Kerja bagus! Seret talenan berisi bawang ke area mangkok.", character: "karakter3.png", isCompleted: false },
@@ -97,7 +97,7 @@ export default class ColoColoScene extends Phaser.Scene {
     for (let i = 1; i <= 5; i++) this.load.image(`telenan_garlic_${i}`, `${basePath}TelenanBawangPutih${i}.png`);
     this.load.image('kecap1', `${basePath}kecap1.png`);
     this.load.image('kecap2', `${basePath}kecap2.png`);
-    this.load.image('kecap3', `${basePath}kecap3.png`);
+    this.load.image('Mangkukcabe', `${basePath}Mangkukcabe.png`);
     this.load.image('tambahancabe', `${basePath}tambahancabe.png`);
     this.load.image('tambahanbawang', `${basePath}tambahanbawang.png`);
     this.load.image('jeruk1', `${basePath}jeruk1.png`);
@@ -173,26 +173,7 @@ export default class ColoColoScene extends Phaser.Scene {
 
     this.input.on('dragend', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
       if (!dropped) {
-        const originalParent = gameObject.getData('originalParent');
-        const dragStartX = gameObject.getData('dragStartX');
-        const dragStartY = gameObject.getData('dragStartY');
-
-        if (originalParent === this.ingredientsContentContainer) {
-          const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
-          this.tweens.add({
-            targets: gameObject,
-            x: worldPos.tx + dragStartX,
-            y: worldPos.ty + dragStartY,
-            duration: 400,
-            ease: 'Back.easeOut',
-            onComplete: () => {
-              gameObject.setPosition(dragStartX, dragStartY);
-              this.ingredientsContentContainer.add(gameObject);
-            }
-          });
-        } else {
-          this.resetIngredientPosition(gameObject);
-        }
+        this.resetIngredientPosition(gameObject);
       }
       if (gameObject.name === 'telenan' && this.telenanDraggable) this.handleTelenanPour();
     });
@@ -211,17 +192,18 @@ export default class ColoColoScene extends Phaser.Scene {
     let correctDrop = false;
 
     switch (this.currentStep) {
-      case 0: // Drag Kecap to Mangkuk
-        if (ingredientName === 'ingredient_kecap' && targetName === 'mangkuk') {
-          this.transformMangkuk('kecap1');
-          correctDrop = true;
-        }
-        break;
-      case 1: // Drag Cabai to Telenan
+      case 0: // Drag Cabai to Telenan
         if (ingredientName === 'ingredient_cabai' && targetName === 'telenan') {
           this.transformTelenan('telenan_chili_0');
           correctDrop = true;
           this.nextStep();
+        }
+        break;
+      case 3: // Drag Kecap to Mangkuk
+        if (ingredientName === 'ingredient_kecap' && targetName === 'mangkuk') {
+          this.transformMangkuk('kecap1');
+          this.displayInstruction("Klik Mangko untuk menuangkan Kecap");
+          correctDrop = true;
         }
         break;
       case 4: // Drag Bawang to Telenan
@@ -234,6 +216,7 @@ export default class ColoColoScene extends Phaser.Scene {
       case 7: // Drag Daun Jeruk to Mangkuk
         if (ingredientName === 'ingredient_daunjeruk' && targetName === 'mangkuk') {
           this.transformMangkuk('tambahandaun');
+          this.displayInstruction("Klik Mangko untuk memotong Daong Lemon");
           correctDrop = true;
         }
         break;
@@ -272,11 +255,11 @@ export default class ColoColoScene extends Phaser.Scene {
 
   private handleMangkukClick() {
     switch (this.currentStep) {
-      case 0: // Clicking for Kecap
+      case 3: // Clicking for Kecap
         this.subStepCounter++;
         if (this.subStepCounter === 1) this.transformMangkuk('kecap2');
         else if (this.subStepCounter === 2) {
-          this.transformMangkuk('kecap3');
+          this.transformMangkuk('tambahancabe');
           this.nextStep();
         }
         break;
@@ -292,7 +275,10 @@ export default class ColoColoScene extends Phaser.Scene {
         break;
       case 11: // Clicking for Jeruk Nipis
         this.subStepCounter++;
-        if (this.subStepCounter === 1) this.transformMangkuk('jeruk2');
+        if (this.subStepCounter === 1) {
+            this.transformMangkuk('jeruk2');
+            this.displayInstruction("Klik Mangko untuk memeras Lemon Cina");
+        }
         else if (this.subStepCounter === 2) {
             this.transformMangkuk('jerukmangkuk');
             this.nextStep();
@@ -324,7 +310,7 @@ export default class ColoColoScene extends Phaser.Scene {
       return;
     }
 
-    const isCuttingStep = this.currentStep === 2 || this.currentStep === 5 || this.currentStep === 10;
+    const isCuttingStep = this.currentStep === 1 || this.currentStep === 5 || this.currentStep === 10;
     if (!isCuttingStep) return;
     const deltaX = pointer.x - this.lastSlicePosition.x;
     if (Math.abs(deltaX) > 5) {
@@ -335,7 +321,7 @@ export default class ColoColoScene extends Phaser.Scene {
             this.sliceStrokes = 0;
             this.subStepCounter++;
             let cuttingComplete = false;
-            if (this.currentStep === 2) {
+            if (this.currentStep === 1) {
                 const max = 3;
                 this.transformTelenan(`telenan_chili_${Math.min(this.subStepCounter, max)}`);
                 if (this.subStepCounter >= max) cuttingComplete = true;
@@ -357,7 +343,7 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private handleTelenanClick() {
-    const canSelect = (this.currentStep === 3 && this.gameState.telenanState === 'telenan_chili_3') ||
+    const canSelect = (this.currentStep === 2 && this.gameState.telenanState === 'telenan_chili_3') ||
                       (this.currentStep === 6 && this.gameState.telenanState === 'telenan_garlic_5') ||
                       (this.currentStep === 11 && this.gameState.telenanState === 'telenan_lime_2');
     if (canSelect) this.makeTelenanDraggable();
@@ -378,8 +364,8 @@ export default class ColoColoScene extends Phaser.Scene {
       return;
     }
     let transferred = false;
-    if (this.currentStep === 3) {
-      this.transformMangkuk('tambahancabe');
+    if (this.currentStep === 2) {
+      this.transformMangkuk('Mangkukcabe');
       this.transformTelenan('colo_telenan');
       transferred = true;
     } else if (this.currentStep === 6) {
@@ -402,6 +388,10 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private nextStep() {
+    if (this.instructionText) {
+        this.instructionText.destroy();
+        this.instructionText = null;
+    }
     if (this.currentStep >= this.gameSteps.length - 1) return;
     this.gameSteps[this.currentStep].isCompleted = true;
     this.currentStep++;
@@ -434,7 +424,26 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private resetIngredientPosition(gameObject: Phaser.GameObjects.Image) {
-    this.tweens.add({ targets: gameObject, x: gameObject.getData('dragStartX'), y: gameObject.getData('dragStartY'), duration: 300, ease: 'Power2' });
+    const originalParent = gameObject.getData('originalParent');
+    const dragStartX = gameObject.getData('dragStartX');
+    const dragStartY = gameObject.getData('dragStartY');
+
+    if (originalParent === this.ingredientsContentContainer) {
+        const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+        this.tweens.add({
+            targets: gameObject,
+            x: worldPos.tx + dragStartX,
+            y: worldPos.ty + dragStartY,
+            duration: 400,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                gameObject.setPosition(dragStartX, dragStartY);
+                this.ingredientsContentContainer.add(gameObject);
+            }
+        });
+    } else {
+        this.tweens.add({ targets: gameObject, x: dragStartX, y: dragStartY, duration: 300, ease: 'Power2' });
+    }
 
     this.cameras.main.shake(150, 0.008);
     
@@ -465,6 +474,32 @@ export default class ColoColoScene extends Phaser.Scene {
   }
 
   private showSuccessFeedback() { this.cameras.main.flash(100, 144, 238, 144); }
+
+  private displayInstruction(message: string) {
+    if (this.instructionText) {
+        this.instructionText.destroy();
+    }
+
+    const { width, height } = this.cameras.main;
+    const cookingAreaCenterX = (width - this.layoutConfig.ingredientsPanelWidth) / 2;
+    const cookingAreaCenterY = height / 2;
+
+    this.instructionText = this.add.text(cookingAreaCenterX, cookingAreaCenterY - 100, message, {
+        fontSize: '32px',
+        fontFamily: 'Chewy, cursive',
+        color: '#FFFFFF',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: { x: 20, y: 10 },
+        align: 'center',
+    }).setOrigin(0.5).setDepth(1000);
+
+    this.time.delayedCall(3000, () => {
+        if (this.instructionText) {
+            this.instructionText.destroy();
+            this.instructionText = null;
+        }
+    });
+  }
 
   private calculateLayout() {
     const gameWidth = this.cameras.main.width;
