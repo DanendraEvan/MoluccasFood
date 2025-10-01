@@ -1,52 +1,14 @@
-// src/pages/info/nasilapola.tsx
+// src/pages/info/5.tsx - Nasi Lapola Page with Clean Mobile Design
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import FoodInfoWrapper from '../../components/FoodInfoWrapper';
 
 type ButtonState = 'normal' | 'hover' | 'active';
 
-// Configuration object untuk pengaturan ukuran - Responsive
-const UI_CONFIG = {
-  homeButton: {
-    size: 'clamp(80px, 12vw, 120px)', // Responsive size
-    position: {
-      top: 'clamp(16px, 3vw, 24px)',
-      left: 'clamp(16px, 3vw, 24px)'
-    }
-  },
-  titleBox: {
-    fontSize: 'clamp(1.25rem, 4vw, 1.875rem)', // Responsive font size
-    padding: {
-      x: 'clamp(16px, 4vw, 32px)',
-      y: 'clamp(12px, 2vw, 16px)'
-    },
-    maxWidth: 'min(90vw, 28rem)' // Responsive max width
-  },
-  contentBox: {
-    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)', // Responsive font size
-    padding: {
-      x: 'clamp(16px, 4vw, 32px)',
-      y: 'clamp(16px, 4vw, 32px)'
-    },
-    maxWidth: 'min(95vw, 56rem)', // Responsive max width
-    lineHeight: 'clamp(1.5, 2vw, 1.75)' // Responsive line height
-  },
-  backButton: {
-    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)', // Responsive font size
-    padding: {
-      x: 'clamp(16px, 3vw, 24px)',
-      y: 'clamp(6px, 1.5vw, 8px)'
-    }
-  }
-};
-
-// Main Nasi Lapola Page Component
 const NasiLapolaPage: React.FC = () => {
   const router = useRouter();
   const [homeButtonState, setHomeButtonState] = useState<ButtonState>('normal');
 
-  // Function to navigate to info index page
   const handleBackToInfoPage = (): void => {
     router.push('/info');
   };
@@ -66,31 +28,33 @@ const NasiLapolaPage: React.FC = () => {
     }
   };
 
-  const nasiLapolaContent = `Nasi Lapola adalah hidangan nasi khas Maluku yang memiliki keunikan tersendiri dalam penyajian dan rasanya. Lapola sendiri berasal dari bahasa lokal yang berarti "dicampur" atau "diaduk". Nasi lapola dibuat dari beras yang dimasak dengan santan kelapa dan rempah-rempah seperti pala, cengkeh, dan daun pandan yang memberikan aroma harum dan rasa yang khas. Yang membuat nasi lapola istimewa adalah cara penyajiannya yang dicampur dengan berbagai lauk pauk seperti ayam suwir, ikan asin, sayuran, dan kerupuk, sehingga menjadi satu hidangan yang lengkap dan mengenyangkan. Biasanya nasi ini disajikan dalam porsi besar dan dimakan bersama-sama sebagai simbol kebersamaan dalam masyarakat Maluku. Cita rasanya yang gurih dari santan dan harum dari rempah-rempah membuat nasi lapola menjadi makanan yang sangat digemari, terutama saat acara-acara adat atau perayaan keluarga.`;
+  const nasiLapolaContent = `Nasi Lapola adalah hidangan nasi khas Maluku yang memiliki keunikan tersendiri dalam penyajian dan rasanya. Lapola sendiri berasal dari bahasa lokal yang berarti "dicampur" atau "diaduk". Nasi lapola dibuat dari beras yang dimasak dengan santan kelapa dan rempah-rempah seperti pala, cengkeh, dan daong pandan yang memberikan aroma harum dan rasa yang khas. Yang membuat nasi lapola istimewa adalah cara penyajiannya yang dicampur dengan berbagai lauk pauk seperti ikan asin, sayuran, dan kacang merah, sehingga menjadi satu hidangan yang lengkap dan mengenyangkan. Biasanya nasi ini disajikan dalam porsi besar dan dimakan bersama-sama sebagai simbol kebersamaan dalam masyarakat Maluku.`;
 
   return (
-    <div className="relative">
-      {/* Global CSS untuk menghilangkan semua background abu-abu */}
+    <div
+      className="min-h-screen w-full relative flex flex-col items-center justify-center"
+      style={{
+        backgroundImage: "url('/assets/backgrounds/menu.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#f97316',
+        padding: '20px 16px',
+      }}
+    >
+      {/* Global CSS */}
       <style jsx global>{`
         button, img, div {
-          background-color: transparent !important;
-          box-shadow: none !important;
-        }
-        .next-image-wrapper, 
-        .next-image, 
-        [data-nimg], 
-        img[data-nimg] {
-          background: transparent !important;
           background-color: transparent !important;
         }
       `}</style>
 
-      {/* Home Button - Top Left - Responsive */}
+      {/* Home Button - Top Left */}
       <div
         className="fixed z-50"
         style={{
-          top: UI_CONFIG.homeButton.position.top,
-          left: UI_CONFIG.homeButton.position.left
+          top: '16px',
+          left: '16px'
         }}
       >
         <button
@@ -105,33 +69,130 @@ const NasiLapolaPage: React.FC = () => {
             border: 'none',
             padding: 0,
             margin: 0,
-            boxShadow: 'none'
           }}
         >
           <Image
             src={getHomeButtonImage()}
             alt="Home Button"
-            width={typeof window !== 'undefined' && window.innerWidth < 640 ? 60 : 80}
-            height={typeof window !== 'undefined' && window.innerWidth < 640 ? 60 : 80}
+            width={56}
+            height={56}
             className="w-auto h-auto object-contain"
-            style={{
-              background: 'transparent',
-              backgroundColor: 'transparent',
-              maxWidth: UI_CONFIG.homeButton.size,
-              maxHeight: UI_CONFIG.homeButton.size
-            }}
           />
         </button>
       </div>
 
-      {/* Food Info Content */}
-      <FoodInfoWrapper
-        title="Nasi Lapola"
-        content={nasiLapolaContent}
-        backgroundImage="/assets/backgrounds/menu.png"
-        onBack={handleBackToInfoPage}
-        uiConfig={UI_CONFIG}
-      />
+      {/* Main Content Container */}
+      <div className="w-full max-w-2xl mx-auto flex flex-col items-center" style={{ gap: '14px' }}>
+
+        {/* Title Box - Narrower width */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.92) 0%, rgba(160, 82, 45, 0.92) 50%, rgba(123, 104, 238, 0.88) 100%)',
+            borderRadius: '18px',
+            padding: '12px 20px',
+            border: '2px solid rgba(218, 165, 32, 0.5)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+            maxWidth: '420px',
+            width: '90%',
+          }}
+        >
+          <h1
+            className="font-bold text-center text-white m-0"
+            style={{
+              fontSize: '1.6rem',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
+              letterSpacing: '0.02em',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}
+          >
+            Nasi Lapola
+          </h1>
+        </div>
+
+        {/* Content Box with Image and Text */}
+        <div
+          className="w-full"
+          style={{
+            background: 'linear-gradient(135deg, rgba(123, 104, 238, 0.9) 0%, rgba(147, 51, 234, 0.85) 100%)',
+            borderRadius: '18px',
+            padding: '0',
+            border: '2px solid rgba(218, 165, 32, 0.4)',
+            boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Container for image and text in horizontal layout with more gap */}
+          <div className="flex flex-row items-center" style={{ gap: '0' }}>
+
+            {/* Food Image - Left side with padding wrapper */}
+            <div className="flex-shrink-0" style={{ paddingLeft: '1px', paddingRight: '1px' }}>
+              <div
+                style={{
+                  width: '220px',
+                  height: '220px',
+                  position: 'relative',
+                }}
+              >
+                <Image
+                  src="/assets/makanan/nasilapola.png"
+                  alt="Nasi Lapola"
+                  fill
+                  style={{
+                    objectFit: 'contain',
+                    objectPosition: 'center'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Text Content - Right side */}
+            <div className="flex-1" style={{ padding: '16px 16px 16px 0' }}>
+              <p
+                className="text-white m-0"
+                style={{
+                  fontSize: '0.85rem',
+                  lineHeight: '1.5',
+                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)',
+                  textAlign: 'left',
+                  fontWeight: 'normal',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                }}
+              >
+                {nasiLapolaContent}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Back Button */}
+        <button
+          onClick={handleBackToInfoPage}
+          className="transition-all duration-300"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.92) 0%, rgba(184, 134, 11, 0.92) 100%)',
+            color: 'white',
+            padding: '10px 28px',
+            borderRadius: '18px',
+            border: '2px solid rgba(218, 165, 32, 0.5)',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+            cursor: 'pointer',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1) translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.25)';
+          }}
+        >
+          ← Kembali ke Page Info
+        </button>
+      </div>
     </div>
   );
 };
