@@ -35,6 +35,7 @@ export default class ColoColoScene extends Phaser.Scene {
   private scrollbarThumb!: Phaser.GameObjects.Graphics;
   private isScrollbarDragging: boolean = false;
   private scrollbarDragStartY: number = 0;
+  private contentStartY: number = 0;
   private instructionText: Phaser.GameObjects.Text | null = null;
 
   // Mobile swipe scroll variables

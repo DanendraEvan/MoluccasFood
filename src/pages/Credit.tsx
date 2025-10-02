@@ -14,13 +14,13 @@ const UI_CONFIG = {
   },
   titleBox: {
     fontSize: 'clamp(1.2rem, 3vw, 2rem)', // Smaller for landscape
-    padding: { x: 'clamp(8px, 3vw, 20px)', y: 'clamp(4px, 1vw, 8px)' }, // Reduced padding
+    padding: { x: 14, y: 6 }, // Reduced padding
     maxWidth: 'min(90vw, 40rem)' // Smaller max width
   },
   cardContainer: {
-    gap: 'clamp(8px, 2vw, 16px)', // Reduced gap
+    gap: 12, // Reduced gap
     maxWidth: 'min(95vw, 70rem)',
-    padding: { x: 'clamp(8px, 2vw, 16px)', y: 'clamp(16px, 4vw, 32px)' } // Much reduced padding
+    padding: { x: 12, y: 24 } // Much reduced padding
   }
 };
 

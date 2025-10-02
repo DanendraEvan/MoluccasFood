@@ -240,7 +240,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     this.load.image('kohukohu_food', '/assets/makanan/kohukohu.png');
 
     // Tools
-    this.load.image("Teflon", "/assets/foods/kohu_kohu/teflonkosong.png");
+    this.load.image("Teflon", "/assets/foods/kohu_kohu/Teflonkosong.png");
     this.load.image("Wajan", "/assets/foods/kohu_kohu/wajan.png");
     this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.png");
     this.load.image("Piring", "/assets/foods/kohu_kohu/Piring Kohu.png");
@@ -261,7 +261,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
 
     // Steps / hasil
     this.load.image("Baskomkelapa", "/assets/foods/kohu_kohu/Baskomkelapa.png");
-    this.load.image("TeflonKelapa", "/assets/foods/kohu_kohu/teflonkelapa.png");
+    this.load.image("TeflonKelapa", "/assets/foods/kohu_kohu/TeflonKelapa.png");
     this.load.image("Sangrai", "/assets/foods/kohu_kohu/sangrai.png");
     this.load.image("Aduk1", "/assets/foods/kohu_kohu/Aduk1.png");
     this.load.image("Aduk2", "/assets/foods/kohu_kohu/Aduk2.png");
@@ -269,7 +269,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     this.load.image("SepatuladanSayur", "/assets/foods/kohu_kohu/SepatuladanSayur.png");
     this.load.image("KohuKohu", "/assets/foods/kohu_kohu/KohuKohu.png");
     this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.png");
-    this.load.image("tambahanKangkung", "/assets/foods/kohu_kohu/tambahanKangkung.png");
+    this.load.image("tambahanKangkung", "/assets/foods/kohu_kohu/TambahanKangkung.png");
     this.load.image("tambahanTimun", "/assets/foods/kohu_kohu/tambahanTimun.png");
     this.load.image("tambahanKacangPanjang", "/assets/foods/kohu_kohu/tambahanKacangPanjang.png");
     this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.png");
