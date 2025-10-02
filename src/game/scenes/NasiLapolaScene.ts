@@ -51,6 +51,14 @@ export default class NasiLapolaScene extends Phaser.Scene {
   private stagingZone!: Phaser.GameObjects.Zone;
   private prepRightZone!: Phaser.GameObjects.Zone;
 
+  // Drop zone highlights
+  private komporZoneHighlight: Phaser.GameObjects.Graphics | null = null;
+  private stagingZoneHighlight: Phaser.GameObjects.Graphics | null = null;
+  private prepRightZoneHighlight: Phaser.GameObjects.Graphics | null = null;
+
+  // Object-based drop target highlights
+  private objectHighlights: Map<Phaser.GameObjects.Image, Phaser.GameObjects.Graphics> = new Map();
+
   // State untuk setiap panci
   private statePanciKiri: PotState = "air"; // legacy
   private statePanciKanan: PotState = "air"; // legacy
@@ -632,6 +640,11 @@ export default class NasiLapolaScene extends Phaser.Scene {
       }
     ).setOrigin(0.5, 0.5);
 
+    // Create drop zone highlights
+    this.komporZoneHighlight = this.createDropZoneHighlight(this.komporZone);
+    this.stagingZoneHighlight = this.createDropZoneHighlight(this.stagingZone);
+    this.prepRightZoneHighlight = this.createDropZoneHighlight(this.prepRightZone);
+
     // No initial pots placed in new flow
     // Create stove on/off button
     this.createStoveButton();
@@ -1162,10 +1175,37 @@ export default class NasiLapolaScene extends Phaser.Scene {
         // Valid ingredient - yellow tint
         gameObject.setTint(0xFFFFAA);
       }
+
+      // Hide all previous object highlights first
+      this.hideAllObjectHighlights();
+
+      // Check if there's a valid object drop target and show highlight
+      const validTarget = this.getValidDropTarget(gameObject.name);
+
+      if (validTarget && validTarget.visible) {
+        // Always show highlight when dragging valid item (regardless of pointer position)
+        this.showObjectHighlight(validTarget);
+      }
+    });
+
+    // Dragenter - show highlight when item enters valid drop zone
+    this.input.on("dragenter", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
+      // Check if this is a valid drop for current step
+      if (this.isValidDropForCurrentStep(gameObject.name, dropZone)) {
+        this.showDropZoneHighlight(dropZone);
+      }
+    });
+
+    // Dragleave - hide highlight when item leaves drop zone
+    this.input.on("dragleave", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
+      this.hideDropZoneHighlight(dropZone);
     });
 
     // Drag end - handle return to panel or stay in dropped position
     this.input.on("dragend", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropped: boolean) => {
+      // Hide all highlights when drag ends
+      this.hideAllDropZoneHighlights();
+      this.hideAllObjectHighlights();
       // Reset visual effects
       gameObject.clearTint();
       gameObject.setDepth(0);
@@ -1295,6 +1335,10 @@ export default class NasiLapolaScene extends Phaser.Scene {
     // Enhanced drop handling dengan improved feedback
     this.input.on("drop", (pointer: any, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
       const droppedKey = gameObject.name;
+
+      // Hide all highlights when drop occurs
+      this.hideAllDropZoneHighlights();
+      this.hideAllObjectHighlights();
 
       // STEP 1: Place pot on stove, pour water, then add beans (Panci->Water->Kacang sequence)
       if (dropZone === this.komporZone && this.currentStep === 0 && this.currentSubStep === 0 && droppedKey === "Panci" && !this.panciMasak) {
@@ -2627,7 +2671,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
         0xFFFFFF,
         0.6
       );
-      
+
       this.tweens.add({
         targets: particle,
         y: particle.y - 40,
@@ -2639,6 +2683,281 @@ export default class NasiLapolaScene extends Phaser.Scene {
         onComplete: () => particle.destroy()
       });
     }
+  }
+
+  private createDropZoneHighlight(zone: Phaser.GameObjects.Zone): Phaser.GameObjects.Graphics {
+    const highlight = this.add.graphics();
+    highlight.fillStyle(0x00FF00, 0.3); // Green color with 30% opacity
+    highlight.lineStyle(3, 0x00FF00, 0.8); // Green border with 80% opacity
+
+    const x = zone.x - zone.width / 2;
+    const y = zone.y - zone.height / 2;
+    const width = zone.width;
+    const height = zone.height;
+
+    // Draw rounded rectangle for better visual
+    highlight.fillRoundedRect(x, y, width, height, 10);
+    highlight.strokeRoundedRect(x, y, width, height, 10);
+
+    // Initially hide the highlight
+    highlight.setVisible(false);
+    highlight.setDepth(5); // Make sure it's visible but below dragged items
+
+    return highlight;
+  }
+
+  private showDropZoneHighlight(zone: Phaser.GameObjects.Zone) {
+    if (zone === this.komporZone && this.komporZoneHighlight) {
+      this.komporZoneHighlight.setVisible(true);
+    } else if (zone === this.stagingZone && this.stagingZoneHighlight) {
+      this.stagingZoneHighlight.setVisible(true);
+    } else if (zone === this.prepRightZone && this.prepRightZoneHighlight) {
+      this.prepRightZoneHighlight.setVisible(true);
+    }
+  }
+
+  private hideDropZoneHighlight(zone: Phaser.GameObjects.Zone) {
+    if (zone === this.komporZone && this.komporZoneHighlight) {
+      this.komporZoneHighlight.setVisible(false);
+    } else if (zone === this.stagingZone && this.stagingZoneHighlight) {
+      this.stagingZoneHighlight.setVisible(false);
+    } else if (zone === this.prepRightZone && this.prepRightZoneHighlight) {
+      this.prepRightZoneHighlight.setVisible(false);
+    }
+  }
+
+  private hideAllDropZoneHighlights() {
+    if (this.komporZoneHighlight) this.komporZoneHighlight.setVisible(false);
+    if (this.stagingZoneHighlight) this.stagingZoneHighlight.setVisible(false);
+    if (this.prepRightZoneHighlight) this.prepRightZoneHighlight.setVisible(false);
+  }
+
+  private createObjectHighlight(targetObject: Phaser.GameObjects.Image): Phaser.GameObjects.Graphics {
+    const highlight = this.add.graphics();
+    highlight.lineStyle(6, 0x00FF00, 1.0); // Thicker green border for objects with full opacity
+    highlight.fillStyle(0x00FF00, 0.35); // Green fill with higher opacity
+
+    const bounds = targetObject.getBounds();
+    const padding = 10; // Add some padding around the object
+
+    // Draw rounded rectangle around the object
+    highlight.strokeRoundedRect(
+      bounds.x - padding,
+      bounds.y - padding,
+      bounds.width + padding * 2,
+      bounds.height + padding * 2,
+      15
+    );
+    highlight.fillRoundedRect(
+      bounds.x - padding,
+      bounds.y - padding,
+      bounds.width + padding * 2,
+      bounds.height + padding * 2,
+      15
+    );
+
+    highlight.setVisible(false);
+    highlight.setDepth(500); // Medium depth - below dragged items (1000) but above game objects
+
+    return highlight;
+  }
+
+  private showObjectHighlight(targetObject: Phaser.GameObjects.Image) {
+    // Create highlight if it doesn't exist
+    if (!this.objectHighlights.has(targetObject)) {
+      const highlight = this.createObjectHighlight(targetObject);
+      this.objectHighlights.set(targetObject, highlight);
+    }
+
+    const highlight = this.objectHighlights.get(targetObject);
+    if (highlight) {
+      // Update position in case object moved
+      const bounds = targetObject.getBounds();
+      const padding = 10;
+
+      highlight.clear();
+      highlight.lineStyle(6, 0x00FF00, 1.0);
+      highlight.fillStyle(0x00FF00, 0.35);
+      highlight.strokeRoundedRect(
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+        15
+      );
+      highlight.fillRoundedRect(
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+        15
+      );
+
+      highlight.setVisible(true);
+      highlight.setDepth(500); // Medium depth - below dragged items but above game objects
+    }
+  }
+
+  private hideObjectHighlight(targetObject: Phaser.GameObjects.Image) {
+    const highlight = this.objectHighlights.get(targetObject);
+    if (highlight) {
+      highlight.setVisible(false);
+    }
+  }
+
+  private hideAllObjectHighlights() {
+    this.objectHighlights.forEach((highlight) => {
+      highlight.setVisible(false);
+    });
+  }
+
+  private getValidDropTarget(itemName: string): Phaser.GameObjects.Image | null {
+    // STEP 0: Water and Kacang drop on Panci
+    if (this.currentStep === 0) {
+      if (this.currentSubStep === 1 && itemName === "water" && this.panciMasak && this.statePanciMasak === "empty") {
+        return this.panciMasak;
+      }
+      if (this.currentSubStep === 2 && itemName === "Kacang" && this.panciMasak && this.statePanciMasak === "air") {
+        return this.panciMasak;
+      }
+    }
+
+    // STEP 2: Parut drops on Baskom, Kelapa drops on SaringKelapa
+    if (this.currentStep === 2) {
+      if (this.currentSubStep === 1 && itemName === "Parut" && this.baskomObj) {
+        return this.baskomObj;
+      }
+      if (this.currentSubStep === 2 && itemName === "Kelapa" && this.saringObj) {
+        return this.saringObj;
+      }
+    }
+
+    // STEP 3: BaskomKelapa drops on PanciKosong
+    if (this.currentStep === 3) {
+      if (this.currentSubStep === 1 && itemName === "BaskomKelapa" && this.panciSaringStep4 && this.statePanciSaringStep4 === 'empty') {
+        return this.panciSaringStep4;
+      }
+      if (this.currentSubStep === 2 && itemName === "water" && this.panciSaringStep4 && this.statePanciSaringStep4 === 'peras_santan_1_need_water') {
+        return this.panciSaringStep4;
+      }
+    }
+
+    // STEP 4: Beras drops on PanciAir2
+    if (this.currentStep === 4) {
+      if (this.currentSubStep === 1 && itemName === "Beras" && this.panciMasak && this.panciMasak.texture.key === 'PanciAir2') {
+        return this.panciMasak;
+      }
+    }
+
+    // STEP 5: Garam, PanciSantan2, and PanciKacang drop sequence
+    if (this.currentStep === 5) {
+      if (this.currentSubStep === 0 && itemName === "Garam" && this.panciMasak && this.panciMasak.texture.key === 'NasiAduk') {
+        return this.panciMasak;
+      }
+      if (this.currentSubStep === 1 && itemName === "PanciSantan2" && this.panciMasak && this.panciMasak.texture.key === 'NasiGaram') {
+        return this.panciMasak;
+      }
+      if (this.currentSubStep === 2 && itemName === "PanciKacang" && this.panciMasak && this.panciMasak.texture.key === 'NasiKelapa') {
+        return this.panciMasak;
+      }
+    }
+
+    // STEP 6: WajanNasiLapola drops on PanciSaring/PanciKukus
+    if (this.currentStep === 6) {
+      if (this.currentSubStep === 2 && itemName === 'WajanNasiLapola' && this.panciKukus) {
+        return this.panciKukus;
+      }
+    }
+
+    // STEP 7: KukusNasi drops on Piring
+    if (this.currentStep === 7) {
+      if (this.panciKukus && this.panciKukus.texture.key === 'KukusNasi' && this.piringInStaging) {
+        return this.piringInStaging;
+      }
+    }
+
+    return null;
+  }
+
+  private isValidDropForCurrentStep(itemName: string, dropZone: Phaser.GameObjects.Zone): boolean {
+    // STEP 0: Place pot, add water, add beans
+    if (this.currentStep === 0) {
+      if (this.currentSubStep === 0 && itemName === "Panci" && dropZone === this.komporZone && !this.panciMasak) {
+        return true;
+      }
+      // Water and Kacang are dropped on the pot itself, not on a zone
+      return false;
+    }
+
+    // STEP 1: Move cooked beans to staging
+    if (this.currentStep === 1) {
+      if (this.currentSubStep === 0 && dropZone === this.stagingZone && this.panciMasak && this.statePanciMasak === "kacang_matang") {
+        return true;
+      }
+      return false;
+    }
+
+    // STEP 2: Grating coconut (Baskom to prepRight)
+    if (this.currentStep === 2) {
+      if (this.currentSubStep === 0 && itemName === "Baskom" && !this.baskomObj) {
+        return true; // Baskom can be dropped anywhere in step 2, substep 0
+      }
+      // Parut and Kelapa are dropped on objects, not zones
+      return false;
+    }
+
+    // STEP 3: Cook santan
+    if (this.currentStep === 3) {
+      if (this.currentSubStep === 0 && itemName === "PanciKosong2" && dropZone === this.komporZone && !this.panciSaringStep4) {
+        return true;
+      }
+      if (this.currentSubStep === 3 && dropZone === this.stagingZone && this.panciSaringStep4 && this.statePanciSaringStep4 === 'santan_matang') {
+        return true;
+      }
+      // BaskomKelapa and PerasSantan are dropped on pot, not zones
+      return false;
+    }
+
+    // STEP 4: Cook rice
+    if (this.currentStep === 4) {
+      if (this.currentSubStep === 0 && itemName === "PanciAir2" && dropZone === this.komporZone && !this.panciMasak) {
+        return true;
+      }
+      // Beras is dropped on pot, not zone
+      return false;
+    }
+
+    // STEP 5: Mix rice with santan
+    if (this.currentStep === 5) {
+      if (this.currentSubStep === 0 && itemName === "PanciSantan2" && dropZone === this.komporZone && !this.panciMasak) {
+        return true;
+      }
+      // PanciKacang and Garam are dropped on pot, not zones
+      return false;
+    }
+
+    // STEP 6: Steam rice
+    if (this.currentStep === 6) {
+      if (this.currentSubStep === 0 && dropZone === this.stagingZone && this.panciMasak && this.panciMasak.texture.key === 'WajanNasiLapola') {
+        return true;
+      }
+      if (this.currentSubStep === 1 && itemName === 'PanciSaring' && dropZone === this.komporZone && !this.panciKukus) {
+        return true;
+      }
+      // WajanNasiLapola is dropped on pot, not zone
+      return false;
+    }
+
+    // STEP 7: Plate the dish
+    if (this.currentStep === 7) {
+      if (itemName === 'Piring' && dropZone === this.stagingZone) {
+        return true;
+      }
+      // KukusKelapa is dropped on Piring, not zone
+      return false;
+    }
+
+    return false;
   }
 
   private showSuccessFeedback() {

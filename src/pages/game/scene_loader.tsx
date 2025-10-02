@@ -186,7 +186,12 @@ const GamePage: React.FC = () => {
               throw new Error(`Unknown scene: ${scene}`);
           }
           
-          console.log(`Scene class loaded: ${SceneClass.name}`);
+          if (!SceneClass) {
+            console.error('Failed to load scene class');
+            throw new Error(`Gagal memuat adegan ${scene}`);
+          }
+          
+          console.log(`Scene class loaded: ${SceneClass?.name || 'unknown'}`);
           setPhaserLoaded(true);
           setLoadingProgress(100);
           setGameStatus('ready');

@@ -52,8 +52,16 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
   // Game objects
   private kompor!: Phaser.GameObjects.Image;
   private komporZone!: Phaser.GameObjects.Zone;
+  private cobekZone!: Phaser.GameObjects.Zone;
   private cookingState: CookingState = "start";
   private cobek!: Phaser.GameObjects.Image;
+
+  // Drop zone highlights
+  private komporZoneHighlight: Phaser.GameObjects.Graphics | null = null;
+  private cobekZoneHighlight: Phaser.GameObjects.Graphics | null = null;
+
+  // Object-based drop target highlights
+  private objectHighlights: Map<Phaser.GameObjects.Image, Phaser.GameObjects.Graphics> = new Map();
 
   // Mengulek state (now handled by initMengulekMechanic function)
   private isMengulek: boolean = false;
@@ -478,8 +486,8 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     // Create Cobek drop zone to the right of kompor (80px distance as specified)
     const cobekZoneX = stoveX + (this.kompor.width * 0.5 / 2) + 80;
     const cobekZoneY = stoveY;
-    const cobekZone = this.add.zone(cobekZoneX, cobekZoneY, 200, 200).setRectangleDropZone(200, 200);
-    cobekZone.name = "cobekZone";
+    this.cobekZone = this.add.zone(cobekZoneX, cobekZoneY, 200, 200).setRectangleDropZone(200, 200);
+    this.cobekZone.name = "cobekZone";
 
     // Create a larger cooking area zone for general dropping
     const cookingAreaZone = this.add.zone(
@@ -492,6 +500,10 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       this.layoutConfig.cookingAreaBottom - this.layoutConfig.cookingAreaTop
     );
     cookingAreaZone.name = "cookingAreaZone";
+
+    // Create drop zone highlights
+    this.komporZoneHighlight = this.createDropZoneHighlight(this.komporZone);
+    this.cobekZoneHighlight = this.createDropZoneHighlight(this.cobekZone);
 
     // Create stove on/off button
     this.createStoveButton();
@@ -957,7 +969,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       // Always follow pointer during drag
       gameObject.x = pointer.worldX;
       gameObject.y = pointer.worldY;
-      
+
       // Provide visual feedback for valid/invalid ingredients
       if (!this.isValidIngredient(gameObject.name)) {
         // Invalid ingredient - red tint to indicate it's not the right time
@@ -966,14 +978,38 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         // Valid ingredient - yellow tint
         gameObject.setTint(0xFFFFAA);
       }
-      
-      // Check if over valid drop zone and provide visual feedback
-      this.highlightValidDropZones(gameObject, pointer);
+
+      // Hide all previous object highlights first
+      this.hideAllObjectHighlights();
+
+      // Check if there's a valid object drop target and show highlight
+      const validTarget = this.getValidDropTarget(gameObject.name);
+      if (validTarget && validTarget.visible) {
+        // Always show highlight when dragging valid item
+        this.showObjectHighlight(validTarget);
+      }
+    });
+
+    // Dragenter - show highlight when item enters valid drop zone
+    this.input.on("dragenter", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
+      // Check if this is a valid drop for current cooking state
+      if (this.isValidDropForCurrentState(gameObject.name, dropZone)) {
+        this.showDropZoneHighlight(dropZone);
+      }
+    });
+
+    // Dragleave - hide highlight when item leaves drop zone
+    this.input.on("dragleave", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone) => {
+      this.hideDropZoneHighlight(dropZone);
     });
 
     // Drag selesai
     this.input.on("drop", (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Image, dropZone: Phaser.GameObjects.Zone | Phaser.GameObjects.Image) => {
       console.log(`DROP EVENT: ${gameObject.name} dropped on`, dropZone, `cooking state: ${this.cookingState}`);
+
+      // Hide all highlights when drop occurs
+      this.hideAllDropZoneHighlights();
+      this.hideAllObjectHighlights();
 
       // Validate drop before processing
       if (!this.isValidDrop(gameObject, dropZone)) {
@@ -1251,7 +1287,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         this.add.image(finalDishX, finalDishY, 'IkanKuahKuning').setScale(finalDishScale);
 
         this.cookingState = 'finished';
-        this.showSuccessPopup();
+        this.showCompletionCelebration();
       }      if (this.wajan && dropZone === this.wajan) {
         switch (this.cookingState) {
           // ... (existing cases)
@@ -1465,6 +1501,10 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       if (this.itemBeingReturned) {
         return;
       }
+
+      // Hide all highlights when drag ends
+      this.hideAllDropZoneHighlights();
+      this.hideAllObjectHighlights();
 
       // Reset semua efek visual
       this.cleanupDragEffects(gameObject);
@@ -1997,12 +2037,11 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
       align: 'center'
     }).setOrigin(0.5);
     
-    // Animate dialog appearance
     const dialogElements = [overlay, dialogBg, completionTitle, completionText, completionSubtext];
     dialogElements.forEach(el => {
-        if (el && typeof el.setAlpha === 'function') {
-            el.setAlpha(0);
-        }
+      if (el && typeof el.setAlpha === 'function') {
+        el.setAlpha(0);
+      }
     });
 
     this.tweens.add({
@@ -2423,45 +2462,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     });
   }
 
-  private showSuccessPopup() {
-    const popupWidth = 500;
-    const popupHeight = 300;
-    const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
 
-    const popup = this.add.container(centerX, centerY);
-    popup.setDepth(1000);
-
-    const background = this.add.graphics();
-    background.fillStyle(0x000000, 0.7);
-    background.fillRect(-popupWidth / 2, -popupHeight / 2, popupWidth, popupHeight);
-    popup.add(background);
-
-    const title = this.add.text(0, -popupHeight / 2 + 50, 'Selamat!', {
-      fontSize: '32px',
-      fontFamily: 'Chewy, cursive',
-      color: '#ffffff',
-      align: 'center'
-    }).setOrigin(0.5);
-    popup.add(title);
-
-    const message = this.add.text(0, 0, 'Ikan Kuah Kuning berhasil dimasak!', {
-      fontSize: '24px',
-      fontFamily: 'Chewy, cursive',
-      color: '#ffffff',
-      align: 'center'
-    }).setOrigin(0.5);
-    popup.add(message);
-
-    // Animate popup
-    this.tweens.add({
-      targets: popup,
-      scale: { from: 0.5, to: 1 },
-      alpha: { from: 0, to: 1 },
-      duration: 500,
-      ease: 'Back.easeOut'
-    });
-  }
 
   private handleMengulek() {
     // Clean up previous listeners
@@ -2668,6 +2669,227 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         console.error('❌ IkanKuahKuning: Dialog sync failed:', error);
       }
     }
+  }
+
+  // === Highlight Functions ===
+  private createDropZoneHighlight(zone: Phaser.GameObjects.Zone): Phaser.GameObjects.Graphics {
+    const highlight = this.add.graphics();
+    highlight.fillStyle(0x00FF00, 0.3); // Green color with 30% opacity
+    highlight.lineStyle(3, 0x00FF00, 0.8); // Green border with 80% opacity
+
+    const x = zone.x - zone.width / 2;
+    const y = zone.y - zone.height / 2;
+    const width = zone.width;
+    const height = zone.height;
+
+    // Draw rounded rectangle for better visual
+    highlight.fillRoundedRect(x, y, width, height, 10);
+    highlight.strokeRoundedRect(x, y, width, height, 10);
+
+    // Initially hide the highlight
+    highlight.setVisible(false);
+    highlight.setDepth(5); // Make sure it's visible but below dragged items
+
+    return highlight;
+  }
+
+  private showDropZoneHighlight(zone: Phaser.GameObjects.Zone) {
+    if (zone === this.komporZone && this.komporZoneHighlight) {
+      this.komporZoneHighlight.setVisible(true);
+    } else if (zone === this.cobekZone && this.cobekZoneHighlight) {
+      this.cobekZoneHighlight.setVisible(true);
+    }
+  }
+
+  private hideDropZoneHighlight(zone: Phaser.GameObjects.Zone) {
+    if (zone === this.komporZone && this.komporZoneHighlight) {
+      this.komporZoneHighlight.setVisible(false);
+    } else if (zone === this.cobekZone && this.cobekZoneHighlight) {
+      this.cobekZoneHighlight.setVisible(false);
+    }
+  }
+
+  private hideAllDropZoneHighlights() {
+    if (this.komporZoneHighlight) this.komporZoneHighlight.setVisible(false);
+    if (this.cobekZoneHighlight) this.cobekZoneHighlight.setVisible(false);
+  }
+
+  private createObjectHighlight(targetObject: Phaser.GameObjects.Image): Phaser.GameObjects.Graphics {
+    const highlight = this.add.graphics();
+    highlight.lineStyle(6, 0x00FF00, 1.0); // Thicker green border for objects with full opacity
+    highlight.fillStyle(0x00FF00, 0.35); // Green fill with higher opacity
+
+    const bounds = targetObject.getBounds();
+    const padding = 10; // Add some padding around the object
+
+    // Draw rounded rectangle around the object
+    highlight.strokeRoundedRect(
+      bounds.x - padding,
+      bounds.y - padding,
+      bounds.width + padding * 2,
+      bounds.height + padding * 2,
+      15
+    );
+    highlight.fillRoundedRect(
+      bounds.x - padding,
+      bounds.y - padding,
+      bounds.width + padding * 2,
+      bounds.height + padding * 2,
+      15
+    );
+
+    highlight.setVisible(false);
+    highlight.setDepth(500); // Medium depth - below dragged items (1000) but above game objects
+
+    return highlight;
+  }
+
+  private showObjectHighlight(targetObject: Phaser.GameObjects.Image) {
+    // Create highlight if it doesn't exist
+    if (!this.objectHighlights.has(targetObject)) {
+      const highlight = this.createObjectHighlight(targetObject);
+      this.objectHighlights.set(targetObject, highlight);
+    }
+
+    const highlight = this.objectHighlights.get(targetObject);
+    if (highlight) {
+      // Update position in case object moved
+      const bounds = targetObject.getBounds();
+      const padding = 10;
+
+      highlight.clear();
+      highlight.lineStyle(6, 0x00FF00, 1.0);
+      highlight.fillStyle(0x00FF00, 0.35);
+      highlight.strokeRoundedRect(
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+        15
+      );
+      highlight.fillRoundedRect(
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+        15
+      );
+
+      highlight.setVisible(true);
+      highlight.setDepth(500); // Medium depth - below dragged items but above game objects
+    }
+  }
+
+  private hideObjectHighlight(targetObject: Phaser.GameObjects.Image) {
+    const highlight = this.objectHighlights.get(targetObject);
+    if (highlight) {
+      highlight.setVisible(false);
+    }
+  }
+
+  private hideAllObjectHighlights() {
+    this.objectHighlights.forEach((highlight) => {
+      highlight.setVisible(false);
+    });
+  }
+
+  private getValidDropTarget(itemName: string): Phaser.GameObjects.Image | null {
+    // Based on cookingState, return the valid drop target object
+
+    // Cobek receives ingredients for grinding
+    if (this.cookingState === 'cobek_placed' && itemName === 'BawangMerah' && this.cobek) {
+      return this.cobek;
+    }
+    if (this.cookingState === 'ulekan_step_1' && itemName === 'CabaiKeriting' && this.cobek) {
+      return this.cobek;
+    }
+    if (this.cookingState === 'ulekan_step_2' && itemName === 'Kunyit' && this.cobek) {
+      return this.cobek;
+    }
+    if (this.cookingState === 'ulekan_step_3' && itemName === 'BawangPutih' && this.cobek) {
+      return this.cobek;
+    }
+    if (this.cookingState === 'ulekan_step_4' && itemName === 'Ulekan' && this.cobek) {
+      return this.cobek;
+    }
+
+    // Wajan receives BumbuHalus
+    if (this.cookingState === 'wajan_placed' && itemName === 'BumbuHalus' && this.wajan) {
+      return this.wajan;
+    }
+
+    // BumbuHalusWajan receives minyak
+    if (this.cookingState === 'bumbu_halus_wajan_need_minyak' && itemName === 'minyak' && this.bumbuHalusWajan) {
+      return this.bumbuHalusWajan;
+    }
+
+    // Wajan receives aromatics and other ingredients
+    if (this.cookingState === 'bumbu_matang' && itemName === 'DaunSalam' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'daun_salam_added' && itemName === 'Sereh' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'sereh_added' && itemName === 'Lengkuas' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'aromatics_done' && itemName === 'IrisanJahe' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'jahe_added' && itemName === 'DaunJeruk' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'daun_jeruk_added' && itemName === 'PotonganIkan' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'ikan_added' && itemName === 'Air' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'mendidih' && itemName === 'Tomat' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'tomat_added' && itemName === 'Garam' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'garam_added' && itemName === 'Gula' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'gula_added' && itemName === 'DaunBawang' && this.wajan) {
+      return this.wajan;
+    }
+    if (this.cookingState === 'daun_bawang_added' && itemName === 'Asam' && this.wajan) {
+      return this.wajan;
+    }
+
+    // Mangkuk receives finished dish
+    if (this.cookingState === 'mangkuk_placed' && itemName === 'IkanKuahKuningJadi' && this.mangkuk) {
+      return this.mangkuk;
+    }
+
+    return null;
+  }
+
+  private isValidDropForCurrentState(itemName: string, dropZone: Phaser.GameObjects.Zone): boolean {
+    // Check if this is a valid drop based on cooking state
+
+    // Cobek drops to cobekZone (right side of kompor)
+    if (dropZone === this.cobekZone) {
+      if (this.cookingState === 'start' && itemName === 'Cobek') {
+        return true;
+      }
+    }
+
+    // Other items drop to komporZone
+    if (dropZone === this.komporZone) {
+      if (this.cookingState === 'bumbu_halus_done' && itemName === 'Wajan') {
+        return true;
+      }
+      if (this.cookingState === 'matang' && itemName === 'Mangkuk') {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   shutdown() {

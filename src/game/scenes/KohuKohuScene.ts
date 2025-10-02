@@ -1121,14 +1121,28 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
       }
       // Step 3: Stir the coconut
       else if (dropZone === this.teflonZone && this.bowlState === "teflonKelapa" && droppedKey === "Sepatula" && this.currentStep === 2) {
-        // Return spatula to panel
-        this.tweens.add({
-            targets: gameObject,
-            x: gameObject.getData('dragStartX'),
-            y: gameObject.getData('dragStartY'),
-            duration: 400,
-            ease: 'Back.easeOut'
-        });
+        // Return spatula to panel correctly
+        const dragStartX = gameObject.getData('dragStartX');
+        const dragStartY = gameObject.getData('dragStartY');
+        const originalParent = gameObject.getData('originalParent');
+
+        if (originalParent === this.ingredientsContentContainer) {
+          const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+          this.tweens.add({
+              targets: gameObject,
+              x: worldPos.tx + dragStartX,
+              y: worldPos.ty + dragStartY,
+              duration: 400,
+              ease: 'Back.easeOut',
+              onComplete: () => {
+                  gameObject.setPosition(dragStartX, dragStartY);
+                  originalParent.add(gameObject);
+              }
+          });
+        } else {
+          // Fallback for safety, though it should be from the panel
+          gameObject.destroy();
+        }
 
         // Set initial state for stirring
         this.setVesselTexture(this.Teflon, "Aduk1");
@@ -1403,14 +1417,35 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   }
 
   private executeInvalidDrop(gameObject: Phaser.GameObjects.Image) {
-    this.tweens.add({
-      targets: gameObject,
-      x: gameObject.getData('dragStartX'),
-      y: gameObject.getData('dragStartY'),
-      duration: 400,
-      ease: 'Back.easeOut'
-    });
-    
+    const originalParent = gameObject.getData('originalParent');
+    const dragStartX = gameObject.getData('dragStartX');
+    const dragStartY = gameObject.getData('dragStartY');
+
+    if (originalParent === this.ingredientsContentContainer) {
+        // It's from the ingredient panel, return it properly.
+        const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+        this.tweens.add({
+            targets: gameObject,
+            x: worldPos.tx + dragStartX,
+            y: worldPos.ty + dragStartY,
+            duration: 400,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                gameObject.setPosition(dragStartX, dragStartY);
+                originalParent.add(gameObject);
+            }
+        });
+    } else {
+        // It's not from the panel (e.g., a movable vessel), just move it back.
+        this.tweens.add({
+            targets: gameObject,
+            x: dragStartX,
+            y: dragStartY,
+            duration: 400,
+            ease: 'Back.easeOut'
+        });
+    }
+
     // Shake effect
     this.cameras.main.shake(150, 0.008);
     

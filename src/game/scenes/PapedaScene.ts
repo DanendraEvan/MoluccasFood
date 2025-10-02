@@ -163,7 +163,7 @@ export default class PapedaScene extends Phaser.Scene {
     this.load.image("Mangkuk", "/assets/foods/papeda/bowl.png");
     this.load.image("AirPanas", "/assets/foods/papeda/AirPanas.png");
     this.load.image("Air100ml", "/assets/foods/papeda/Air-100-ml.png");
-    this.load.image("Nipis", "/assets/foods/papeda/nipis.png");
+    this.load.image("Nipis", "/assets/foods/papeda/Buah Tomi Tomi.png");
     this.load.image("Piring", "/assets/foods/papeda/Piring.png");
     this.load.image("SaguManta", "/assets/foods/papeda/SaguManta.png");
 
@@ -203,13 +203,13 @@ export default class PapedaScene extends Phaser.Scene {
     this.load.image("Air1400ml1", "/assets/foods/papeda/Air1400ml1.png");
     this.load.image("Air1400ml2", "/assets/foods/papeda/Air1400ml2.png");
     this.load.image("Air1400ml3", "/assets/foods/papeda/Air1400ml3.png");
-    this.load.image("JerukDiatas", "/assets/foods/papeda/JerukDiatas.png");
-    this.load.image("CipratanJeruk1", "/assets/foods/papeda/CipratanJeruk1.png");
-    this.load.image("CipratanJeruk2", "/assets/foods/papeda/CipratanJeruk2.png");
-    this.load.image("CipratanJeruk3", "/assets/foods/papeda/CipratanJeruk3.png");
-    this.load.image("AdonanJeruk", "/assets/foods/papeda/AdonanJeruk.png");
-    this.load.image("AdukJeruk1", "/assets/foods/papeda/AdukJeruk1.png");
-    this.load.image("AdukJeruk2", "/assets/foods/papeda/AdukJeruk2.png");
+    this.load.image("JerukDiatas", "/assets/foods/papeda/TomiTomi Diatas.png");
+    this.load.image("CipratanJeruk1", "/assets/foods/papeda/Cipratan Tomi1.png");
+    this.load.image("CipratanJeruk2", "/assets/foods/papeda/Cipratan Tomi2.png");
+    this.load.image("CipratanJeruk3", "/assets/foods/papeda/Cipratan Tomi3.png");
+    this.load.image("AdonanJeruk", "/assets/foods/papeda/Adonan Tomi.png");
+    this.load.image("AdukJeruk1", "/assets/foods/papeda/Aduk Tomi1.png");
+    this.load.image("AdukJeruk2", "/assets/foods/papeda/AdukTomi2.png");
     this.load.image("SebelumPapeda", "/assets/foods/papeda/SebelumPapeda.png");
 
     // Stirring animation images
@@ -422,7 +422,7 @@ export default class PapedaScene extends Phaser.Scene {
       { key: "Spoon", name: "Sendok", scale: 0.15 },
       { key: "Saring", name: "Saringan", scale: 0.15 },
       { key: "Air100ml", name: "Aer 100ml", scale: 0.12 },
-      { key: "Nipis", name: "Jeruk Nipis", scale: 0.2 },
+      { key: "Nipis", name: "Buah Tomi Tomi", scale: 0.2 },
       { key: "AirPanas", name: "Aer Panas", scale: 0.12 },
       { key: "SebelumPapeda", name: "Ikan Kuah Kuning", scale: 0.08 },
     ];
@@ -1342,13 +1342,35 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private executeInvalidDrop(gameObject: Phaser.GameObjects.Image) {
-    this.tweens.add({
-      targets: gameObject,
-      x: gameObject.getData('dragStartX'),
-      y: gameObject.getData('dragStartY'),
-      duration: 400,
-      ease: 'Back.easeOut'
-    });
+    const originalParent = gameObject.getData('originalParent');
+    const dragStartX = gameObject.getData('dragStartX');
+    const dragStartY = gameObject.getData('dragStartY');
+
+    if (originalParent === this.ingredientsContentContainer) {
+      const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+      const targetX = worldPos.tx + dragStartX;
+      const targetY = worldPos.ty + dragStartY;
+
+      this.tweens.add({
+        targets: gameObject,
+        x: targetX,
+        y: targetY,
+        duration: 400,
+        ease: 'Back.easeOut',
+        onComplete: () => {
+          gameObject.setPosition(dragStartX, dragStartY);
+          this.ingredientsContentContainer.add(gameObject);
+        }
+      });
+    } else {
+      this.tweens.add({
+        targets: gameObject,
+        x: dragStartX,
+        y: dragStartY,
+        duration: 400,
+        ease: 'Back.easeOut'
+      });
+    }
     
     this.cameras.main.shake(150, 0.008);
     
@@ -1646,9 +1668,6 @@ export default class PapedaScene extends Phaser.Scene {
     this.mangkuk.setInteractive({ draggable: true });
     this.input.setDraggable(this.mangkuk);
     
-    // Return spoon back to its original drag position
-    this.returnSpoonToDragStart();
-    
     // Show completion feedback
     this.showPlacementSuccess(this.mangkuk.x, this.mangkuk.y, "15x Adukan Selesai!");
     
@@ -1659,22 +1678,52 @@ export default class PapedaScene extends Phaser.Scene {
   // Tween the kept spoon back to its drag start position
   private returnSpoonToDragStart() {
     if (this.spoonItem) {
-      const targetX = this.spoonItem.getData('dragStartX') ?? this.spoonItem.x;
-      const targetY = this.spoonItem.getData('dragStartY') ?? this.spoonItem.y;
+      const originalParent = this.spoonItem.getData('originalParent');
+      const dragStartX = this.spoonItem.getData('dragStartX');
+      const dragStartY = this.spoonItem.getData('dragStartY');
+
       this.spoonItem.setVisible(true);
-      this.tweens.add({
-        targets: this.spoonItem,
-        x: targetX,
-        y: targetY,
-        alpha: 1,
-        scale: 0.15,
-        duration: 300,
-        ease: 'Back.easeOut',
-        onComplete: () => {
-          // Clear reference
-          this.spoonItem = null;
-        }
-      });
+      this.spoonItem.setAlpha(1);
+      const originalScale = this.spoonItem.getData('originalScale') || 0.15;
+      this.spoonItem.setScale(originalScale);
+
+      if (originalParent === this.ingredientsContentContainer && dragStartX !== undefined && dragStartY !== undefined) {
+        // It came from the panel, so return it there.
+        const worldPos = this.ingredientsContentContainer.getWorldTransformMatrix();
+        const targetX = worldPos.tx + dragStartX;
+        const targetY = worldPos.ty + dragStartY;
+
+        this.tweens.add({
+          targets: this.spoonItem,
+          x: targetX,
+          y: targetY,
+          duration: 300,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            if (this.spoonItem) {
+              this.spoonItem.setPosition(dragStartX, dragStartY);
+              this.ingredientsContentContainer.add(this.spoonItem);
+              this.spoonItem = null; // Clear reference
+            }
+          }
+        });
+      } else {
+        // It was not from the panel, just move it back.
+        const targetX = this.spoonItem.getData('dragStartX') ?? this.spoonItem.x;
+        const targetY = this.spoonItem.getData('dragStartY') ?? this.spoonItem.y;
+        this.tweens.add({
+          targets: this.spoonItem,
+          x: targetX,
+          y: targetY,
+          duration: 300,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            if (this.spoonItem) {
+              this.spoonItem = null; // Clear reference
+            }
+          }
+        });
+      }
     }
   }
 
@@ -1835,6 +1884,11 @@ export default class PapedaScene extends Phaser.Scene {
   }
 
   private showCompletionDialog() {
+    const dialogWidth = 500;
+    const dialogHeight = 200;
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+
     // Geser piring papeda agar tidak tertumpuk popup
     if (this.finalPlate) {
       this.tweens.add({
@@ -1847,22 +1901,20 @@ export default class PapedaScene extends Phaser.Scene {
       });
     }
 
-    const dialogWidth = 500;
-    const dialogHeight = 200;
-    const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
-
+    // Background overlay
     const overlay = this.add.graphics();
     overlay.fillStyle(0x000000, 0.8);
     overlay.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
 
+    // Dialog background
     const dialogBg = this.add.graphics();
     dialogBg.fillStyle(0x2A1810, 0.95);
     dialogBg.fillRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
     dialogBg.lineStyle(4, 0xFFD700, 1);
     dialogBg.strokeRoundedRect(centerX - dialogWidth/2, centerY - dialogHeight/2, dialogWidth, dialogHeight, 25);
     
-    const completionTitle = this.add.text(centerX, centerY - 40, "SELAMAT!", {
+    // Completion text
+    const completionTitle = this.add.text(centerX, centerY - 40, "🎉 SELAMAT! 🎉", {
       fontSize: '32px',
       fontFamily: 'Chewy, cursive',
       color: '#FFD700',
@@ -1896,7 +1948,7 @@ export default class PapedaScene extends Phaser.Scene {
       alpha: 1,
       duration: 500,
       ease: 'Power2',
-      stagger: 100
+      delay: ((_: any, __: any, ___: any, index: number) => index * 100) as any
     });
   }
 
@@ -2587,6 +2639,110 @@ export default class PapedaScene extends Phaser.Scene {
       });
     }
   }
+
+  // Helper method to return spoon to panel
+  private returnSpoonToPanel() {
+    // Check if spoon already exists in panel and remove it first
+    const existingSpoons = this.ingredientItems.filter(item => item.name === 'Spoon');
+    existingSpoons.forEach(spoon => {
+      const index = this.ingredientItems.indexOf(spoon);
+      if (index > -1) {
+        this.ingredientItems.splice(index, 1);
+      }
+      spoon.destroy();
+    });
+    
+    // Use the exact same ingredients array as in createIngredients
+    const ingredients = [
+      { key: "Mangkuk", name: "Mangkuk", scale: 0.15 },
+      { key: "Mangkuk", name: "Mangkuk", scale: 0.15 },
+      { key: "Tepung", name: "Sagu Manta", scale: 0.12 },
+      { key: "Water", name: "Air 200ml", scale: 0.2 },
+      { key: "Spoon", name: "Sendok", scale: 0.15 },
+      { key: "Saring", name: "Saringan", scale: 0.15 },
+      { key: "Air100ml", name: "Air 100ml", scale: 0.12 },
+      { key: "Nipis", name: "Jeruk Nipis", scale: 0.2 },
+      { key: "AirPanas", name: "Air Panas", scale: 0.2 },
+      { key: "SebelumPapeda", name: "Ikan Kuah Kuning", scale: 0.15 },
+      { key: "Piring", name: "Piring", scale: 0.15 }
+    ];
+    
+    // Calculate spoon's position using the exact same layout logic as createIngredients
+    const itemsPerRow = 2;
+    const horizontalPadding = 40;
+    const verticalPadding = 20;
+    const panelWidth = this.layoutConfig.ingredientsPanelWidth;
+    const panelHeight = this.layoutConfig.ingredientsPanelHeight;
+    const titleAreaHeight = 80;
+    
+    const availableWidth = panelWidth - horizontalPadding;
+    const spacingX = availableWidth / itemsPerRow;
+    const startX = (horizontalPadding / 2) + (spacingX / 2);
+    
+    const numRows = Math.ceil(ingredients.length / itemsPerRow);
+    const availableHeight = panelHeight - titleAreaHeight - verticalPadding;
+    const spacingY = availableHeight / numRows;
+    const startY = titleAreaHeight + (verticalPadding / 2) + (spacingY / 2);
+    
+    // Spoon is at index 4, so row 2, col 0
+    const spoonIndex = 4;
+    const row = Math.floor(spoonIndex / itemsPerRow);
+    const col = spoonIndex % itemsPerRow;
+    const spoonX = startX + (col * spacingX);
+    const spoonY = startY + (row * spacingY);
+    
+    // Create item background first (same as in createIngredients)
+    const itemBg = this.add.graphics();
+    itemBg.fillStyle(0x000000, 0.25);
+    itemBg.fillRoundedRect(spoonX - 55, spoonY - 37.5, 110, 75, 12);
+    itemBg.lineStyle(1, 0x8B4513, 0.4);
+    itemBg.strokeRoundedRect(spoonX - 55, spoonY - 37.5, 110, 75, 12);
+    this.ingredientsPanel.add(itemBg);
+    
+    // Create a new spoon in the ingredients panel
+    const spoonInPanel = this.add.image(spoonX, spoonY, 'Spoon')
+      .setInteractive()
+      .setScale(0.15)
+      .setName('Spoon');
+    
+    // Add to ingredients panel and make draggable
+    this.ingredientsPanel.add(spoonInPanel);
+    this.input.setDraggable(spoonInPanel);
+    this.ingredientItems.push(spoonInPanel);
+    
+    // Item label
+    const label = this.add.text(spoonX, spoonY + 40, "Sendok", {
+      fontSize: '18px',
+      fontFamily: 'Chewy, cursive',
+      color: '#FFFFFF',
+      align: 'center',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0.5);
+    this.ingredientsPanel.add(label);
+    
+    // Add hover effects like other ingredients
+    spoonInPanel.on('pointerover', () => {
+      spoonInPanel.setScale(0.15 * 1.15);
+      label.setColor('#FFFFFF');
+      itemBg.clear();
+      itemBg.fillStyle(0xFFD700, 0.15);
+      itemBg.fillRoundedRect(spoonX - 55, spoonY - 37.5, 110, 75, 12);
+      itemBg.lineStyle(1, 0xFFD700, 0.6);
+      itemBg.strokeRoundedRect(spoonX - 55, spoonY - 37.5, 110, 75, 12);
+    });
+    
+    spoonInPanel.on('pointerout', () => {
+      spoonInPanel.setScale(0.15);
+      label.setColor('#FFE4B5');
+      itemBg.clear();
+      itemBg.fillStyle(0x000000, 0.25);
+      itemBg.fillRoundedRect(spoonX - 55, spoonY - 37.5, 110, 75, 12);
+      itemBg.lineStyle(1, 0x8B4513, 0.4);
+      itemBg.strokeRoundedRect(spoonX - 55, spoonY - 37.5, 110, 75, 12);
+    });
+  }
+
+
 
   private setupDialogBridge() {
     console.log('🔧 Papeda: Setting up dialog bridge...');

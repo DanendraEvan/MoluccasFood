@@ -414,13 +414,7 @@ export default class ColoColoScene extends Phaser.Scene {
   private transformMangkuk(newState: string) { 
     this.gameState.mangkukState = newState; 
     const mangkuk = this.gameObjects.mangkuk;
-    const targetWidth = mangkuk.getData('targetWidth');
-    mangkuk.setTexture(newState);
-    if (!targetWidth) return;
-    const newTexture = this.textures.get(newState);
-    if (!newTexture || !newTexture.source || !newTexture.source[0]) return;
-    const newBaseWidth = newTexture.source[0].width;
-    if (newBaseWidth > 0) mangkuk.setScale(targetWidth / newBaseWidth);
+    mangkuk.setTexture(newState).setScale(0.8);
   }
 
   private resetIngredientPosition(gameObject: Phaser.GameObjects.Image) {
@@ -512,8 +506,7 @@ export default class ColoColoScene extends Phaser.Scene {
     const cookingAreaCenterX = (width - this.layoutConfig.ingredientsPanelWidth) / 2;
     const cookingAreaCenterY = height - 320;
     this.gameObjects.telenan = this.add.image(cookingAreaCenterX - 200, cookingAreaCenterY, 'colo_telenan').setInteractive({ dropZone: true }).setName('telenan').setScale(0.6);
-    this.gameObjects.mangkuk = this.add.image(cookingAreaCenterX + 200, cookingAreaCenterY, 'colo_mangkuk').setInteractive({ dropZone: true }).setName('mangkuk').setScale(0.5);
-    this.gameObjects.mangkuk.setData('targetWidth', this.gameObjects.mangkuk.displayWidth);
+    this.gameObjects.mangkuk = this.add.image(cookingAreaCenterX + 200, cookingAreaCenterY, 'colo_mangkuk').setInteractive({ dropZone: true }).setName('mangkuk').setScale(0.8);
     this.telenanOriginalPos = { x: this.gameObjects.telenan.x, y: this.gameObjects.telenan.y };
   }
 
