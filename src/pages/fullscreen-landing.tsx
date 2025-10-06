@@ -193,7 +193,7 @@ const FullscreenLandingPage: React.FC = () => {
 
       {/* Footer */}
       <div className="relative z-10 mt-6 text-xs text-white font-semibold text-center bg-black/40 backdrop-blur-sm px-4 py-2 rounded-lg">
-        <p>TFM Game © 2024 - Optimized for Landscape Mode</p>
+        <p>TFM Game © 2025 - Optimized for Landscape Mode</p>
       </div>
     </div>
   );

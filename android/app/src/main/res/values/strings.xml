@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MoluccasFood</string>
+    <string name="title_activity_main">MoluccasFood</string>
+    <string name="package_name">com.moluccas.food</string>
+    <string name="custom_url_scheme">com.moluccas.food</string>
+</resources>
