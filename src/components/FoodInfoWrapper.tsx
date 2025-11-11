@@ -1,151 +1,301 @@
-// src/components/FoodInfoWrapper.tsx - Updated with Sample Colors
-import React from 'react';
+// src/components/FoodInfoWrapper.tsx
+import React, { useState } from 'react';
+import Image from 'next/image';
 
-interface UIConfig {
-  homeButton: {
-    size: number;
-    position: { top: number; left: number };
-  };
-  titleBox: {
-    fontSize: string;
-    padding: { x: number; y: number };
-    maxWidth: string;
-  };
-  contentBox: {
-    fontSize: string;
-    padding: { x: number; y: number };
-    maxWidth: string;
-    lineHeight: string;
-  };
-  backButton: {
-    fontSize: string;
-    padding: { x: number; y: number };
-  };
-}
+type ButtonState = 'normal' | 'hover' | 'active';
 
 interface FoodInfoWrapperProps {
   title: string;
+  imageSrc: string;
+  imageAlt: string;
   content: string;
-  backgroundImage?: string;
   onBack: () => void;
-  uiConfig: UIConfig;
+  onHome: () => void;
+  nutritionInfo?: {
+    title: string;
+    points: string[];
+  };
 }
 
-const FoodInfoWrapper: React.FC<FoodInfoWrapperProps> = ({ 
-  title, 
-  content, 
-  backgroundImage = "/assets/backgrounds/menu.png", 
+const FoodInfoWrapper: React.FC<FoodInfoWrapperProps> = ({
+  title,
+  imageSrc,
+  imageAlt,
+  content,
   onBack,
-  uiConfig
+  onHome,
+  nutritionInfo,
 }) => {
-  // Inline styles untuk memastikan background bekerja
-  const backgroundStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    width: '100%',
-    backgroundImage: `url('${backgroundImage}')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundColor: '#f97316', // Orange fallback
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '2rem 1.5rem'
+  const [homeButtonState, setHomeButtonState] = useState<ButtonState>('normal');
+  const [hintButtonState, setHintButtonState] = useState<ButtonState>('normal');
+  const [isHintVisible, setIsHintVisible] = useState(false);
+
+  const getHomeButtonImage = (): string => {
+    switch (homeButtonState) {
+      case 'hover':
+        return '/assets/ui/buttons/home/home_hover.webp';
+      case 'active':
+        return '/assets/ui/buttons/home/home_active.webp';
+      default:
+        return '/assets/ui/buttons/home/home_normal.webp';
+    }
   };
 
-  // Updated colors to match sample - Brown/Gold theme
-  const titleBoxStyle: React.CSSProperties = {
-    background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(160, 82, 45, 0.9) 100%)', // Brown gradient
-    borderRadius: '25px',
-    padding: `${uiConfig.titleBox.padding.y}px ${uiConfig.titleBox.padding.x}px`,
-    marginBottom: '1.5rem',
-    backdropFilter: 'blur(10px)',
-    border: '2px solid rgba(218, 165, 32, 0.6)', // Golden border
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-  };
-
-  const contentBoxStyle: React.CSSProperties = {
-    background: 'linear-gradient(135deg, rgba(101, 67, 33, 0.85) 0%, rgba(139, 69, 19, 0.85) 100%)', // Darker brown gradient
-    borderRadius: '20px',
-    padding: `${uiConfig.contentBox.padding.y}px ${uiConfig.contentBox.padding.x}px`,
-    marginBottom: '2rem',
-    backdropFilter: 'blur(15px)',
-    border: '2px solid rgba(218, 165, 32, 0.5)', // Golden border
-    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-    maxWidth: uiConfig.contentBox.maxWidth,
-    width: '100%'
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    background: 'linear-gradient(135deg, rgba(184, 134, 11, 0.9) 0%, rgba(146, 64, 14, 0.9) 100%)', // Golden-brown gradient
-    color: 'white',
-    padding: `${uiConfig.backButton.padding.y}px ${uiConfig.backButton.padding.x}px`,
-    borderRadius: '25px',
-    border: '2px solid rgba(218, 165, 32, 0.7)', // Golden border
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    backdropFilter: 'blur(10px)',
-    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-    fontSize: uiConfig.backButton.fontSize,
-    fontWeight: '600',
-    textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
+  const getHintButtonImage = (): string => {
+    switch (hintButtonState) {
+      case 'hover':
+        return '/assets/ui/buttons/hint/hint_hover.webp';
+      case 'active':
+        return '/assets/ui/buttons/hint/hint_active.webp';
+      default:
+        return '/assets/ui/buttons/hint/hint_normal.webp';
+    }
   };
 
   return (
-    <div style={backgroundStyle}>
-      
-      {/* Title Section */}
-      <div style={{ width: '100%', maxWidth: uiConfig.titleBox.maxWidth }}>
-        <div style={titleBoxStyle}>
-          <h1 style={{
-            fontSize: uiConfig.titleBox.fontSize,
-            fontWeight: 'bold',
-            textAlign: 'center',
-            color: 'white',
+    <div
+      className="min-h-screen w-full relative flex flex-col items-center justify-center"
+      style={{
+        backgroundImage: "url('/assets/backgrounds/menu.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#f97316',
+        padding: '20px 16px',
+      }}
+    >
+      {/* Home Button - Top Left */}
+      <button
+        onClick={onHome}
+        onMouseEnter={() => setHomeButtonState('hover')}
+        onMouseLeave={() => setHomeButtonState('normal')}
+        onMouseDown={() => setHomeButtonState('active')}
+        onMouseUp={() => setHomeButtonState('hover')}
+        className="fixed z-50 transition-transform duration-200 hover:scale-105 active:scale-95"
+        style={{
+          top: '16px',
+          left: '16px',
+          width: '72px', // Increased size
+          height: '72px', // Increased size
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
+          margin: 0,
+          cursor: 'pointer',
+        }}
+      >
+        <Image
+          src={getHomeButtonImage()}
+          alt="Home Button"
+          layout="fill"
+          objectFit="contain"
+        />
+      </button>
+
+      {/* Hint Button - Top Right (conditional) */}
+      {nutritionInfo && (
+        <button
+          onClick={() => setIsHintVisible(true)}
+          onMouseEnter={() => setHintButtonState('hover')}
+          onMouseLeave={() => setHintButtonState('normal')}
+          onMouseDown={() => setHintButtonState('active')}
+          onMouseUp={() => setHintButtonState('hover')}
+          className="fixed z-50 transition-transform duration-200 hover:scale-105 active:scale-95"
+          style={{
+            top: '16px',
+            right: '16px',
+            width: '72px', // Increased size
+            height: '72px', // Increased size
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
             margin: 0,
-            letterSpacing: '0.025em',
-            textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)'
-          }}>
+            cursor: 'pointer',
+          }}
+        >
+          <Image
+            src={getHintButtonImage()}
+            alt="Hint Button"
+            layout="fill"
+            objectFit="contain"
+          />
+        </button>
+      )}
+
+      {/* Nutrition Info Popup */}
+      {isHintVisible && nutritionInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+          onClick={() => setIsHintVisible(false)} // Close on backdrop click
+        >
+          <div
+            className="relative"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            style={{
+              width: 'clamp(300px, 90vw, 450px)',
+              background: '#2D2D2D', // Solid background color
+              borderRadius: '24px',
+              border: '3px solid #D4AF37', // Restored border
+              padding: '24px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+              color: 'white',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+            }}
+          >
+            <button
+              onClick={() => setIsHintVisible(false)}
+              className="absolute transition-transform duration-200 hover:scale-110"
+              style={{
+                top: '12px',
+                right: '12px',
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                fontSize: '24px',
+                lineHeight: '1',
+                cursor: 'pointer',
+              }}
+            >
+              &times;
+            </button>
+            <h2
+              className="text-center font-bold"
+              style={{
+                fontSize: '1.5rem',
+                marginBottom: '16px',
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+              }}
+            >
+              {nutritionInfo.title}
+            </h2>
+            <ul style={{ listStyle: 'disc', paddingLeft: '20px', margin: 0 }}>
+              {nutritionInfo.points.map((point, index) => (
+                <li
+                  key={index}
+                  style={{
+                    fontSize: '1rem',
+                    marginBottom: '8px',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Container */}
+      <div className="w-full max-w-2xl mx-auto flex flex-col items-center" style={{ gap: '14px' }}>
+
+        {/* Title Box */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.92) 0%, rgba(160, 82, 45, 0.92) 50%, rgba(123, 104, 238, 0.88) 100%)',
+            borderRadius: '18px',
+            padding: '12px 20px',
+            border: '2px solid rgba(218, 165, 32, 0.5)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+            maxWidth: '420px',
+            width: '90%',
+          }}
+        >
+          <h1
+            className="font-bold text-center text-white m-0"
+            style={{
+              fontSize: '1.6rem',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.4)',
+              letterSpacing: '0.02em',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}
+          >
             {title}
           </h1>
         </div>
-      </div>
 
-      {/* Content Section */}
-      <div style={contentBoxStyle}>
-        <p style={{
-          fontSize: uiConfig.contentBox.fontSize,
-          lineHeight: uiConfig.contentBox.lineHeight,
-          color: 'white',
-          margin: 0,
-          textAlign: 'justify',
-          fontWeight: 'normal',
-          textShadow: '0 1px 2px rgba(0, 0, 0, 0.7)'
-        }}>
-          {content}
-        </p>
-      </div>
+        {/* Content Box with Image and Text */}
+        <div
+          className="w-full"
+          style={{
+            background: 'linear-gradient(135deg, rgba(123, 104, 238, 0.9) 0%, rgba(147, 51, 234, 0.85) 100%)',
+            borderRadius: '18px',
+            padding: '16px',
+            border: '2px solid rgba(218, 165, 32, 0.4)',
+            boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3)',
+            overflow: 'hidden',
+          }}
+        >
+          <div className="flex flex-row items-center" style={{ gap: '16px' }}>
+            <div className="flex-shrink-0">
+              <div
+                style={{
+                  width: '140px',
+                  height: '140px',
+                  position: 'relative',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                }}
+              >
+                <Image
+                  src={imageSrc}
+                  alt={imageAlt}
+                  fill
+                  style={{
+                    objectFit: 'cover',
+                    objectPosition: 'center'
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex-1">
+              <p
+                className="text-white m-0"
+                style={{
+                  fontSize: '0.85rem',
+                  lineHeight: '1.5',
+                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)',
+                  textAlign: 'left',
+                  fontWeight: 'normal',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                }}
+              >
+                {content}
+              </p>
+            </div>
+          </div>
+        </div>
 
-      {/* Back Button */}
-      <button
-        onClick={onBack}
-        style={buttonStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(202, 138, 4, 1) 0%, rgba(168, 85, 247, 0.8) 100%)';
-          e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(184, 134, 11, 0.9) 0%, rgba(146, 64, 14, 0.9) 100%)';
-          e.currentTarget.style.transform = 'scale(1) translateY(0)';
-          e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-        }}
-      >
-        ← Kembali ke Page Info
-      </button>
-      
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className="transition-all duration-300"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.92) 0%, rgba(184, 134, 11, 0.92) 100%)',
+            color: 'white',
+            padding: '10px 28px',
+            borderRadius: '18px',
+            border: '2px solid rgba(218, 165, 32, 0.5)',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+            cursor: 'pointer',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1) translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.25)';
+          }}
+        >
+          ← Kembali ke Page Info
+        </button>
+      </div>
     </div>
   );
 };

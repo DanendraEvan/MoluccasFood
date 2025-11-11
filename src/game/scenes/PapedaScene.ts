@@ -9,9 +9,9 @@ interface GameStep {
 }
 
 export default class PapedaScene extends Phaser.Scene {
-  // Dialog bridge for React integration - Disabled
+  // Dialog bridge for React integration
   public dialogBridge: any = null;
-  private useReactDialog: boolean = false; // Disable React dialog
+  private useReactDialog: boolean = true; // Enable React dialog
 
   // Original game objects
   private dropZone!: Phaser.GameObjects.Zone;
@@ -77,7 +77,7 @@ export default class PapedaScene extends Phaser.Scene {
   private swipeStartYScroll: number = 0;
   private swipeStartScrollYPos: number = 0;
   // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
-  private infoContent: string = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan pada meja makan masyarakat Maluku. Makanan yang seringkali disebut mirip dengan lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang seringkali disebut Sagu Manta oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung dari jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur yang lengket menyerupai lem dan rasa yang hambar, dan bahkan sering dideskripsikan sebagai tidak memiliki rasa khusus. Oleh karena itu, Papeda hampir selalu disajikan bersama makanan berkuah seperti Ikan Kuah Kuning.`;
+  private infoContent: string = `Papeda adalah salah satu olahan sagu yang paling sering ditemukan di meja makan masyarakat Maluku. Makanan yang sering disebut mirip lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang dikenal sebagai *Sagu Manta* oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan menjadi bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung pada jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur lengket menyerupai lem dan rasa yang hambar, sehingga hampir selalu disajikan bersama makanan berkuah seperti **Ikan Kuah Kuning** untuk menambah cita rasa. Secara gizi, papeda mengandung karbohidrat dari sagu, serat pangan, serta mineral seperti tembaga, vitamin B1, kalsium, dan fosfor, namun sangat rendah protein dan lemak.`;
 
   // Layout configuration
   private layoutConfig = {
@@ -138,87 +138,87 @@ export default class PapedaScene extends Phaser.Scene {
   preload() {
     // Background and UI
     this.load.image("background", "/assets/backgrounds/kitchen.png");
-    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
+    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.webp");
     
     // Load food image for hint popup
-    this.load.image('papeda_food', '/assets/makanan/papeda.png');
-    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
-    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
-    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
-    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
-    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
+    this.load.image('papeda_food', '/assets/makanan/papeda.webp');
+    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.webp");
+    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.webp");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.webp");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.webp");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.webp");
 
     // Characters
-    this.load.image("karakter1", "/assets/karakter/karakter1.png");
-    this.load.image("karakter2", "/assets/karakter/karakter2.png");
-    this.load.image("karakter3", "/assets/karakter/karakter3.png");
-    this.load.image("karakter4", "/assets/karakter/karakter4.png");
-    this.load.image("karakter5", "/assets/karakter/karakter5.png");
-    this.load.image("karakter6", "/assets/karakter/karakter6.png");
+    this.load.image("karakter1", "/assets/karakter/karakter1.webp");
+    this.load.image("karakter2", "/assets/karakter/karakter2.webp");
+    this.load.image("karakter3", "/assets/karakter/karakter3.webp");
+    this.load.image("karakter4", "/assets/karakter/karakter4.webp");
+    this.load.image("karakter5", "/assets/karakter/karakter5.webp");
+    this.load.image("karakter6", "/assets/karakter/karakter6.webp");
 
     // Papeda ingredients and tools
-    // this.load.image("Tepung", "/assets/foods/papeda/flour.png");
-    this.load.image("Water", "/assets/foods/papeda/water.png");
-    this.load.image("Spoon", "/assets/foods/papeda/spoon.png");
-    this.load.image("Mangkuk", "/assets/foods/papeda/bowl.png");
-    this.load.image("AirPanas", "/assets/foods/papeda/AirPanas.png");
-    this.load.image("Air100ml", "/assets/foods/papeda/Air-100-ml.png");
-    this.load.image("Nipis", "/assets/foods/papeda/Buah Tomi Tomi.png");
-    this.load.image("Piring", "/assets/foods/papeda/Piring.png");
-    this.load.image("SaguManta", "/assets/foods/papeda/SaguManta.png");
+    // this.load.image("Tepung", "/assets/foods/papeda/flour.webp");
+    this.load.image("Water", "/assets/foods/papeda/water.webp");
+    this.load.image("Spoon", "/assets/foods/papeda/spoon.webp");
+    this.load.image("Mangkuk", "/assets/foods/papeda/bowl.webp");
+    this.load.image("AirPanas", "/assets/foods/papeda/AirPanas.webp");
+    this.load.image("Air100ml", "/assets/foods/papeda/Air-100-ml.webp");
+    this.load.image("Nipis", "/assets/foods/papeda/Buah Tomi Tomi.webp");
+    this.load.image("Piring", "/assets/foods/papeda/Piring.webp");
+    this.load.image("SaguManta", "/assets/foods/papeda/SaguManta.webp");
 
     // Papeda process images
-    this.load.image('Saring', '/assets/foods/papeda/Saring.png');
-    this.load.image('Saring1', '/assets/foods/papeda/Saring1.png');
-    this.load.image('Saring2', '/assets/foods/papeda/Saring2.png');
-    this.load.image('SaringKosong1', '/assets/foods/papeda/SaringKosong1.png');
-    this.load.image('SaringKosong2', '/assets/foods/papeda/SaringKosong2.png');
-    this.load.image('TepungSaring', '/assets/foods/papeda/TepungSaring.png');
-    this.load.image("TepungBuangAir", '/assets/foods/papeda/TepungBuangAir.png');
-    this.load.image("Air200ml1", "/assets/foods/papeda/Air200ml1.png");
-    this.load.image("Air200ml2", "/assets/foods/papeda/Air200ml2.png");
-    this.load.image("Air200ml3", "/assets/foods/papeda/Air200ml3.png");
-    // this.load.image("TuangTepung1", "/assets/foods/papeda/TuangTepung1.png");
-    // this.load.image("TuangTepung2", "/assets/foods/papeda/TuangTepung2.png");
-    // this.load.image("TuangTepung3", "/assets/foods/papeda/TuangTepung3.png");
-    // this.load.image("TepungPotong", "/assets/foods/papeda/TepungPotong.png");
-    this.load.image("DenganTepung", "/assets/foods/papeda/DenganTepung.png");
-    this.load.image("DenganAir", "/assets/foods/papeda/DenganAir.png");
-    this.load.image("DenganEndok", "/assets/foods/papeda/Denganendok.png");
-    this.load.image("PapedaAduk1", "/assets/foods/papeda/PapedaAduk1.png");
-    this.load.image("PapedaAduk2", "/assets/foods/papeda/PapedaAduk2.png");
-    this.load.image("HasilAduk1", "/assets/foods/papeda/hasilAduk1.png");
-    this.load.image("HasilAduk2", "/assets/foods/papeda/hasilAduk2.png");
-    this.load.image("Keras", "/assets/foods/papeda/Keras.png");
-    this.load.image("Keras2", "/assets/foods/papeda/Keras2.png");
-    this.load.image("TambahanAir100Ml", "/assets/foods/papeda/Tambahan-Air-100-Ml.png");
-    this.load.image("Tambahan-Nipis", "/assets/foods/papeda/Tambahan-Nipis.png");
-    this.load.image("Tambahan-Air-Panas", "/assets/foods/papeda/Tambahan-Air-Panas.png");
-    this.load.image("Hasil-Jadi", "/assets/foods/papeda/Hasil-Jadi.png");
-    this.load.image("Papeda", "/assets/foods/papeda/Papeda.png");
+    this.load.image('Saring', '/assets/foods/papeda/Saring.webp');
+    this.load.image('Saring1', '/assets/foods/papeda/Saring1.webp');
+    this.load.image('Saring2', '/assets/foods/papeda/Saring2.webp');
+    this.load.image('SaringKosong1', '/assets/foods/papeda/SaringKosong1.webp');
+    this.load.image('SaringKosong2', '/assets/foods/papeda/SaringKosong2.webp');
+    this.load.image('TepungSaring', '/assets/foods/papeda/TepungSaring.webp');
+    this.load.image("TepungBuangAir", '/assets/foods/papeda/TepungBuangAir.webp');
+    this.load.image("Air200ml1", "/assets/foods/papeda/Air200ml1.webp");
+    this.load.image("Air200ml2", "/assets/foods/papeda/Air200ml2.webp");
+    this.load.image("Air200ml3", "/assets/foods/papeda/Air200ml3.webp");
+    // this.load.image("TuangTepung1", "/assets/foods/papeda/TuangTepung1.webp");
+    // this.load.image("TuangTepung2", "/assets/foods/papeda/TuangTepung2.webp");
+    // this.load.image("TuangTepung3", "/assets/foods/papeda/TuangTepung3.webp");
+    // this.load.image("TepungPotong", "/assets/foods/papeda/TepungPotong.webp");
+    this.load.image("DenganTepung", "/assets/foods/papeda/DenganTepung.webp");
+    this.load.image("DenganAir", "/assets/foods/papeda/DenganAir.webp");
+    this.load.image("DenganEndok", "/assets/foods/papeda/Denganendok.webp");
+    this.load.image("PapedaAduk1", "/assets/foods/papeda/PapedaAduk1.webp");
+    this.load.image("PapedaAduk2", "/assets/foods/papeda/PapedaAduk2.webp");
+    this.load.image("HasilAduk1", "/assets/foods/papeda/hasilAduk1.webp");
+    this.load.image("HasilAduk2", "/assets/foods/papeda/hasilAduk2.webp");
+    this.load.image("Keras", "/assets/foods/papeda/Keras.webp");
+    this.load.image("Keras2", "/assets/foods/papeda/Keras2.webp");
+    this.load.image("TambahanAir100Ml", "/assets/foods/papeda/Tambahan-Air-100-Ml.webp");
+    this.load.image("Tambahan-Nipis", "/assets/foods/papeda/Tambahan-Nipis.webp");
+    this.load.image("Tambahan-Air-Panas", "/assets/foods/papeda/Tambahan-Air-Panas.webp");
+    this.load.image("Hasil-Jadi", "/assets/foods/papeda/Hasil-Jadi.webp");
+    this.load.image("Papeda", "/assets/foods/papeda/Papeda.webp");
     
     // Additional assets for steps 7-12
-    this.load.image("Air100ml1", "/assets/foods/papeda/Air100ml1.png");
-    this.load.image("Air100ml2", "/assets/foods/papeda/Air100ml2.png");
-    this.load.image("Air1400ml1", "/assets/foods/papeda/Air1400ml1.png");
-    this.load.image("Air1400ml2", "/assets/foods/papeda/Air1400ml2.png");
-    this.load.image("Air1400ml3", "/assets/foods/papeda/Air1400ml3.png");
-    this.load.image("JerukDiatas", "/assets/foods/papeda/TomiTomi Diatas.png");
-    this.load.image("CipratanJeruk1", "/assets/foods/papeda/Cipratan Tomi1.png");
-    this.load.image("CipratanJeruk2", "/assets/foods/papeda/Cipratan Tomi2.png");
-    this.load.image("CipratanJeruk3", "/assets/foods/papeda/Cipratan Tomi3.png");
-    this.load.image("AdonanJeruk", "/assets/foods/papeda/Adonan Tomi.png");
-    this.load.image("AdukJeruk1", "/assets/foods/papeda/Aduk Tomi1.png");
-    this.load.image("AdukJeruk2", "/assets/foods/papeda/AdukTomi2.png");
-    this.load.image("SebelumPapeda", "/assets/foods/papeda/SebelumPapeda.png");
+    this.load.image("Air100ml1", "/assets/foods/papeda/Air100ml1.webp");
+    this.load.image("Air100ml2", "/assets/foods/papeda/Air100ml2.webp");
+    this.load.image("Air1400ml1", "/assets/foods/papeda/Air1400ml1.webp");
+    this.load.image("Air1400ml2", "/assets/foods/papeda/Air1400ml2.webp");
+    this.load.image("Air1400ml3", "/assets/foods/papeda/Air1400ml3.webp");
+    this.load.image("JerukDiatas", "/assets/foods/papeda/TomiTomi Diatas.webp");
+    this.load.image("CipratanJeruk1", "/assets/foods/papeda/Cipratan Tomi1.webp");
+    this.load.image("CipratanJeruk2", "/assets/foods/papeda/Cipratan Tomi2.webp");
+    this.load.image("CipratanJeruk3", "/assets/foods/papeda/Cipratan Tomi3.webp");
+    this.load.image("AdonanJeruk", "/assets/foods/papeda/Adonan Tomi.webp");
+    this.load.image("AdukJeruk1", "/assets/foods/papeda/Aduk Tomi1.webp");
+    this.load.image("AdukJeruk2", "/assets/foods/papeda/AdukTomi2.webp");
+    this.load.image("SebelumPapeda", "/assets/foods/papeda/SebelumPapeda.webp");
 
     // Stirring animation images
-    this.load.image("Aduk3", "/assets/foods/papeda/Aduk3.png");
-    this.load.image("Aduk4", "/assets/foods/papeda/Aduk4.png");
-    this.load.image("Aduk5", "/assets/foods/papeda/Aduk5.png");
-    this.load.image("Aduk6", "/assets/foods/papeda/Aduk6.png");
-    this.load.image("Aduk7", "/assets/foods/papeda/Aduk7.png");
-    this.load.image("Aduk8", "/assets/foods/papeda/Aduk8.png");
+    this.load.image("Aduk3", "/assets/foods/papeda/Aduk3.webp");
+    this.load.image("Aduk4", "/assets/foods/papeda/Aduk4.webp");
+    this.load.image("Aduk5", "/assets/foods/papeda/Aduk5.webp");
+    this.load.image("Aduk6", "/assets/foods/papeda/Aduk6.webp");
+    this.load.image("Aduk7", "/assets/foods/papeda/Aduk7.webp");
+    this.load.image("Aduk8", "/assets/foods/papeda/Aduk8.webp");
   }
 
   create() {
@@ -246,8 +246,68 @@ export default class PapedaScene extends Phaser.Scene {
     // NOTE: createHintButton removed - hint system now handled by React components in KitchenBackgroundWrapper
 
     // Setup dialog bridge integration
-    // this.setupDialogBridge();
+    this.setupDialogBridge();
   }
+
+  private setupDialogBridge() {
+    console.log('🔧 PapedaScene: Setting up dialog bridge...');
+
+    // Wait for dialog bridge to be attached by React
+    const checkForBridge = () => {
+      console.log('🔍 PapedaScene: Checking for dialog bridge...');
+      if (this.dialogBridge) {
+        console.log('✅ PapedaScene: Dialog bridge connected!');
+        console.log('🎯 PapedaScene: Current game step:', this.currentStep);
+
+        // Test the bridge
+        try {
+          const currentDialogStep = this.dialogBridge.getCurrentStep();
+          console.log('📊 PapedaScene: Current dialog step:', currentDialogStep);
+
+          // Sync initial step
+          this.syncDialogWithGameStep();
+
+          // Send info content to React UI
+          if (this.dialogBridge.setInfoContent) {
+            this.dialogBridge.setInfoContent(this.infoContent);
+          }
+
+        } catch (error) {
+          console.error('❌ PapedaScene: Bridge test failed:', error);
+        }
+      } else {
+        console.log('⏳ PapedaScene: Bridge not ready, checking again in 500ms...');
+        // Try again in 500ms
+        this.time.delayedCall(500, checkForBridge);
+      }
+    };
+
+    // Start checking for bridge
+    this.time.delayedCall(100, checkForBridge);
+  }
+
+  private syncDialogWithGameStep() {
+    if (this.dialogBridge) {
+      console.log('🔄 PapedaScene: Syncing dialog with game step...');
+
+      try {
+        // Make sure dialog is at the correct step
+        const currentDialogStep = this.dialogBridge.getCurrentStep();
+        console.log(`📊 PapedaScene: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
+
+        if (this.currentStep !== currentDialogStep) {
+          console.log(`🔄 PapedaScene: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
+          this.dialogBridge.setStep(this.currentStep);
+          console.log('✅ PapedaScene: Dialog sync complete');
+        } else {
+          console.log('✅ PapedaScene: Dialog already in sync');
+        }
+      } catch (error) {
+        console.error('❌ PapedaScene: Dialog sync failed:', error);
+      }
+    }
+  }
+
 
   private calculateLayout() {
     const gameWidth = this.cameras.main.width;
@@ -1652,7 +1712,7 @@ export default class PapedaScene extends Phaser.Scene {
       this.returnSpoonToDragStart();
     }
 
-    // Change to final mixed texture - DenganTepung.png
+    // Change to final mixed texture - DenganTepung.webp
     this.mangkuk.setTexture('DenganTepung').setScale(0.6);
     this.mangkuk.setName('DenganTepung');
 
@@ -1865,7 +1925,7 @@ export default class PapedaScene extends Phaser.Scene {
     stagingText.destroy();
     stagedItem.destroy();
     
-    // Auto-return to cooking area as Keras.png - fixed position
+    // Auto-return to cooking area as Keras.webp - fixed position
     const gameHeight = this.cameras.main.height;
     const fixedKerasX = 950;
     const fixedKerasY = gameHeight - 400;
@@ -2637,61 +2697,6 @@ export default class PapedaScene extends Phaser.Scene {
           particle.destroy();
         }
       });
-    }
-  }
-
-
-
-  private setupDialogBridge() {
-    console.log('🔧 Papeda: Setting up dialog bridge...');
-
-    // Wait for dialog bridge to be attached by React
-    const checkForBridge = () => {
-      console.log('🔍 Papeda: Checking for dialog bridge...');
-      if (this.dialogBridge) {
-        console.log('✅ Papeda: Dialog bridge connected!');
-        console.log('🎯 Papeda: Current game step:', this.currentStep);
-
-        // Test the bridge
-        try {
-          const currentDialogStep = this.dialogBridge.getCurrentStep();
-          console.log('📊 Papeda: Current dialog step:', currentDialogStep);
-
-          // Sync initial step
-          this.syncDialogWithGameStep();
-        } catch (error) {
-          console.error('❌ Papeda: Bridge test failed:', error);
-        }
-      } else {
-        console.log('⏳ Papeda: Bridge not ready, checking again in 500ms...');
-        // Try again in 500ms
-        this.time.delayedCall(500, checkForBridge);
-      }
-    };
-
-    // Start checking for bridge
-    this.time.delayedCall(100, checkForBridge);
-  }
-
-  private syncDialogWithGameStep() {
-    if (this.dialogBridge) {
-      console.log('🔄 Papeda: Syncing dialog with game step...');
-
-      try {
-        // Make sure dialog is at the correct step
-        const currentDialogStep = this.dialogBridge.getCurrentStep();
-        console.log(`📊 Papeda: Game step: ${this.currentStep}, Dialog step: ${currentDialogStep}`);
-
-        if (this.currentStep !== currentDialogStep) {
-          console.log(`🔄 Papeda: Syncing dialog step from ${currentDialogStep} to ${this.currentStep}`);
-          this.dialogBridge.setStep(this.currentStep);
-          console.log('✅ Papeda: Dialog sync complete');
-        } else {
-          console.log('✅ Papeda: Dialog already in sync');
-        }
-      } catch (error) {
-        console.error('❌ Papeda: Dialog sync failed:', error);
-      }
     }
   }
 }

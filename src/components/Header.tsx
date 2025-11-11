@@ -11,9 +11,9 @@ const Header = () => {
   return (
     <div className="absolute top-4 left-4">
       <GameButton
-        normal="/assets/ui/buttons/home/home_normal.png"
-        hover="/assets/ui/buttons/home/home_hover.png"
-        active="/assets/ui/buttons/home/home_active.png"
+        normal="/assets/ui/buttons/home/home_normal.webp"
+        hover="/assets/ui/buttons/home/home_hover.webp"
+        active="/assets/ui/buttons/home/home_active.webp"
         onClick={() => router.push('/')}
         alt="Home"
       />

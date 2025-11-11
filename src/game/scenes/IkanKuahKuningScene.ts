@@ -148,7 +148,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
   // Event listener properties (mengulek now uses initMengulekMechanic)
 
-  private infoContent: string = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti ikan cakalang, tongkol, atau ikan kerapu yang dipotong-potong. Bumbu kuah kuning terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum kemudian ditambah air dan santan hingga mendidih. Ikan kemudian dimasukkan dan dimasak hingga matang sambil menyerap cita rasa kuah yang kaya rempah. Hidangan ini biasanya disajikan dengan nasi putih atau papeda, dan memberikan sensasi hangat serta menyegarkan dengan aroma rempah yang khas.`;
+  private infoContent: string = `Ikan Kuah Kuning adalah hidangan berkuah khas Maluku yang memiliki cita rasa gurih, segar, dan kaya rempah. Sesuai namanya, kuah dari hidangan ini berwarna kuning cerah yang berasal dari penggunaan kunyit sebagai bumbu utama. Ikan yang digunakan biasanya adalah ikan laut segar seperti cakalang, tongkol, atau kerapu yang dipotong-potong, kemudian dimasak dengan bumbu yang terdiri dari kunyit, jahe, lengkuas, serai, daun jeruk, cabai, bawang merah, bawang putih, dan santan kelapa. Semua bumbu ditumis hingga harum lalu ditambahkan air dan santan hingga mendidih sebelum ikan dimasukkan dan dimasak hingga matang, menyerap cita rasa kuah yang kaya rempah. Selain lezat, hidangan ini juga bernilai gizi tinggi karena mengandung protein dari ikan, lemak sehat termasuk omega-3, karbohidrat dari rempah seperti kunyit, bawang, dan jahe, serta vitamin dan mineral seperti vitamin A, C, dan zat besi. Ikan Kuah Kuning biasanya disajikan bersama nasi putih atau papeda, memberikan sensasi hangat dan menyegarkan dengan aroma rempah yang khas.`;
 
   // Layout configuration
   private layoutConfig = {
@@ -188,43 +188,43 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
     {
       id: 1,
       text: "Selamat Datang di Game Traditional of Moluccas Food, sudah siap untuk Memasak Ikan Kuah Kuning hari ini!?! Okee!! Pertama ambil Cobek dari Menu dan taruh ke sebelah kanan Kompor. Lanjut kita masukkan Bawang Merah, Cabai Keriting, Kunyit dan, Bawang Putih.",
-      character: "karakter1.png",
+      character: "karakter1.webp",
       isCompleted: false
     },
     {
       id: 2,
       text: "Bumbu sudah masuk mari kita haluskan bumbunya!! Ambil Ulekan di Menu dan taruh ke dalam Cobek. Sudah? Ayo kita haluskan bumbunya dengan menggerakkan Ulekan ke kanan dan kiri sampai jadi.",
-      character: "karakter2.png",
+      character: "karakter2.webp",
       isCompleted: false
     },
     {
       id: 3,
       text: "Step ke 3 ayo kita ambil wajan di Menu dan taruh ke atas Kompor. Sudah? Masukkan Bumbu Halus ke Wajan dan Aduk sampai harum.",
-      character: "karakter3.png",
+      character: "karakter3.webp",
       isCompleted: false
     },
     {
       id: 4,
       text: "Oke sudah Diaduk?!? Ayo Kita masukkan Daun Salam, Sereh, dan Lengkuas ke dalam Wajan. Ayo Kita aduk lagi Bumbunya.",
-      character: "karakter4.png",
+      character: "karakter4.webp",
       isCompleted: false
     },
     {
       id: 5,
       text: "Lanjut lagi. Ayo kita masukkan Irisan jahe, Daun Jeruk, Ikan Cakalang, dan Air kedalam bumbu yang kita masak tadi. Kemudian aduk lagi sampai semua nya bercampur rata dan Air mendidih.",
-      character: "karakter5.png",
+      character: "karakter5.webp",
       isCompleted: false
     },
     {
       id: 6,
       text: "Setelah mendidih masukkan Tomat, Garam, Gula, Daun Bawang, dan Asam Jawa, Kemudian aduk dan tunggu Ikan Kuah Kuning sampai Matang.",
-      character: "karakter6.png",
+      character: "karakter6.webp",
       isCompleted: false
     },
     {
       id: 7,
       text: "Yeayy!!! Kita telah menyelesaikan Masakan Ikan Kuah Kuning. Ambil Mangkuk di Menu dan taruh di Meja. Ambil Masakan Ikan Kuah Kuning yang sudah matang dari Wajan dan sajikan ke Mangkuk yang ada di Meja.",
-      character: "karakter1.png",
+      character: "karakter1.webp",
       isCompleted: false
     }
   ];
@@ -235,107 +235,107 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
   preload() {
     this.load.image("background", "/assets/backgrounds/kitchen.png");
-    this.load.image("Kompor", "/assets/foods/ikan_kuahkuning/Kompor.png");
+    this.load.image("Kompor", "/assets/foods/ikan_kuahkuning/Kompor.webp");
 
     // --- Ingredient Panel Assets ---
-    this.load.image('Cobek', '/assets/foods/ikan_kuahkuning/Cobek.png');
-    this.load.image('minyak', '/assets/foods/ikan_kuahkuning/minyak.png');
-    this.load.image('TuangMinyak1', '/assets/foods/ikan_kuahkuning/TuangMinyak1.png');
-    this.load.image('TuangMinyak2', '/assets/foods/ikan_kuahkuning/TuangMinyak2.png');
-    this.load.image('BawangMerah', '/assets/foods/ikan_kuahkuning/BawangMerah.png');
-    this.load.image('CabaiKeriting', '/assets/foods/ikan_kuahkuning/CabaiKeriting.png');
-    this.load.image('Kunyit', '/assets/foods/ikan_kuahkuning/Kunyit.png');
-    this.load.image('BawangPutih', '/assets/foods/ikan_kuahkuning/BawangPutih.png');
-    this.load.image('Ulekan', '/assets/foods/ikan_kuahkuning/Ulekan.png');
-    this.load.image('Wajan', '/assets/foods/ikan_kuahkuning/Wajan.png');
-    this.load.image('Sereh', '/assets/foods/ikan_kuahkuning/Sereh.png');
-    this.load.image('Lengkuas', '/assets/foods/ikan_kuahkuning/Lengkuas.png');
-    this.load.image('DaunSalam', '/assets/foods/ikan_kuahkuning/DaunSalam.png');
-    this.load.image('IrisanJahe', '/assets/foods/ikan_kuahkuning/IrisanJahe.png');
-    this.load.image('DaunJeruk', '/assets/foods/ikan_kuahkuning/DaunJeruk.png');
-    this.load.image('PotonganIkan', '/assets/foods/ikan_kuahkuning/PotonganIkan.png');
-    this.load.image('Air', '/assets/foods/ikan_kuahkuning/Air.png');
-    this.load.image('Asam', '/assets/foods/ikan_kuahkuning/Asam.png');
-    this.load.image('Tomat', '/assets/foods/ikan_kuahkuning/Tomat.png');
-    this.load.image('Gula', '/assets/foods/ikan_kuahkuning/Gula.png');
-    this.load.image('Garam', '/assets/foods/ikan_kuahkuning/Garam.png');
-    this.load.image('DaunBawang', '/assets/foods/ikan_kuahkuning/DaunBawang.png');
-    this.load.image('Mangkuk', '/assets/foods/ikan_kuahkuning/Mangkuk.png');
+    this.load.image('Cobek', '/assets/foods/ikan_kuahkuning/Cobek.webp');
+    this.load.image('minyak', '/assets/foods/ikan_kuahkuning/minyak.webp');
+    this.load.image('TuangMinyak1', '/assets/foods/ikan_kuahkuning/TuangMinyak1.webp');
+    this.load.image('TuangMinyak2', '/assets/foods/ikan_kuahkuning/TuangMinyak2.webp');
+    this.load.image('BawangMerah', '/assets/foods/ikan_kuahkuning/BawangMerah.webp');
+    this.load.image('CabaiKeriting', '/assets/foods/ikan_kuahkuning/CabaiKeriting.webp');
+    this.load.image('Kunyit', '/assets/foods/ikan_kuahkuning/Kunyit.webp');
+    this.load.image('BawangPutih', '/assets/foods/ikan_kuahkuning/BawangPutih.webp');
+    this.load.image('Ulekan', '/assets/foods/ikan_kuahkuning/Ulekan.webp');
+    this.load.image('Wajan', '/assets/foods/ikan_kuahkuning/Wajan.webp');
+    this.load.image('Sereh', '/assets/foods/ikan_kuahkuning/Sereh.webp');
+    this.load.image('Lengkuas', '/assets/foods/ikan_kuahkuning/Lengkuas.webp');
+    this.load.image('DaunSalam', '/assets/foods/ikan_kuahkuning/DaunSalam.webp');
+    this.load.image('IrisanJahe', '/assets/foods/ikan_kuahkuning/IrisanJahe.webp');
+    this.load.image('DaunJeruk', '/assets/foods/ikan_kuahkuning/DaunJeruk.webp');
+    this.load.image('PotonganIkan', '/assets/foods/ikan_kuahkuning/PotonganIkan.webp');
+    this.load.image('Air', '/assets/foods/ikan_kuahkuning/Air.webp');
+    this.load.image('Asam', '/assets/foods/ikan_kuahkuning/Asam.webp');
+    this.load.image('Tomat', '/assets/foods/ikan_kuahkuning/Tomat.webp');
+    this.load.image('Gula', '/assets/foods/ikan_kuahkuning/Gula.webp');
+    this.load.image('Garam', '/assets/foods/ikan_kuahkuning/Garam.webp');
+    this.load.image('DaunBawang', '/assets/foods/ikan_kuahkuning/DaunBawang.webp');
+    this.load.image('Mangkuk', '/assets/foods/ikan_kuahkuning/Mangkuk.webp');
 
     // Kompor nyala frames
-    this.load.image("KomporNyala1", "/assets/foods/ikan_kuahkuning/KomporNyala1.png");
-    this.load.image("KomporNyala2", "/assets/foods/ikan_kuahkuning/KomporNyala2.png");
-    this.load.image("KomporNyala3", "/assets/foods/ikan_kuahkuning/KomporNyala3.png");
-    this.load.image("KomporNyala4", "/assets/foods/ikan_kuahkuning/KomporNyala4.png");
-    this.load.image("KomporNyala5", "/assets/foods/ikan_kuahkuning/KomporNyala5.png");
-    this.load.image("KomporNyala6", "/assets/foods/ikan_kuahkuning/KomporNyala6.png");
+    this.load.image("KomporNyala1", "/assets/foods/ikan_kuahkuning/KomporNyala1.webp");
+    this.load.image("KomporNyala2", "/assets/foods/ikan_kuahkuning/KomporNyala2.webp");
+    this.load.image("KomporNyala3", "/assets/foods/ikan_kuahkuning/KomporNyala3.webp");
+    this.load.image("KomporNyala4", "/assets/foods/ikan_kuahkuning/KomporNyala4.webp");
+    this.load.image("KomporNyala5", "/assets/foods/ikan_kuahkuning/KomporNyala5.webp");
+    this.load.image("KomporNyala6", "/assets/foods/ikan_kuahkuning/KomporNyala6.webp");
     // --- Game Step Assets ---
     // Ulekan states
-    this.load.image('Ulekan1', '/assets/foods/ikan_kuahkuning/Ulekan1.png');
-    this.load.image('Ulekan2', '/assets/foods/ikan_kuahkuning/Ulekan2.png');
-    this.load.image('Ulekan3', '/assets/foods/ikan_kuahkuning/Ulekan3.png');
-    this.load.image('Ulekan4', '/assets/foods/ikan_kuahkuning/Ulekan4.png');
+    this.load.image('Ulekan1', '/assets/foods/ikan_kuahkuning/Ulekan1.webp');
+    this.load.image('Ulekan2', '/assets/foods/ikan_kuahkuning/Ulekan2.webp');
+    this.load.image('Ulekan3', '/assets/foods/ikan_kuahkuning/Ulekan3.webp');
+    this.load.image('Ulekan4', '/assets/foods/ikan_kuahkuning/Ulekan4.webp');
 
     // Mengulek animation frames
-    this.load.image('Mengulek1', '/assets/foods/ikan_kuahkuning/Mengulek1.png');
-    this.load.image('Mengulek2', '/assets/foods/ikan_kuahkuning/Mengulek2.png');
-    this.load.image('Mengulek4', '/assets/foods/ikan_kuahkuning/Mengulek4.png');
-    this.load.image('Mengulek5', '/assets/foods/ikan_kuahkuning/Mengulek5.png');
-    this.load.image('BumbuHalus', '/assets/foods/ikan_kuahkuning/BumbuHalus.png');
+    this.load.image('Mengulek1', '/assets/foods/ikan_kuahkuning/Mengulek1.webp');
+    this.load.image('Mengulek2', '/assets/foods/ikan_kuahkuning/Mengulek2.webp');
+    this.load.image('Mengulek4', '/assets/foods/ikan_kuahkuning/Mengulek4.webp');
+    this.load.image('Mengulek5', '/assets/foods/ikan_kuahkuning/Mengulek5.webp');
+    this.load.image('BumbuHalus', '/assets/foods/ikan_kuahkuning/BumbuHalus.webp');
 
 
     // Tuang Bumbu animation
-    this.load.image('TuangBumbu1', '/assets/foods/ikan_kuahkuning/TuangBumbu1.png');
-    this.load.image('TuangBumbu2', '/assets/foods/ikan_kuahkuning/TuangBumbu2.png');
+    this.load.image('TuangBumbu1', '/assets/foods/ikan_kuahkuning/TuangBumbu1.webp');
+    this.load.image('TuangBumbu2', '/assets/foods/ikan_kuahkuning/TuangBumbu2.webp');
 
     // Aduk Bumbu animation
-    this.load.image('AdukBumbu1', '/assets/foods/ikan_kuahkuning/AdukBumbu1.png');
-    this.load.image('AdukBumbu2', '/assets/foods/ikan_kuahkuning/AdukBumbu2.png');
-    this.load.image('BumbuHalusWajan', '/assets/foods/ikan_kuahkuning/BumbuHalusWajan.png');
+    this.load.image('AdukBumbu1', '/assets/foods/ikan_kuahkuning/AdukBumbu1.webp');
+    this.load.image('AdukBumbu2', '/assets/foods/ikan_kuahkuning/AdukBumbu2.webp');
+    this.load.image('BumbuHalusWajan', '/assets/foods/ikan_kuahkuning/BumbuHalusWajan.webp');
 
     // Step 4 states
-    this.load.image('TambahDaunSalam', '/assets/foods/ikan_kuahkuning/TambahDaunSalam.png');
-    this.load.image('TambahSereh', '/assets/foods/ikan_kuahkuning/TambahSereh.png');
-    this.load.image('TambahLengkuas', '/assets/foods/ikan_kuahkuning/TambahLengkuas.png');
-    this.load.image('AdukBumbuStep4-1', '/assets/foods/ikan_kuahkuning/AdukBumbuStep4-1.png');
-    this.load.image('AdukBumbuStep4-2', '/assets/foods/ikan_kuahkuning/AdukBumbuStep4-2.png');
-    this.load.image('BumbuStep4-2', '/assets/foods/ikan_kuahkuning/BumbuStep4-2.png');
+    this.load.image('TambahDaunSalam', '/assets/foods/ikan_kuahkuning/TambahDaunSalam.webp');
+    this.load.image('TambahSereh', '/assets/foods/ikan_kuahkuning/TambahSereh.webp');
+    this.load.image('TambahLengkuas', '/assets/foods/ikan_kuahkuning/TambahLengkuas.webp');
+    this.load.image('AdukBumbuStep4-1', '/assets/foods/ikan_kuahkuning/AdukBumbuStep4-1.webp');
+    this.load.image('AdukBumbuStep4-2', '/assets/foods/ikan_kuahkuning/AdukBumbuStep4-2.webp');
+    this.load.image('BumbuStep4-2', '/assets/foods/ikan_kuahkuning/BumbuStep4-2.webp');
 
     // Step 5 states
-    this.load.image('TambahJahe', '/assets/foods/ikan_kuahkuning/TambahJahe.png');
-    this.load.image('TambahDaun', '/assets/foods/ikan_kuahkuning/TambahDaun.png');
-    this.load.image('TambahIkan', '/assets/foods/ikan_kuahkuning/TambahIkan.png');
-    this.load.image('TambahAir', '/assets/foods/ikan_kuahkuning/TambahAir.png');
-    this.load.image('AdukAir1', '/assets/foods/ikan_kuahkuning/AdukAir1.png');
-    this.load.image('AdukAir2', '/assets/foods/ikan_kuahkuning/AdukAir2.png');
-    this.load.image('TambahAir2', '/assets/foods/ikan_kuahkuning/TambahAir2.png');
+    this.load.image('TambahJahe', '/assets/foods/ikan_kuahkuning/TambahJahe.webp');
+    this.load.image('TambahDaun', '/assets/foods/ikan_kuahkuning/TambahDaun.webp');
+    this.load.image('TambahIkan', '/assets/foods/ikan_kuahkuning/TambahIkan.webp');
+    this.load.image('TambahAir', '/assets/foods/ikan_kuahkuning/TambahAir.webp');
+    this.load.image('AdukAir1', '/assets/foods/ikan_kuahkuning/AdukAir1.webp');
+    this.load.image('AdukAir2', '/assets/foods/ikan_kuahkuning/AdukAir2.webp');
+    this.load.image('TambahAir2', '/assets/foods/ikan_kuahkuning/TambahAir2.webp');
 
     // Step 6 states
-    this.load.image('TambahTomat', '/assets/foods/ikan_kuahkuning/TambahTomat.png');
-    this.load.image('TambahGaram', '/assets/foods/ikan_kuahkuning/TambahGaram.png');
-    this.load.image('TambahGula', '/assets/foods/ikan_kuahkuning/TambahGula.png');
-    this.load.image('TambahAsam', '/assets/foods/ikan_kuahkuning/TambahAsam.png');
-    this.load.image('AdukFinishing1', '/assets/foods/ikan_kuahkuning/AdukFinishing1.png');
-    this.load.image('AdukFinishing2', '/assets/foods/ikan_kuahkuning/AdukFinishing2.png');
-    this.load.image('IkanKuahKuningJadi', '/assets/foods/ikan_kuahkuning/IkanKuahKuningJadi.png');
+    this.load.image('TambahTomat', '/assets/foods/ikan_kuahkuning/TambahTomat.webp');
+    this.load.image('TambahGaram', '/assets/foods/ikan_kuahkuning/TambahGaram.webp');
+    this.load.image('TambahGula', '/assets/foods/ikan_kuahkuning/TambahGula.webp');
+    this.load.image('TambahAsam', '/assets/foods/ikan_kuahkuning/TambahAsam.webp');
+    this.load.image('AdukFinishing1', '/assets/foods/ikan_kuahkuning/AdukFinishing1.webp');
+    this.load.image('AdukFinishing2', '/assets/foods/ikan_kuahkuning/AdukFinishing2.webp');
+    this.load.image('IkanKuahKuningJadi', '/assets/foods/ikan_kuahkuning/IkanKuahKuningJadi.webp');
 
     // Final dish
-    this.load.image('IkanKuahKuning', '/assets/foods/ikan_kuahkuning/IkanKuahKuning.png');
+    this.load.image('IkanKuahKuning', '/assets/foods/ikan_kuahkuning/IkanKuahKuning.webp');
 
     // --- UI & Character Assets ---
-    this.load.image('ikankuahkuning_food', '/assets/makanan/ikankuahkuning.png');
-    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
-    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
-    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
-    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
-    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
-    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
-    this.load.image("karakter1", "/assets/karakter/karakter1.png");
-    this.load.image("karakter2", "/assets/karakter/karakter2.png");
-    this.load.image("karakter3", "/assets/karakter/karakter3.png");
-    this.load.image("karakter4", "/assets/karakter/karakter4.png");
-    this.load.image("karakter5", "/assets/karakter/karakter5.png");
-    this.load.image("karakter6", "/assets/karakter/karakter6.png");
+    this.load.image('ikankuahkuning_food', '/assets/makanan/ikankuahkuning.webp');
+    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.webp");
+    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.webp");
+    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.webp");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.webp");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.webp");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.webp");
+    this.load.image("karakter1", "/assets/karakter/karakter1.webp");
+    this.load.image("karakter2", "/assets/karakter/karakter2.webp");
+    this.load.image("karakter3", "/assets/karakter/karakter3.webp");
+    this.load.image("karakter4", "/assets/karakter/karakter4.webp");
+    this.load.image("karakter5", "/assets/karakter/karakter5.webp");
+    this.load.image("karakter6", "/assets/karakter/karakter6.webp");
   }
 
   create() {
@@ -2089,7 +2089,7 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
         );
       
       case 'wajan_placed':
-        // BumbuHalus HANYA bisa di-drop ke Wajan.png, tidak ke zone lain
+        // BumbuHalus HANYA bisa di-drop ke Wajan.webp, tidak ke zone lain
         return itemName === 'BumbuHalus' && dropZone === this.wajan;
 
       case 'bumbu_halus_wajan_need_minyak':
@@ -2635,6 +2635,12 @@ export default class IkanKuahKuningScene extends Phaser.Scene {
 
           // Sync initial step
           this.syncDialogWithGameStep();
+
+          // Send info content to React UI
+          if (this.dialogBridge.setInfoContent) {
+            this.dialogBridge.setInfoContent(this.infoContent);
+          }
+
         } catch (error) {
           console.error('❌ IkanKuahKuning: Bridge test failed:', error);
         }

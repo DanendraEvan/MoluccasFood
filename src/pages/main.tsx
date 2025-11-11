@@ -74,9 +74,9 @@ const MainPage = () => {
 
         {/* Start Button */}
         <GameButton
-          normal="/assets/ui/buttons/start/start_normal.png"
-          hover="/assets/ui/buttons/start/start_hover.png"
-          active="/assets/ui/buttons/start/start_active.png"
+            normal="/assets/ui/buttons/start/start_normal.webp"                                                                  
+            hover="/assets/ui/buttons/start/start_hover.webp"                                                                    
+            active="/assets/ui/buttons/start/start_active.webp"  
           alt="Start Button"
           onClick={() => router.push("/menu")}
           width={buttonSize.width}

@@ -38,9 +38,9 @@ export class Preloader extends Scene {
     this.load.image("logo", "logo.png");
 
     // Cooking assets - memperbaiki path yang salah
-    this.load.image("Tepung", "foods/flour.png");
-    this.load.image("Mangkuk", "foods/bowl.png");
-    this.load.image("Mangkuk_isi", "foods/DenganTepung.png");
+    this.load.image("Tepung", "foods/flour.webp");
+    this.load.image("Mangkuk", "foods/bowl.webp");
+    this.load.image("Mangkuk_isi", "foods/DenganTepung.webp");
     this.load.image("dropZone", "foods/DropZOne.png");
 
     // Background dapur
@@ -50,16 +50,16 @@ export class Preloader extends Scene {
     this.load.image("star", "foods/star.png");
     
     // Character assets untuk dialog
-    this.load.image("karakter1", "characters/karakter1.png");
-    this.load.image("karakter2", "characters/karakter2.png");
-    this.load.image("karakter3", "characters/karakter3.png");
-    this.load.image("karakter4", "characters/karakter4.png");
-    this.load.image("karakter5", "characters/karakter5.png");
+    this.load.image("karakter1", "characters/karakter1.webp");
+    this.load.image("karakter2", "characters/karakter2.webp");
+    this.load.image("karakter3", "characters/karakter3.webp");
+    this.load.image("karakter4", "characters/karakter4.webp");
+    this.load.image("karakter5", "characters/karakter5.webp");
     
     // UI buttons
-    this.load.image("menu_button", "ui/buttons/menu/menu_normal.png");
-    this.load.image("menu_button_hover", "ui/buttons/menu/menu_hover.png");
-    this.load.image("menu_button_active", "ui/buttons/menu/menu_active.png");
+    this.load.image("menu_button", "ui/buttons/menu/menu_normal.webp");
+    this.load.image("menu_button_hover", "ui/buttons/menu/menu_hover.webp");
+    this.load.image("menu_button_active", "ui/buttons/menu/menu_active.webp");
   }
 
   create() {

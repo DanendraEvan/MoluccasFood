@@ -96,7 +96,7 @@ export default class NasiLapolaScene extends Phaser.Scene {
   private swipeStartY: number = 0;
   private swipeStartScrollY: number = 0;
   // NOTE: Hint system removed - now handled by React components in KitchenBackgroundWrapper
-  private infoContent: string = `Nasi Lapola adalah hidangan nasi khas Maluku yang memiliki keunikan tersendiri dalam penyajian dan rasanya. Lapola sendiri berasal dari bahasa lokal yang berarti "dicampur" atau "diaduk". Nasi lapola dibuat dari beras yang dimasak dengan santan kelapa dan rempah-rempah seperti pala, cengkeh, dan daun pandan yang memberikan aroma harum dan rasa yang khas. Yang membuat nasi lapola istimewa adalah cara penyajiannya yang dicampur dengan berbagai lauk pauk seperti ayam suwir, ikan asin, sayuran, dan kerupuk, sehingga menjadi satu hidangan yang lengkap dan mengenyangkan. Biasanya nasi ini disajikan dalam porsi besar dan dimakan bersama-sama sebagai simbol kebersamaan dalam masyarakat Maluku. Cita rasanya yang gurih dari santan dan harum dari rempah-rempah membuat nasi lapola menjadi makanan yang sangat digemari, terutama saat acara-acara adat atau perayaan keluarga.`;
+  private infoContent: string = `Nasi Lapola adalah hidangan nasi khas Maluku yang memiliki keunikan tersendiri dalam penyajian dan rasanya. Lapola sendiri berasal dari bahasa lokal yang berarti "dicampur" atau "diaduk". Nasi lapola dibuat dari beras yang dimasak dengan santan kelapa serta rempah-rempah seperti pala, cengkeh, dan daun pandan yang memberikan aroma harum dan cita rasa khas. Keistimewaan nasi lapola terletak pada penyajiannya yang dicampur dengan berbagai lauk pauk seperti ayam suwir, ikan asin, sayuran, dan kerupuk, menjadikannya hidangan lengkap dan mengenyangkan. Selain lezat, nasi lapola juga bernilai gizi tinggi karena mengandung karbohidrat dari beras, protein dari kacang tolo, lemak dari santan kelapa, serta vitamin dan mineral dalam jumlah sedang. Biasanya nasi ini disajikan dalam porsi besar dan disantap bersama-sama sebagai simbol kebersamaan masyarakat Maluku, dengan cita rasa gurih dari santan dan aroma rempah yang menggugah selera.`;
 
   // Stove and timing state
   private isStoveOn: boolean = false;
@@ -183,49 +183,49 @@ export default class NasiLapolaScene extends Phaser.Scene {
     {
      id:1,
       text: "Selamat Datang di Game Traditional of Moluccas Food, sudah siap untuk Memasak Nasi Lapola hari ini!?! Oke Step 1 ambil Panci di Menu dan taruh di atas kompor. Sudah? Ambil air dan masukkan kedalam Panci. Setelah air masukkan kacang ke dalamnya.",
-      character: "karakter1.png",
+      character: "karakter1.webp",
       isCompleted: false
     },
     {
       id: 2,
       text: "Step ke 2 ayo kita nyalakan Kompornya dengan Klik tuasnya. Tunggu beberapa saat sampai matang. Kacang yang sudah matang dan tempatkan ke Tempat Tiris.",
-      character: "karakter2.png",
+      character: "karakter2.webp",
       isCompleted: false
     },
     {
       id: 3,
       text: "Lanjut, kita parut kelapa terlebih dahulu. Ambil Baskom dan taruh di sebelah kompor. Ambil Parutan Kelapa dan Kelapa diatas baskom. Sudah? Mari kita parut kelapa dengan menggerakkan kelapa ke atas dan bawah",
-      character: "karakter3.png",
+      character: "karakter3.webp",
       isCompleted: false
     },
     {
       id: 4,
       text: "Step ke 4 Ambil Panci Kosong dari Menu dan taruh ke atas Kompor. Kemudian ambil Parutan Kelapa tadi dan masukkan ke dalam Panci Kosong. Sekarang kita peras santan dengan tap/klik 4 kali pada setiap tahap sampai menjadi PanciSantan. Nyalakan Kompor dan tunggu 30 detik sampai matang, lalu tempatkan ke Tempat Tiris.",
-      character: "karakter4.png",
+      character: "karakter4.webp",
       isCompleted: false
     },
     {
       id: 5,
       text: "Baik setelah Merebus kacang dan Memasak santan, mari kita masak berasnya. Ambil Panci Air di menu dan Taruh ke Kompor. Ambil Beras dari menu dan masukkan ke dalam Panci air diatas Kompor. Lanjut!! Kita aduk terus beras sampai masak setengah matang.",
-      character: "karakter5.png",
+      character: "karakter5.webp",
       isCompleted: false
     },
     {
       id: 6,
       text: "Beras yang setengah matang mari kita tambahkan dengan bahan lainnya. Ambil Garam terlebih dahulu di Menu dan PanciSantan yang ada di Tempat Tiris. Sudah? Mari kita tambahkan Rebusan Kacang di Tempat Tiris dan Masukkan ke dalam Masakan Beras tadi. Aduk hingga merata, kemudian tunggu beberapa saat sampai matang.",
-      character: "karakter6.png",
+      character: "karakter6.webp",
       isCompleted: false
     },
     {
       id: 7,
       text: "Oke lanjut ya? Kita sisihkan Masakan nasi yang kita masak ke Tempat Tiris di Kiri. Lanjut kita ambil Panci Kukus di Menu dan taruh keatas kompor. Kita ambil lagi Masakan Nasi yang kita sisihkan di Area Tiris dan masukkan ke dalam Panci Kukus. Kita tunggu beberapa saat sampai Nasi matang",
-      character: "karakter1.png",
+      character: "karakter1.webp",
       isCompleted: false
     },
     {
       id: 8,
       text: "Yeayy!!! Kita telah menyelesaikan Masakan Nasi Lapola. Ambil Piring di Menu dan taruh ke Tempat Tiris. Ambil Kukusan Nasi Lapola yang sudah matang dan sajikan ke Piring di Tempat Tiris.",
-      character: "karakter2.png",
+      character: "karakter2.webp",
       isCompleted: false
     }
   ];
@@ -237,114 +237,114 @@ export default class NasiLapolaScene extends Phaser.Scene {
   preload() {
     this.load.image("background", "/assets/backgrounds/kitchen.png");
     // Ensure stove for this scene uses nasi_lapola asset set
-    this.load.image("Kompor", "/assets/foods/nasi_lapola/Kompor.png");
+    this.load.image("Kompor", "/assets/foods/nasi_lapola/Kompor.webp");
     
     // Load food image for hint popup
-    this.load.image('nasilapola_food', '/assets/makanan/nasilapola.png');
+    this.load.image('nasilapola_food', '/assets/makanan/nasilapola.webp');
 
     // Alat & Bahan - preload all assets found under /assets/foods/nasi_lapola
-    this.load.image("PanciAir", "/assets/foods/nasi_lapola/PanciAir.png");
-    this.load.image("PanciAir2", "/assets/foods/nasi_lapola/PanciAir2.png");
-    this.load.image("Kacang", "/assets/foods/nasi_lapola/Kacang.png");
-    this.load.image("Kelapa", "/assets/foods/nasi_lapola/Kelapa.png");
-    this.load.image("Beras", "/assets/foods/nasi_lapola/Beras.png");
-    this.load.image("Garam", "/assets/foods/nasi_lapola/Garam.png");
-    this.load.image("Sepatula", "/assets/foods/nasi_lapola/sepatula.png");
-    this.load.image("Panci", "/assets/foods/nasi_lapola/Panci.png");
-    this.load.image("Baskom", "/assets/foods/nasi_lapola/Baskom.png");
-    this.load.image("Parut", "/assets/foods/nasi_lapola/Parut.png");
+    this.load.image("PanciAir", "/assets/foods/nasi_lapola/PanciAir.webp");
+    this.load.image("PanciAir2", "/assets/foods/nasi_lapola/PanciAir2.webp");
+    this.load.image("Kacang", "/assets/foods/nasi_lapola/Kacang.webp");
+    this.load.image("Kelapa", "/assets/foods/nasi_lapola/Kelapa.webp");
+    this.load.image("Beras", "/assets/foods/nasi_lapola/Beras.webp");
+    this.load.image("Garam", "/assets/foods/nasi_lapola/Garam.webp");
+    this.load.image("Sepatula", "/assets/foods/nasi_lapola/sepatula.webp");
+    this.load.image("Panci", "/assets/foods/nasi_lapola/Panci.webp");
+    this.load.image("Baskom", "/assets/foods/nasi_lapola/Baskom.webp");
+    this.load.image("Parut", "/assets/foods/nasi_lapola/Parut.webp");
 
     // Variasi & hasil proses
-    this.load.image("PanciKacang", "/assets/foods/nasi_lapola/PanciKacang.png");
-    this.load.image("PanciSaring", "/assets/foods/nasi_lapola/PanciSaring.png");
-    this.load.image("PanciKosong", "/assets/foods/nasi_lapola/PanciKosong.png");
-    this.load.image("PanciKosong2", "/assets/foods/nasi_lapola/PanciKosong2.png");
-    this.load.image("AirkeKelapa1", "/assets/foods/nasi_lapola/AirkeKelapa1.png");
-    this.load.image("AirkeKelapa2", "/assets/foods/nasi_lapola/AirkeKelapa2.png");
-    this.load.image("PerasSantan1", "/assets/foods/nasi_lapola/PerasSantan1.png");
-    this.load.image("PerasSantan2", "/assets/foods/nasi_lapola/PerasSantan2.png");
-    this.load.image("PerasSantan3", "/assets/foods/nasi_lapola/PerasSantan3.png");
-    this.load.image("PanciSantan", "/assets/foods/nasi_lapola/PanciSantan.png");
-    this.load.image("PanciSantan2", "/assets/foods/nasi_lapola/PanciSantan2.png");
-    this.load.image("PanciKelapa", "/assets/foods/nasi_lapola/PanciKelapa.png");
-    this.load.image("PanciBeras", "/assets/foods/nasi_lapola/PanciBeras.png");
-    this.load.image("PanciBerasKelapa", "/assets/foods/nasi_lapola/PanciBerasKelapa.png");
-    this.load.image("PanciNasiLapola", "/assets/foods/nasi_lapola/PanciNasiLapola.png");
-    this.load.image("NasiAduk", "/assets/foods/nasi_lapola/NasiAduk.png");
-    this.load.image("NasiGaram", "/assets/foods/nasi_lapola/NasiGaram.png");
-    this.load.image("NasiKelapa", "/assets/foods/nasi_lapola/NasiKelapa.png");
-    this.load.image("KukusNasiLapola", "/assets/foods/nasi_lapola/KukusNasiLapola.png");
-    this.load.image("WajanNasiLapola", "/assets/foods/nasi_lapola/WajanNasiLapola.png");
-    this.load.image("KukusNasi", "/assets/foods/nasi_lapola/KukusNasi.png");
-    this.load.image("KukusKelapa", "/assets/foods/nasi_lapola/KukusKelapa.png");
-    this.load.image("BaskomKelapa", "/assets/foods/nasi_lapola/BaskomKelapa.png");
-    this.load.image("Piring", "/assets/foods/nasi_lapola/Piring.png");
-    this.load.image("NasiLapola", "/assets/foods/nasi_lapola/NasiLapola.png");
+    this.load.image("PanciKacang", "/assets/foods/nasi_lapola/PanciKacang.webp");
+    this.load.image("PanciSaring", "/assets/foods/nasi_lapola/PanciSaring.webp");
+    this.load.image("PanciKosong", "/assets/foods/nasi_lapola/PanciKosong.webp");
+    this.load.image("PanciKosong2", "/assets/foods/nasi_lapola/PanciKosong2.webp");
+    this.load.image("AirkeKelapa1", "/assets/foods/nasi_lapola/AirkeKelapa1.webp");
+    this.load.image("AirkeKelapa2", "/assets/foods/nasi_lapola/AirkeKelapa2.webp");
+    this.load.image("PerasSantan1", "/assets/foods/nasi_lapola/PerasSantan1.webp");
+    this.load.image("PerasSantan2", "/assets/foods/nasi_lapola/PerasSantan2.webp");
+    this.load.image("PerasSantan3", "/assets/foods/nasi_lapola/PerasSantan3.webp");
+    this.load.image("PanciSantan", "/assets/foods/nasi_lapola/PanciSantan.webp");
+    this.load.image("PanciSantan2", "/assets/foods/nasi_lapola/PanciSantan2.webp");
+    this.load.image("PanciKelapa", "/assets/foods/nasi_lapola/PanciKelapa.webp");
+    this.load.image("PanciBeras", "/assets/foods/nasi_lapola/PanciBeras.webp");
+    this.load.image("PanciBerasKelapa", "/assets/foods/nasi_lapola/PanciBerasKelapa.webp");
+    this.load.image("PanciNasiLapola", "/assets/foods/nasi_lapola/PanciNasiLapola.webp");
+    this.load.image("NasiAduk", "/assets/foods/nasi_lapola/NasiAduk.webp");
+    this.load.image("NasiGaram", "/assets/foods/nasi_lapola/NasiGaram.webp");
+    this.load.image("NasiKelapa", "/assets/foods/nasi_lapola/NasiKelapa.webp");
+    this.load.image("KukusNasiLapola", "/assets/foods/nasi_lapola/KukusNasiLapola.webp");
+    this.load.image("WajanNasiLapola", "/assets/foods/nasi_lapola/WajanNasiLapola.webp");
+    this.load.image("KukusNasi", "/assets/foods/nasi_lapola/KukusNasi.webp");
+    this.load.image("KukusKelapa", "/assets/foods/nasi_lapola/KukusKelapa.webp");
+    this.load.image("BaskomKelapa", "/assets/foods/nasi_lapola/BaskomKelapa.webp");
+    this.load.image("Piring", "/assets/foods/nasi_lapola/Piring.webp");
+    this.load.image("NasiLapola", "/assets/foods/nasi_lapola/NasiLapola.webp");
 
     // Kompor nyala frames
-    this.load.image("KomporNyala1", "/assets/foods/nasi_lapola/KomporNyala1.png");
-    this.load.image("KomporNyala2", "/assets/foods/nasi_lapola/KomporNyala2.png");
-    this.load.image("KomporNyala3", "/assets/foods/nasi_lapola/KomporNyala3.png");
-    this.load.image("KomporNyala4", "/assets/foods/nasi_lapola/KomporNyala4.png");
-    this.load.image("KomporNyala5", "/assets/foods/nasi_lapola/KomporNyala5.png");
-    this.load.image("KomporNyala6", "/assets/foods/nasi_lapola/KomporNyala6.png");
+    this.load.image("KomporNyala1", "/assets/foods/nasi_lapola/KomporNyala1.webp");
+    this.load.image("KomporNyala2", "/assets/foods/nasi_lapola/KomporNyala2.webp");
+    this.load.image("KomporNyala3", "/assets/foods/nasi_lapola/KomporNyala3.webp");
+    this.load.image("KomporNyala4", "/assets/foods/nasi_lapola/KomporNyala4.webp");
+    this.load.image("KomporNyala5", "/assets/foods/nasi_lapola/KomporNyala5.webp");
+    this.load.image("KomporNyala6", "/assets/foods/nasi_lapola/KomporNyala6.webp");
 
     // Tuang/memasukkan animasi frames
-    this.load.image("TuangAir1", "/assets/foods/nasi_lapola/TuangAir1.png");
-    this.load.image("TuangAir2", "/assets/foods/nasi_lapola/TuangAir2.png");
-    this.load.image("TuangAir3", "/assets/foods/nasi_lapola/TuangAir3.png");
-    this.load.image("TuangAir4", "/assets/foods/nasi_lapola/TuangAir4.png");
-    this.load.image("MasukkanKacang1", "/assets/foods/nasi_lapola/MasukkanKacang1.png");
-    this.load.image("MasukkanKacang2", "/assets/foods/nasi_lapola/MasukkanKacang2.png");
-    this.load.image("MasukkanKacang3", "/assets/foods/nasi_lapola/MasukkanKacang3.png");
-    this.load.image("MasukkanKacang4", "/assets/foods/nasi_lapola/MasukkanKacang4.png");
-    this.load.image("MasukkanBeras1", "/assets/foods/nasi_lapola/MasukkanBeras1.png");
-    this.load.image("MasukkanBeras2", "/assets/foods/nasi_lapola/MasukkanBeras2.png");
-    this.load.image("MasukkanBeras3", "/assets/foods/nasi_lapola/MasukkanBeras3.png");
-    this.load.image("KelapaMasuk1", "/assets/foods/nasi_lapola/KelapaMasuk1.png");
-    this.load.image("KelapaMasuk2", "/assets/foods/nasi_lapola/KelapaMasuk2.png");
-    this.load.image("KelapaMasuk3", "/assets/foods/nasi_lapola/KelapaMasuk3.png");
-    this.load.image("TuangGaram1", "/assets/foods/nasi_lapola/TuangGaram1.png");
-    this.load.image("TuangGaram2", "/assets/foods/nasi_lapola/TuangGaram2.png");
-    this.load.image("TuangGaram3", "/assets/foods/nasi_lapola/TuangGaram3.png");
-    this.load.image("TuangKelapa1", "/assets/foods/nasi_lapola/TuangKelapa1.png");
-    this.load.image("TuangKelapa2", "/assets/foods/nasi_lapola/TuangKelapa2.png");
-    this.load.image("TuangKelapa3", "/assets/foods/nasi_lapola/TuangKelapa3.png");
-    this.load.image("TuangKacang1", "/assets/foods/nasi_lapola/TuangKacang1.png");
-    this.load.image("TuangKacang2", "/assets/foods/nasi_lapola/TuangKacang2.png");
-    this.load.image("TuangKacang3", "/assets/foods/nasi_lapola/TuangKacang3.png");
+    this.load.image("TuangAir1", "/assets/foods/nasi_lapola/TuangAir1.webp");
+    this.load.image("TuangAir2", "/assets/foods/nasi_lapola/TuangAir2.webp");
+    this.load.image("TuangAir3", "/assets/foods/nasi_lapola/TuangAir3.webp");
+    this.load.image("TuangAir4", "/assets/foods/nasi_lapola/TuangAir4.webp");
+    this.load.image("MasukkanKacang1", "/assets/foods/nasi_lapola/MasukkanKacang1.webp");
+    this.load.image("MasukkanKacang2", "/assets/foods/nasi_lapola/MasukkanKacang2.webp");
+    this.load.image("MasukkanKacang3", "/assets/foods/nasi_lapola/MasukkanKacang3.webp");
+    this.load.image("MasukkanKacang4", "/assets/foods/nasi_lapola/MasukkanKacang4.webp");
+    this.load.image("MasukkanBeras1", "/assets/foods/nasi_lapola/MasukkanBeras1.webp");
+    this.load.image("MasukkanBeras2", "/assets/foods/nasi_lapola/MasukkanBeras2.webp");
+    this.load.image("MasukkanBeras3", "/assets/foods/nasi_lapola/MasukkanBeras3.webp");
+    this.load.image("KelapaMasuk1", "/assets/foods/nasi_lapola/KelapaMasuk1.webp");
+    this.load.image("KelapaMasuk2", "/assets/foods/nasi_lapola/KelapaMasuk2.webp");
+    this.load.image("KelapaMasuk3", "/assets/foods/nasi_lapola/KelapaMasuk3.webp");
+    this.load.image("TuangGaram1", "/assets/foods/nasi_lapola/TuangGaram1.webp");
+    this.load.image("TuangGaram2", "/assets/foods/nasi_lapola/TuangGaram2.webp");
+    this.load.image("TuangGaram3", "/assets/foods/nasi_lapola/TuangGaram3.webp");
+    this.load.image("TuangKelapa1", "/assets/foods/nasi_lapola/TuangKelapa1.webp");
+    this.load.image("TuangKelapa2", "/assets/foods/nasi_lapola/TuangKelapa2.webp");
+    this.load.image("TuangKelapa3", "/assets/foods/nasi_lapola/TuangKelapa3.webp");
+    this.load.image("TuangKacang1", "/assets/foods/nasi_lapola/TuangKacang1.webp");
+    this.load.image("TuangKacang2", "/assets/foods/nasi_lapola/TuangKacang2.webp");
+    this.load.image("TuangKacang3", "/assets/foods/nasi_lapola/TuangKacang3.webp");
 
     // Aduk frames
-    this.load.image("PanciAirSepatula", "/assets/foods/nasi_lapola/PanciAirSepatula.png");
-    this.load.image("PanciAirSepatula2", "/assets/foods/nasi_lapola/PanciAirSepatula2.png");
-    this.load.image("PanciAirSepatula3", "/assets/foods/nasi_lapola/PanciAirSepatula3.png");
-    this.load.image("AdukKacang", "/assets/foods/nasi_lapola/AdukKacang.png");
-    this.load.image("AdukKacang2", "/assets/foods/nasi_lapola/AdukKacang2.png");
+    this.load.image("PanciAirSepatula", "/assets/foods/nasi_lapola/PanciAirSepatula.webp");
+    this.load.image("PanciAirSepatula2", "/assets/foods/nasi_lapola/PanciAirSepatula2.webp");
+    this.load.image("PanciAirSepatula3", "/assets/foods/nasi_lapola/PanciAirSepatula3.webp");
+    this.load.image("AdukKacang", "/assets/foods/nasi_lapola/AdukKacang.webp");
+    this.load.image("AdukKacang2", "/assets/foods/nasi_lapola/AdukKacang2.webp");
 
     // Saring/parut kelapa sequence
-    this.load.image("SaringKelapa", "/assets/foods/nasi_lapola/SaringKelapa.png");
-    this.load.image("SaringKelapa1", "/assets/foods/nasi_lapola/SaringKelapa1.png");
-    this.load.image("SaringKelapa2", "/assets/foods/nasi_lapola/SaringKelapa2.png");
-    this.load.image("SaringKelapa3", "/assets/foods/nasi_lapola/SaringKelapa3.png");
+    this.load.image("SaringKelapa", "/assets/foods/nasi_lapola/SaringKelapa.webp");
+    this.load.image("SaringKelapa1", "/assets/foods/nasi_lapola/SaringKelapa1.webp");
+    this.load.image("SaringKelapa2", "/assets/foods/nasi_lapola/SaringKelapa2.webp");
+    this.load.image("SaringKelapa3", "/assets/foods/nasi_lapola/SaringKelapa3.webp");
 
     // Others
-    this.load.image("water", "/assets/foods/nasi_lapola/water.png");
+    this.load.image("water", "/assets/foods/nasi_lapola/water.webp");
 
     // UI Elements
-    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
-    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
-    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
-    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
-    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
-    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
+    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.webp");
+    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.webp");
+    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.webp");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.webp");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.webp");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.webp");
 
     // Characters
-    this.load.image("karakter1", "/assets/karakter/karakter1.png");
-    this.load.image("karakter2", "/assets/karakter/karakter2.png");
-    this.load.image("karakter3", "/assets/karakter/karakter3.png");
-    this.load.image("karakter4", "/assets/karakter/karakter4.png");
-    this.load.image("karakter5", "/assets/karakter/karakter5.png");
-    this.load.image("karakter6", "/assets/karakter/karakter6.png");
+    this.load.image("karakter1", "/assets/karakter/karakter1.webp");
+    this.load.image("karakter2", "/assets/karakter/karakter2.webp");
+    this.load.image("karakter3", "/assets/karakter/karakter3.webp");
+    this.load.image("karakter4", "/assets/karakter/karakter4.webp");
+    this.load.image("karakter5", "/assets/karakter/karakter5.webp");
+    this.load.image("karakter6", "/assets/karakter/karakter6.webp");
   }
 
   create() {
@@ -394,6 +394,12 @@ export default class NasiLapolaScene extends Phaser.Scene {
 
           // Sync initial step
           this.syncDialogWithGameStep();
+
+          // Send info content to React UI
+          if (this.dialogBridge.setInfoContent) {
+            this.dialogBridge.setInfoContent(this.infoContent);
+          }
+          
         } catch (error) {
           console.error('❌ NasiLapola: Bridge test failed:', error);
         }

@@ -46,6 +46,15 @@ const gameScenes: Record<string, GameScene> = {
   }
 };
 
+// Centralized food info content
+const foodInfo: Record<string, string> = {
+  kohukohu: `Kohu-kohu adalah salad segar khas Maluku yang dibuat dari sayuran mentah seperti kacang panjang, tauge, dan kemangi. Bumbunya menggunakan kelapa parut yang disangrai dan dicampur dengan cabai serta bawang, menghasilkan rasa yang segar, gurih, dan sedikit pedas. Selain lezat, kohu-kohu juga bergizi tinggi karena mengandung protein dari ikan tongkol dan sayuran, lemak sehat termasuk omega-3, karbohidrat dari sayuran dan bumbu, serta berbagai vitamin seperti B1, B2, C, dan A, juga mineral penting seperti fosfor dan kalsium.`,
+  nasilapola: `Nasi Lapola adalah hidangan nasi khas Maluku yang dimasak dengan kacang tolo dan kelapa parut. Proses memasaknya membuat nasi menjadi gurih dan sedikit manis, dengan tekstur yang pulen dan aroma yang khas. Makanan ini sering disajikan sebagai pengganti nasi putih biasa dan cocok disantap dengan berbagai lauk pauk khas Maluku.`,
+  colocolo: `Colo-colo adalah sambal khas Maluku yang terkenal dengan rasa segar, pedas, dan asam. Sambal ini dibuat dari bahan-bahan mentah seperti cabai, bawang merah, tomat, dan daun kemangi yang diiris tipis, lalu disiram dengan perasan jeruk nipis dan sedikit kecap manis. Colo-colo sangat cocok disajikan sebagai pendamping ikan bakar atau hidangan laut lainnya.`,
+  ikankuahkuning: `Ikan Kuah Kuning adalah salah satu masakan paling ikonik dari Maluku. Hidangan ini menggunakan ikan segar, biasanya ikan tongkol atau baronang, yang dimasak dalam kuah kaya rempah berwarna kuning dari kunyit. Rasa asam segar dari belimbing wuluh atau jeruk nipis, serta aroma harum dari serai dan daun kemangi, membuat hidangan ini sangat menggugah selera.`,
+  papeda: `Papeda adalah salah satu olahan sagu yang paling sering ditemukan di meja makan masyarakat Maluku. Makanan yang sering disebut mirip lem ini sebenarnya terbuat dari pati sagu yang dikeringkan, atau yang dikenal sebagai *Sagu Manta* oleh orang Maluku. Papeda dibuat dengan cara mengaduk sagu manta yang sudah dibersihkan menggunakan air dengan air mendidih hingga mengental dan menjadi bening. Warna papeda dapat bervariasi dari kecoklatan hingga putih bening, tergantung pada jenis sagu manta yang digunakan. Papeda yang sudah matang memiliki tekstur lengket menyerupai lem dan rasa yang hambar, sehingga hampir selalu disajikan bersama makanan berkuah seperti **Ikan Kuah Kuning** untuk menambah cita rasa. Secara gizi, papeda mengandung karbohidrat dari sagu, serat pangan, serta mineral seperti tembaga, vitamin B1, kalsium, dan fosfor, namun sangat rendah protein dan lemak.`
+};
+
 const GamePage: React.FC = () => {
   const router = useRouter();
   const { scene } = router.query;
@@ -58,6 +67,7 @@ const GamePage: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [sceneInfoContent, setSceneInfoContent] = useState<string>(''); // New state for info content
 
   // Import dialog steps
   const { getDialogStepsForScene } = require('@/components/DialogSteps');
@@ -109,6 +119,13 @@ const GamePage: React.FC = () => {
         const current = dialogSystem.currentStep;
         console.log(`📍 Dialog bridge: getCurrentStep called - returning ${current}`);
         return current;
+      },
+      setInfoContent: (content: string) => {
+        // This function is now kept for compatibility but the primary source is the centralized foodInfo object.
+        console.log(`🔄 Dialog bridge: setInfoContent called (legacy)`);
+        if (!sceneInfoContent) { // Only set if not already set from centralized source
+          setSceneInfoContent(content);
+        }
       }
     };
 
@@ -125,7 +142,7 @@ const GamePage: React.FC = () => {
 
     console.log('=== BRIDGE SETUP COMPLETE ===');
     return bridge;
-  }, [dialogSystem]);
+  }, [dialogSystem, sceneInfoContent]); // Dependency updated
 
   // Initialize scene configuration
   useEffect(() => {
@@ -144,6 +161,14 @@ const GamePage: React.FC = () => {
 
     setCurrentScene(sceneConfig);
     setLoadingProgress(20);
+
+    // Set info content from the centralized object
+    const info = foodInfo[scene];
+    if (info) {
+      setSceneInfoContent(info);
+    } else {
+      setSceneInfoContent('Informasi untuk makanan ini tidak tersedia.');
+    }
   }, [scene, router]);
 
   // Load Phaser and Scene

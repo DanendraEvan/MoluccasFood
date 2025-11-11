@@ -25,7 +25,7 @@ const MusicButton: React.FC<MusicButtonProps> = ({
 
   const getButtonImage = (): string => {
     const prefix = isPlaying ? 'music' : 'nomusic';
-    return `/assets/ui/buttons/music/${prefix}_${buttonState}.png`;
+    return `/assets/ui/buttons/music/${prefix}_${buttonState}.webp`;
   };
 
   const buttonStyle: React.CSSProperties = {

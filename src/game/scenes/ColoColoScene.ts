@@ -11,6 +11,7 @@ interface GameStep {
 
 export default class ColoColoScene extends Phaser.Scene {
   public dialogBridge: any = null;
+  public infoContent = `Colo-colo adalah sambal khas Maluku yang memiliki cita rasa pedas dan segar. Sambal ini dibuat dari campuran cabai rawit merah, bawang merah, tomat, dan garam yang diulek kasar hingga tercampur rata. Keunikan colo-colo terletak pada teksturnya yang tidak terlalu halus, sehingga potongan kecil bahan-bahannya masih terasa. Kadang-kadang ditambahkan perasan lemon cina atau jeruk nipis untuk memberikan rasa asam segar yang menyeimbangkan pedasnya. Selain menambah cita rasa pada hidangan seperti ikan bakar, papeda, atau nasi putih, colo-colo juga mengandung nilai gizi seperti protein dari ikan segar, vitamin C dari jeruk nipis dan cabai, serta mineral dari bumbu dan ikan.`;
   private currentStep = 0;
   private subStepCounter = 0;
   private gameState: { telenanState: string; mangkukState: string; };
@@ -53,21 +54,21 @@ export default class ColoColoScene extends Phaser.Scene {
   };
 
   private readonly gameSteps: GameStep[] = [
-    { id: 0, text: "Mari kita mulai! Pertama, letakkan cili di atas talenan.", character: "karakter1.png", isCompleted: false },
-    { id: 1, text: "Ambil piso lalu gesekkan pada cili untuk memotongnya.", character: "karakter1.png", isCompleted: false },
-    { id: 2, text: "Bagus! Seret talenan berisi cili ke area mangkok untuk memindahkannya.", character: "karakter2.png", isCompleted: false },
-    { id: 3, text: "Saatnya menambahkan kecap. Seret dan letakkan kecap ke dalam mangkok.", character: "karakter3.png", isCompleted: false },
-    { id: 4, text: "Sekarang, letakkan bawang putih di talenan yang kosong.", character: "karakter2.png", isCompleted: false },
-    { id: 5, text: "Sama seperti cili, potong bawang putih hingga halus.", character: "karakter2.png", isCompleted: false },
-    { id: 6, text: "Kerja bagus! Seret talenan berisi bawang ke area mangkok.", character: "karakter3.png", isCompleted: false },
-    { id: 7, text: "Sekarang, tambahkan daong lemon untuk memberi aroma segar.", character: "karakter4.png", isCompleted: false },
-    { id: 8, text: "Sekarang, tambahkan daong lemon untuk memberi aroma segar.", character: "karakter4.png", isCompleted: false },
-    { id: 9, text: "Letakkan lemon cina di atas talenan yang bersih.", character: "karakter5.png", isCompleted: false },
-    { id: 10, text: "Potong lemon cina menjadi dua bagian dengan piso.", character: "karakter5.png", isCompleted: false },
-    { id: 11, text: "Pindahkan potongan lemon cina ke dalam mangkok.", character: "karakter5.png", isCompleted: false },
-    { id: 12, text: "Ambil sendok untuk mengaduk semua bahan di dalam mangkok.", character: "karakter1.png", isCompleted: false },
-    { id: 13, text: "Hampir selesai! Ambil mangko dan sajikan sambalmu.", character: "karakter2.png", isCompleted: false },
-    { id: 14, text: "Luar biasa! Sambal Colo-colo khas Maluku buatanmu sudah jadi!", character: "karakter2.png", isCompleted: false },
+    { id: 0, text: "Mari kita mulai! Pertama, letakkan cili di atas talenan.", character: "karakter1.webp", isCompleted: false },
+    { id: 1, text: "Ambil piso lalu gesekkan pada cili untuk memotongnya.", character: "karakter1.webp", isCompleted: false },
+    { id: 2, text: "Bagus! Seret talenan berisi cili ke area mangkok untuk memindahkannya.", character: "karakter2.webp", isCompleted: false },
+    { id: 3, text: "Saatnya menambahkan kecap. Seret dan letakkan kecap ke dalam mangkok.", character: "karakter3.webp", isCompleted: false },
+    { id: 4, text: "Sekarang, letakkan bawang putih di talenan yang kosong.", character: "karakter2.webp", isCompleted: false },
+    { id: 5, text: "Sama seperti cili, potong bawang putih hingga halus.", character: "karakter2.webp", isCompleted: false },
+    { id: 6, text: "Kerja bagus! Seret talenan berisi bawang ke area mangkok.", character: "karakter3.webp", isCompleted: false },
+    { id: 7, text: "Sekarang, tambahkan daong lemon untuk memberi aroma segar.", character: "karakter4.webp", isCompleted: false },
+    { id: 8, text: "Sekarang, tambahkan daong lemon untuk memberi aroma segar.", character: "karakter4.webp", isCompleted: false },
+    { id: 9, text: "Letakkan lemon cina di atas talenan yang bersih.", character: "karakter5.webp", isCompleted: false },
+    { id: 10, text: "Potong lemon cina menjadi dua bagian dengan piso.", character: "karakter5.webp", isCompleted: false },
+    { id: 11, text: "Pindahkan potongan lemon cina ke dalam mangkok.", character: "karakter5.webp", isCompleted: false },
+    { id: 12, text: "Ambil sendok untuk mengaduk semua bahan di dalam mangkok.", character: "karakter1.webp", isCompleted: false },
+    { id: 13, text: "Hampir selesai! Ambil mangko dan sajikan sambalmu.", character: "karakter2.webp", isCompleted: false },
+    { id: 14, text: "Luar biasa! Sambal Colo-colo khas Maluku buatanmu sudah jadi!", character: "karakter2.webp", isCompleted: false },
   ];
 
   constructor() {
@@ -79,45 +80,45 @@ export default class ColoColoScene extends Phaser.Scene {
     this.load.image('background', '/assets/backgrounds/kitchen.png');
     const basePath = '/assets/foods/colo_colo/';
     const assets = [
-      { file: 'Cabai.png', key: 'cabai' },
-      { file: 'BawangPutih2.png', key: 'bawangputih2' },
-      { file: 'DaunJeruk.png', key: 'daunjeruk' },
-      { file: 'JerukNipis.png', key: 'jeruknipis' },
-      { file: 'Kecap.png', key: 'kecap' },
-      { file: 'Sendok.png', key: 'sendok' },
-      { file: 'Pisau.png', key: 'pisau' },
-      { file: 'PiringColoColo.png', key: 'piringcolocolo' },
-      { file: 'telenan.png', key: 'telenan' },
-      { file: 'Mangkuk.png', key: 'mangkuk' },
-      { file: 'ColoColo.png', key: 'colocolo' }
+      { file: 'Cabai.webp', key: 'cabai' },
+      { file: 'BawangPutih2.webp', key: 'bawangputih2' },
+      { file: 'DaunJeruk.webp', key: 'daunjeruk' },
+      { file: 'JerukNipis.webp', key: 'jeruknipis' },
+      { file: 'Kecap.webp', key: 'kecap' },
+      { file: 'Sendok.webp', key: 'sendok' },
+      { file: 'Pisau.webp', key: 'pisau' },
+      { file: 'PiringColoColo.webp', key: 'piringcolocolo' },
+      { file: 'telenan.webp', key: 'telenan' },
+      { file: 'Mangkuk.webp', key: 'mangkuk' },
+      { file: 'ColoColo.webp', key: 'colocolo' }
     ];
     assets.forEach(asset => this.load.image(`colo_${asset.key}`, `${basePath}${asset.file}`));
     this.load.on('loaderror', (file: any) => console.warn(`Failed to load: ${file.src}`));
-    for (let i = 0; i <= 3; i++) this.load.image(`telenan_chili_${i}`, `${basePath}TelenanCabaiPotong${i === 0 ? '' : i}.png`);
-    this.load.image('telenan_garlic_0', `${basePath}TelenanBawangPutih.png`);
-    for (let i = 1; i <= 5; i++) this.load.image(`telenan_garlic_${i}`, `${basePath}TelenanBawangPutih${i}.png`);
-    this.load.image('kecap1', `${basePath}kecap1.png`);
-    this.load.image('kecap2', `${basePath}kecap2.png`);
-    this.load.image('Mangkukcabe', `${basePath}Mangkukcabe.png`);
-    this.load.image('tambahancabe', `${basePath}tambahancabe.png`);
-    this.load.image('tambahanbawang', `${basePath}tambahanbawang.png`);
-    this.load.image('jeruk1', `${basePath}jeruk1.png`);
-    this.load.image('jeruk2', `${basePath}jeruk2.png`);
-    this.load.image('tambahandaun', `${basePath}tambahandaun.png`);
-    this.load.image('daun1', `${basePath}daun1.png`);
-    this.load.image('daun2', `${basePath}daun2.png`);
-    this.load.image('daun3', `${basePath}daun3.png`);
-    this.load.image('daunmangkuk', `${basePath}daunmangkuk.png`);
-    this.load.image('sendok1', `${basePath}sendok1.png`);
-    this.load.image('sendok2', `${basePath}sendok2.png`);
-    this.load.image('jerukmangkuk', `${basePath}jerukmangkuk.png`);
-    this.load.image('telenan_lime_0', `${basePath}TelenanNipis.png`);
-    this.load.image('telenan_lime_1', `${basePath}TelenanNipis1.png`);
-    this.load.image('telenan_lime_2', `${basePath}TelenanNipis2.png`);
-    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
-    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
-    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
-    for (let i = 1; i <= 5; i++) this.load.image(`karakter${i}`, `/assets/karakter/karakter${i}.png`);
+    for (let i = 0; i <= 3; i++) this.load.image(`telenan_chili_${i}`, `${basePath}TelenanCabaiPotong${i === 0 ? '' : i}.webp`);
+    this.load.image('telenan_garlic_0', `${basePath}TelenanBawangPutih.webp`);
+    for (let i = 1; i <= 5; i++) this.load.image(`telenan_garlic_${i}`, `${basePath}TelenanBawangPutih${i}.webp`);
+    this.load.image('kecap1', `${basePath}kecap1.webp`);
+    this.load.image('kecap2', `${basePath}kecap2.webp`);
+    this.load.image('Mangkukcabe', `${basePath}Mangkukcabe.webp`);
+    this.load.image('tambahancabe', `${basePath}tambahancabe.webp`);
+    this.load.image('tambahanbawang', `${basePath}tambahanbawang.webp`);
+    this.load.image('jeruk1', `${basePath}jeruk1.webp`);
+    this.load.image('jeruk2', `${basePath}jeruk2.webp`);
+    this.load.image('tambahandaun', `${basePath}tambahandaun.webp`);
+    this.load.image('daun1', `${basePath}daun1.webp`);
+    this.load.image('daun2', `${basePath}daun2.webp`);
+    this.load.image('daun3', `${basePath}daun3.webp`);
+    this.load.image('daunmangkuk', `${basePath}daunmangkuk.webp`);
+    this.load.image('sendok1', `${basePath}sendok1.webp`);
+    this.load.image('sendok2', `${basePath}sendok2.webp`);
+    this.load.image('jerukmangkuk', `${basePath}jerukmangkuk.webp`);
+    this.load.image('telenan_lime_0', `${basePath}TelenanNipis.webp`);
+    this.load.image('telenan_lime_1', `${basePath}TelenanNipis1.webp`);
+    this.load.image('telenan_lime_2', `${basePath}TelenanNipis2.webp`);
+    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.webp");
+    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.webp");
+    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.webp");
+    for (let i = 1; i <= 5; i++) this.load.image(`karakter${i}`, `/assets/karakter/karakter${i}.webp`);
   }
 
   create() {
@@ -896,7 +897,12 @@ export default class ColoColoScene extends Phaser.Scene {
 
   private setupDialogBridge() {
     const checkForBridge = () => {
-      if (this.dialogBridge) this.syncDialogWithGameStep();
+      if (this.dialogBridge) {
+        this.syncDialogWithGameStep();
+        if (this.dialogBridge.setInfoContent) {
+          this.dialogBridge.setInfoContent(this.infoContent);
+        }
+      }
       else this.time.delayedCall(500, checkForBridge);
     };
     this.time.delayedCall(100, checkForBridge);

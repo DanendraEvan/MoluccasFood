@@ -93,9 +93,9 @@ const FoodButton: React.FC<FoodButtonProps> = ({ foodName, route, displayName })
   };
 
   const getImageSrc = () => {
-    if (isActive) return `/assets/ui/buttons/${foodName}/${foodName}_active.png`;
-    if (isHovered) return `/assets/ui/buttons/${foodName}/${foodName}_hover.png`;
-    return `/assets/ui/buttons/${foodName}/${foodName}_normal.png`;
+    if (isActive) return `/assets/ui/buttons/${foodName}/${foodName}_active.webp`;
+    if (isHovered) return `/assets/ui/buttons/${foodName}/${foodName}_hover.webp`;
+    return `/assets/ui/buttons/${foodName}/${foodName}_normal.webp`;
   };
 
   return (
@@ -150,9 +150,9 @@ const HomeButton: React.FC = () => {
   };
 
   const getImageSrc = () => {
-    if (isActive) return '/assets/ui/buttons/home/home_active.png';
-    if (isHovered) return '/assets/ui/buttons/home/home_hover.png';
-    return '/assets/ui/buttons/home/home_normal.png';
+    if (isActive) return '/assets/ui/buttons/home/home_active.webp';
+    if (isHovered) return '/assets/ui/buttons/home/home_hover.webp';
+    return '/assets/ui/buttons/home/home_normal.webp';
   };
 
   return (

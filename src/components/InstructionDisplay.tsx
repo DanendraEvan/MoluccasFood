@@ -49,7 +49,7 @@ const COOKING_INSTRUCTIONS: Record<string, string[]> = {
     "Kas pindah kalapa sangrai dari teflon, taro di atas piring.",
     "Amper jadi! Ambe sayor dari tacu pake bila-bila, taro di atas piring.",
     "Mantap e! Kohu-kohu su jadi, katong siap makan!",
-    "Selamat kohu kohu su jadi. Ose su kasi selesai samua langkah deng bae dan memberikan rasa segar yang menyegarkan dengan sensasi pedas dari cabai rawit."
+    "Selamat kohu kohu su jadi. ale su kasi selesai samua langkah deng bae dan memberikan rasa segar yang menyegarkan dengan sensasi pedas dari cabai rawit."
   ],
   colocolo: [
     "Ambil cili lalu taru di papang pengiris",

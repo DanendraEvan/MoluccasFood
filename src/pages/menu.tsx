@@ -124,27 +124,27 @@ const MenuPage: React.FC = () => {
           }}
         >
           <GameButton
-            normal="/assets/ui/buttons/credit/credit_normal.png"
-            hover="/assets/ui/buttons/credit/credit_hover.png"
-            active="/assets/ui/buttons/credit/credit_active.png"
+            normal="/assets/ui/buttons/credit/credit_normal.webp"
+            hover="/assets/ui/buttons/credit/credit_hover.webp"
+            active="/assets/ui/buttons/credit/credit_active.webp"
             onClick={() => router.push("/Credit")}
             alt="Credit Button"
             width={buttonSize}
             height={buttonSize}
           />
           <GameButton
-            normal="/assets/ui/buttons/play/play_normal.png"
-            hover="/assets/ui/buttons/play/play_hover.png"
-            active="/assets/ui/buttons/play/play_active.png"
+            normal="/assets/ui/buttons/play/play_normal.webp"
+            hover="/assets/ui/buttons/play/play_hover.webp"
+            active="/assets/ui/buttons/play/play_active.webp"
             onClick={() => router.push("/game/index_game")}
             alt="Play Button"
             width={buttonSize}
             height={buttonSize}
           />
           <GameButton
-            normal="/assets/ui/buttons/info/info_normal.png"
-            hover="/assets/ui/buttons/info/info_hover.png"
-            active="/assets/ui/buttons/info/info_active.png"
+            normal="/assets/ui/buttons/info/info_normal.webp"
+            hover="/assets/ui/buttons/info/info_hover.webp"
+            active="/assets/ui/buttons/info/info_active.webp"
             onClick={() => router.push("/info")}
             alt="Info Button"
             width={buttonSize}

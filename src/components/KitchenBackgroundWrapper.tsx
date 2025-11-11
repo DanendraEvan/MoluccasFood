@@ -192,9 +192,9 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
     };
 
     const getImageSrc = () => {
-      if (isActive) return '/assets/ui/buttons/home/home_active.png';
-      if (isHovered) return '/assets/ui/buttons/home/home_hover.png';
-      return '/assets/ui/buttons/home/home_normal.png';
+      if (isActive) return '/assets/ui/buttons/home/home_active.webp';
+      if (isHovered) return '/assets/ui/buttons/home/home_hover.webp';
+      return '/assets/ui/buttons/home/home_normal.webp';
     };
 
     return (
@@ -298,9 +298,9 @@ const KitchenBackgroundWrapper: React.FC<KitchenBackgroundWrapperProps> = ({
 
     const getButtonSrc = () => {
       const buttonType = isDialogOpen ? 'down' : 'up';
-      if (isPressed) return `/assets/ui/buttons/${buttonType}/${buttonType}_active.png`;
-      if (isHovered) return `/assets/ui/buttons/${buttonType}/${buttonType}_hover.png`;
-      return `/assets/ui/buttons/${buttonType}/${buttonType}_normal.png`;
+      if (isPressed) return `/assets/ui/buttons/${buttonType}/${buttonType}_active.webp`;
+      if (isHovered) return `/assets/ui/buttons/${buttonType}/${buttonType}_hover.webp`;
+      return `/assets/ui/buttons/${buttonType}/${buttonType}_normal.webp`;
     };
 
     return (

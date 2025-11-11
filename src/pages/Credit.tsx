@@ -69,11 +69,11 @@ const CreditPage: React.FC = () => {
   const getHomeButtonImage = (): string => {
     switch (homeButtonState) {
       case 'hover':
-        return '/assets/ui/buttons/home/home_hover.png';
+        return '/assets/ui/buttons/home/home_hover.webp';
       case 'active':
-        return '/assets/ui/buttons/home/home_active.png';
+        return '/assets/ui/buttons/home/home_active.webp';
       default:
-        return '/assets/ui/buttons/home/home_normal.png';
+        return '/assets/ui/buttons/home/home_normal.webp';
     }
   };
 

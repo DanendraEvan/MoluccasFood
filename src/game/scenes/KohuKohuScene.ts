@@ -1,4 +1,4 @@
-// src/game/scenes/KohuKohuScene.ts - Enhanced with UI Components from NasiLapola
+ // src/game/scenes/KohuKohuScene.ts - Enhanced with UI Components from NasiLapola
 import * as Phaser from "phaser";
 import ResponsiveGameUtils, { ResponsiveLayout } from "../utils/ResponsiveUtils";
 import ResponsiveMixin, { ResponsiveScene } from "../utils/ResponsiveMixin";
@@ -104,7 +104,7 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
   private isSwipeScrolling: boolean = false;
   private swipeStartY: number = 0;
   private swipeStartScrollY: number = 0;
-  private infoContent: string = `Kohu-kohu adalah salad segar dari Maluku! Makanan ini dibuat dari sayuran mentah seperti kacang panjang, tauge, dan kemangi. Bumbunya spesial, yaitu kelapa parut yang disangrai dan dicampur dengan bumbu lain seperti cabai dan bawang. Rasanya segar, gurih, dan sedikit pedas. Enak sekali dimakan bersama nasi!`;
+  private infoContent: string = `Kohu-kohu adalah salad segar khas Maluku yang dibuat dari sayuran mentah seperti kacang panjang, tauge, dan kemangi. Bumbunya menggunakan kelapa parut yang disangrai dan dicampur dengan cabai serta bawang, menghasilkan rasa yang segar, gurih, dan sedikit pedas. Selain lezat, kohu-kohu juga bergizi tinggi karena mengandung protein dari ikan tongkol dan sayuran, lemak sehat termasuk omega-3, karbohidrat dari sayuran dan bumbu, serta berbagai vitamin seperti B1, B2, C, dan A, juga mineral penting seperti fosfor dan kalsium.`;
 
   // Layout configuration
   public layoutConfig = {
@@ -151,79 +151,79 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
     {
       id: 1,
       text: "Halo! Mari kita buat Kohu-Kohu. Pertama, ambil Kalapa dari panel bahan di sebelah kanan, lalu seret dan letakkan di atas baskom di tengah.",
-      character: "karakter1.png",
+      character: "karakter1.webp",
       isCompleted: false
     },
     {
       id: 2,
       text: "Bagus! Kelapanya sudah diparut. Sekarang, klik di sekitar kanan Baskom dan seret Baskom berisi kelapa parut dan letakkan di atas teflon di sebelah kanan.",
-      character: "karakter2.png",
+      character: "karakter2.webp",
       isCompleted: false
     },
     {
       id: 3,
       text: "Saatnya menyangrai kelapa. Ambil Bila-Bila dari panel kanan, lalu seret ke atas teflon untuk mulai mengaduk. Geser ke kiri dan kanan berulang kali ya!",
-      character: "karakter3.png",
+      character: "karakter3.webp",
       isCompleted: false
     },
     {
       id: 4,
       text: "Sip, kelapa sangrai sudah jadi! Sekarang, kita siapkan sayurannya. Ambil Kumangi dari panel kanan dan masukkan ke dalam wajan di sebelah kiri.",
-      character: "karakter3.png",
+      character: "karakter3.webp",
       isCompleted: false
     },
     {
       id: 5,
       text: "Lanjutkan dengan mengambil Kacang Panjang dan masukkan ke dalam wajan.",
-      character: "karakter3.png",
+      character: "karakter3.webp",
       isCompleted: false
     },
     {
       id: 6,
       text: "Sekarang, ambil Kangkung dan masukkan ke dalam wajan.",
-      character: "karakter3.png",
+      character: "karakter3.webp",
       isCompleted: false
     },
     {
       id: 7,
       text: "Terakhir, ambil Timun dan masukkan ke dalam wajan.",
-      character: "karakter3.png",
+      character: "karakter3.webp",
       isCompleted: false
     },
     {
       id: 8,
       text: "Biar makin lezat, ayo tambahkan bumbu! Ambil Cili dan Bawang Merah, lalu masukkan ke wajan. Setelah itu, ambil Ikang Cakalang dan masukkan juga ke wajan ya.",
-      character: "karakter4.png",
+      character: "karakter4.webp",
       isCompleted: false
     },
     {
       id: 9,
       text: "Hampir selesai! Ambil Minya Ikang dari panel kanan dan tuangkan ke dalam wajan untuk rasa yang lebih mantap.",
-      character: "karakter5.png",
+      character: "karakter5.webp",
       isCompleted: false
     },
     {
       id: 10,
       text: "Bagus! Semua bahan sudah tercampur. Sekarang ambil Piring dari panel bahan dan letakkan di Area Penyajian di sebelah kiri.",
-      character: "karakter5.png",
+      character: "karakter5.webp",
       isCompleted: false
     },
     {
       id: 11,
       text: "Pertama, seret Teflon yang berisi kelapa sangrai dan letakkan di atas piring.",
-      character: "karakter6.png",
+      character: "karakter6.webp",
       isCompleted: false
     },
     {
       id: 12,
       text: "Luar biasa! Sekarang, ambil Bila-Bila dan seret ke wajan untuk mengangkat sayuran. Lalu, bawa sayuran itu ke atas piring.",
-      character: "karakter6.png",
+      character: "karakter6.webp",
       isCompleted: false
     },
     {
       id: 13,
       text: "Wah, kamu hebat! Kohu-Kohu buatanmu sudah jadi dan siap disajikan! Selamat menikmati!",
-      character: "karakter6.png",
+      character: "karakter6.webp",
       isCompleted: false
     }
   ];
@@ -234,63 +234,63 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
 
   preload() {
     this.load.image("background", "/assets/backgrounds/kitchen.png");
-    this.load.image("Kompor", "/assets/foods/kohu_kohu/Kompor.png");
+    this.load.image("Kompor", "/assets/foods/kohu_kohu/Kompor.webp");
     
     // Load food image for hint popup
-    this.load.image('kohukohu_food', '/assets/makanan/kohukohu.png');
+    this.load.image('kohukohu_food', '/assets/makanan/kohukohu.webp');
 
     // Tools
-    this.load.image("Teflon", "/assets/foods/kohu_kohu/Teflonkosong.png");
-    this.load.image("Wajan", "/assets/foods/kohu_kohu/wajan.png");
-    this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.png");
-    this.load.image("Piring", "/assets/foods/kohu_kohu/Piring Kohu.png");
-    this.load.image("Baskom", "/assets/foods/kohu_kohu/Baskom.png");
-    this.load.image("Parut1", "/assets/foods/kohu_kohu/Parut1.png");
-    this.load.image("Parut2", "/assets/foods/kohu_kohu/Parut2.png");
+    this.load.image("Teflon", "/assets/foods/kohu_kohu/Teflonkosong.webp");
+    this.load.image("Wajan", "/assets/foods/kohu_kohu/wajan.webp");
+    this.load.image("Sepatula", "/assets/foods/kohu_kohu/sepatula.webp");
+    this.load.image("Piring", "/assets/foods/kohu_kohu/Piring Kohu.webp");
+    this.load.image("Baskom", "/assets/foods/kohu_kohu/Baskom.webp");
+    this.load.image("Parut1", "/assets/foods/kohu_kohu/Parut1.webp");
+    this.load.image("Parut2", "/assets/foods/kohu_kohu/Parut2.webp");
 
     // Ingredients
-    this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.png");
-    this.load.image("Kangkung", "/assets/foods/kohu_kohu/Kangkung.png");
-    this.load.image("Timun", "/assets/foods/kohu_kohu/Timun.png");
-    this.load.image("KacangPanjang", "/assets/foods/kohu_kohu/KacangPanjang.png");
-    this.load.image("Kemangi", "/assets/foods/kohu_kohu/Kemangi.png");
-    this.load.image("Cabe", "/assets/foods/kohu_kohu/Cabe.png");
-    this.load.image("BawangMerah", "/assets/foods/kohu_kohu/Bawang Merah.png");
-    this.load.image("Daging", "/assets/foods/kohu_kohu/Daging.png");
-    this.load.image("MinyakIkan", "/assets/foods/kohu_kohu/MinyakIkan.png");
+    this.load.image("Kelapa", "/assets/foods/kohu_kohu/Kelapa.webp");
+    this.load.image("Kangkung", "/assets/foods/kohu_kohu/Kangkung.webp");
+    this.load.image("Timun", "/assets/foods/kohu_kohu/Timun.webp");
+    this.load.image("KacangPanjang", "/assets/foods/kohu_kohu/KacangPanjang.webp");
+    this.load.image("Kemangi", "/assets/foods/kohu_kohu/Kemangi.webp");
+    this.load.image("Cabe", "/assets/foods/kohu_kohu/Cabe.webp");
+    this.load.image("BawangMerah", "/assets/foods/kohu_kohu/Bawang Merah.webp");
+    this.load.image("Daging", "/assets/foods/kohu_kohu/Daging.webp");
+    this.load.image("MinyakIkan", "/assets/foods/kohu_kohu/MinyakIkan.webp");
 
     // Steps / hasil
-    this.load.image("Baskomkelapa", "/assets/foods/kohu_kohu/Baskomkelapa.png");
-    this.load.image("TeflonKelapa", "/assets/foods/kohu_kohu/TeflonKelapa.png");
-    this.load.image("Sangrai", "/assets/foods/kohu_kohu/sangrai.png");
-    this.load.image("Aduk1", "/assets/foods/kohu_kohu/Aduk1.png");
-    this.load.image("Aduk2", "/assets/foods/kohu_kohu/Aduk2.png");
-    this.load.image("PiringKelapa", "/assets/foods/kohu_kohu/PiringKelapa.png");
-    this.load.image("SepatuladanSayur", "/assets/foods/kohu_kohu/SepatuladanSayur.png");
-    this.load.image("KohuKohu", "/assets/foods/kohu_kohu/KohuKohu.png");
-    this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.png");
-    this.load.image("tambahanKangkung", "/assets/foods/kohu_kohu/TambahanKangkung.png");
-    this.load.image("tambahanTimun", "/assets/foods/kohu_kohu/tambahanTimun.png");
-    this.load.image("tambahanKacangPanjang", "/assets/foods/kohu_kohu/tambahanKacangPanjang.png");
-    this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.png");
-    this.load.image("tambahanDaging", "/assets/foods/kohu_kohu/TambahanDaging.png");
-    this.load.image("tambahanMinyak", "/assets/foods/kohu_kohu/tambahanMinyak.png");
+    this.load.image("Baskomkelapa", "/assets/foods/kohu_kohu/Baskomkelapa.webp");
+    this.load.image("TeflonKelapa", "/assets/foods/kohu_kohu/TeflonKelapa.webp");
+    this.load.image("Sangrai", "/assets/foods/kohu_kohu/sangrai.webp");
+    this.load.image("Aduk1", "/assets/foods/kohu_kohu/Aduk1.webp");
+    this.load.image("Aduk2", "/assets/foods/kohu_kohu/Aduk2.webp");
+    this.load.image("PiringKelapa", "/assets/foods/kohu_kohu/PiringKelapa.webp");
+    this.load.image("SepatuladanSayur", "/assets/foods/kohu_kohu/SepatuladanSayur.webp");
+    this.load.image("KohuKohu", "/assets/foods/kohu_kohu/KohuKohu.webp");
+    this.load.image("Tambahankemangi", "/assets/foods/kohu_kohu/Tambahankemangi.webp");
+    this.load.image("tambahanKangkung", "/assets/foods/kohu_kohu/TambahanKangkung.webp");
+    this.load.image("tambahanTimun", "/assets/foods/kohu_kohu/tambahanTimun.webp");
+    this.load.image("tambahanKacangPanjang", "/assets/foods/kohu_kohu/tambahanKacangPanjang.webp");
+    this.load.image("tambahanCabeBawangMerah", "/assets/foods/kohu_kohu/tambahanCabeBawangMerah.webp");
+    this.load.image("tambahanDaging", "/assets/foods/kohu_kohu/TambahanDaging.webp");
+    this.load.image("tambahanMinyak", "/assets/foods/kohu_kohu/tambahanMinyak.webp");
 
     // UI Elements
-    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.png");
-    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.png");
-    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.png");
-    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.png");
-    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.png");
-    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.png");
+    this.load.image("menu_normal", "/assets/ui/buttons/menu/menu_normal.webp");
+    this.load.image("menu_hover", "/assets/ui/buttons/menu/menu_hover.webp");
+    this.load.image("menu_active", "/assets/ui/buttons/menu/menu_active.webp");
+    this.load.image("hint_normal", "/assets/ui/buttons/hint/hint_normal.webp");
+    this.load.image("hint_hover", "/assets/ui/buttons/hint/hint_hover.webp");
+    this.load.image("hint_active", "/assets/ui/buttons/hint/hint_active.webp");
 
     // Characters
-    this.load.image("karakter1", "/assets/karakter/karakter1.png");
-    this.load.image("karakter2", "/assets/karakter/karakter2.png");
-    this.load.image("karakter3", "/assets/karakter/karakter3.png");
-    this.load.image("karakter4", "/assets/karakter/karakter4.png");
-    this.load.image("karakter5", "/assets/karakter/karakter5.png");
-    this.load.image("karakter6", "/assets/karakter/karakter6.png");
+    this.load.image("karakter1", "/assets/karakter/karakter1.webp");
+    this.load.image("karakter2", "/assets/karakter/karakter2.webp");
+    this.load.image("karakter3", "/assets/karakter/karakter3.webp");
+    this.load.image("karakter4", "/assets/karakter/karakter4.webp");
+    this.load.image("karakter5", "/assets/karakter/karakter5.webp");
+    this.load.image("karakter6", "/assets/karakter/karakter6.webp");
   }
 
   create() {
@@ -1768,6 +1768,12 @@ export default class KohuKohuScene extends Phaser.Scene implements ResponsiveSce
 
           // Sync initial step
           this.syncDialogWithGameStep();
+
+          // Send info content to React UI
+          if (this.dialogBridge.setInfoContent) {
+            this.dialogBridge.setInfoContent(this.infoContent);
+          }
+
         } catch (error) {
           console.error('❌ KohuKohu: Bridge test failed:', error);
         }

@@ -16,9 +16,9 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ children }) => {
       <div className="w-full h-full relative">
         <div className="absolute top-4 left-4 z-10">
           <GameButton
-            normal="/assets/ui/buttons/home/home_normal.png"
-            hover="/assets/ui/buttons/home/home_hover.png"
-            active="/assets/ui/buttons/home/home_active.png"
+            normal="/assets/ui/buttons/home/home_normal.webp"
+            hover="/assets/ui/buttons/home/home_hover.webp"
+            active="/assets/ui/buttons/home/home_active.webp"
             alt="Home Button"
             onClick={() => router.push("/menu")}
             width={120}
